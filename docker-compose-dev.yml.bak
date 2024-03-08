@@ -1,0 +1,153 @@
+version: "3"
+services:
+  webservice:
+    build:
+      context: .
+      dockerfile: ./dockerfiles/web_service.dockerfile
+    image: web_service_image
+    command: bash -c "python manage.py wait_for_db && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./exportdir:/media/exportdir
+      - ./logs:/media/logs
+      - ./Web_service:/usr/src/Web_service
+    ports:
+      - "8000:8000"
+    environment:
+      - POSTGRES_NAME=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
+      - CELERY_BROKER=redis://redis:6379/0
+      - CELERY_BACKEND=redis://redis:6379/0
+      - DEV=True
+    depends_on:
+      - db
+      - redis
+    secrets:
+      - ftpsecret
+      - sheetsecret
+      - mailsecret
+      - surfsecret
+      - djangosecret
+      - captchasecret
+      - diopsissecret
+    restart: always
+  webserviceworker:
+    image: web_service_image
+    command: bash -c "celery -A Web_service worker --autoscale 10,1 --loglevel=INFO -Q webservice"
+    secrets:
+      - ftpsecret
+      - sheetsecret
+      - mailsecret
+      - surfsecret
+      - djangosecret
+      - captchasecret
+      - diopsissecret
+    volumes:
+      - ./exportdir:/media/exportdir
+      - ./logs:/media/logs
+      - ./Web_service:/usr/src/Web_service
+    environment:
+      - POSTGRES_NAME=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
+      - CELERY_BROKER=redis://redis:6379/0
+      - CELERY_BACKEND=redis://redis:6379/0
+      - DEV=True
+    depends_on:
+      - db
+      - redis
+      - webservice
+    restart: always
+  dbworker:
+    image: web_service_image
+    command: bash -c "celery -A Web_service worker -c 1 --loglevel=INFO -Q database"
+    secrets:
+      - ftpsecret
+      - sheetsecret
+      - mailsecret
+      - surfsecret
+      - djangosecret
+      - captchasecret
+      - diopsissecret
+    volumes:
+      - ./exportdir:/media/exportdir
+      - ./logs:/media/logs
+      - ./Web_service:/usr/src/Web_service
+    environment:
+      - POSTGRES_NAME=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
+      - CELERY_BROKER=redis://redis:6379/0
+      - CELERY_BACKEND=redis://redis:6379/0
+      - DEV=True
+    depends_on:
+      - db
+      - redis
+      - webservice
+    restart: always
+  webservicebeat:
+    image: web_service_image
+    command: bash -c "celery -A Web_service beat --loglevel=INFO"
+    secrets:
+      - djangosecret
+      - captchasecret
+    environment:
+      - POSTGRES_NAME=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
+      - CELERY_BROKER=redis://redis:6379/0
+      - CELERY_BACKEND=redis://redis:6379/0
+      - DEV=True
+    depends_on:
+      - db
+      - redis
+      - webserviceworker
+      - webservice
+    restart: always
+  db:
+    image: postgis/postgis:14-3.3
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    restart: always
+  redis:
+      image: "redis:alpine"
+      restart: always
+  birdnet:
+    build:
+      context: C:/Users/jevans/Documents/GitHub/BirdNET-Analyzer-celery
+    image: birdnet
+    command: bash -c "celery -A worker.worker worker --autoscale 10,1 --loglevel=INFO -Q birdnet"
+    restart: always 
+    volumes:
+      - ./exportdir:/media/exportdir
+    environment: 
+      - CELERY_BROKER=redis://redis:6379/0
+      - CELERY_BACKEND=redis://redis:6379/0
+    restart: always
+volumes:
+  exportdir:
+  logs:
+  db:
+secrets:
+  ftpsecret:
+    file: ./secrets/ftpsecret
+  sheetsecret:
+    file: ./secrets/sheetsecret
+  mailsecret:
+    file: ./secrets/mailsecret
+  surfsecret:
+    file: ./secrets/surfsecret
+  djangosecret:
+    file: ./secrets/djangosecret
+  captchasecret:
+    file: ./secrets/captchasecret
+  diopsissecret:
+    file: ./secrets/diopsissecret
