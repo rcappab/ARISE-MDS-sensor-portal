@@ -1,15 +1,14 @@
 version: "3"
 services:
-  webservice:
+  sensor_portal_django:
     build:
       context: .
-      dockerfile: ./dockerfiles/web_service.dockerfile
+      dockerfile: ./dockerfiles/sensor_portal.dockerfile
     image: web_service_image
     command: bash -c "python manage.py wait_for_db && python manage.py runserver 0.0.0.0:8000"
     volumes:
-      - ./exportdir:/media/exportdir
-      - ./logs:/media/logs
-      - ./Web_service:/usr/src/Web_service
+      - ./file_storage:/media/file_storage
+      - ./sensor_portal:/usr/src/sensor_portal
     ports:
       - "8000:8000"
     environment:

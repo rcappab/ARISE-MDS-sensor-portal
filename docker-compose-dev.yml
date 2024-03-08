@@ -20,32 +20,17 @@ services:
       - CELERY_BACKEND=redis://redis:6379/0
       - DEV=True
     depends_on:
-      - db
-      - redis
+      - sensor_portal_db
+      - sensor_portal_redis
     secrets:
-      - ftpsecret
-      - sheetsecret
-      - mailsecret
-      - surfsecret
-      - djangosecret
-      - captchasecret
-      - diopsissecret
     restart: always
-  webserviceworker:
+  sensor_portal_worker:
     image: web_service_image
-    command: bash -c "celery -A Web_service worker --autoscale 10,1 --loglevel=INFO -Q webservice"
+    command: bash -c "celery -A Sensor_portal worker --autoscale 10,1 --loglevel=INFO -Q main_worker"
     secrets:
-      - ftpsecret
-      - sheetsecret
-      - mailsecret
-      - surfsecret
-      - djangosecret
-      - captchasecret
-      - diopsissecret
     volumes:
-      - ./exportdir:/media/exportdir
-      - ./logs:/media/logs
-      - ./Web_service:/usr/src/Web_service
+      - ./file_storage:/media/file_storage
+      - ./sensor_portal:/usr/src/sensor_portal
     environment:
       - POSTGRES_NAME=postgres
       - POSTGRES_USER=postgres
@@ -55,25 +40,17 @@ services:
       - CELERY_BACKEND=redis://redis:6379/0
       - DEV=True
     depends_on:
-      - db
-      - redis
-      - webservice
+      - sensor_portal_db
+      - sensor_portal_redis
+      - sensor_portal_django
     restart: always
-  dbworker:
+  sensor_portal_single_worker:
     image: web_service_image
-    command: bash -c "celery -A Web_service worker -c 1 --loglevel=INFO -Q database"
+    command: bash -c "celery -A Sensor_portal worker -c 1 --loglevel=INFO -Q single_worker"
     secrets:
-      - ftpsecret
-      - sheetsecret
-      - mailsecret
-      - surfsecret
-      - djangosecret
-      - captchasecret
-      - diopsissecret
     volumes:
-      - ./exportdir:/media/exportdir
-      - ./logs:/media/logs
-      - ./Web_service:/usr/src/Web_service
+      - ./file_storage:/media/file_storage
+      - ./sensor_portal:/usr/src/sensor_portal
     environment:
       - POSTGRES_NAME=postgres
       - POSTGRES_USER=postgres
@@ -83,16 +60,14 @@ services:
       - CELERY_BACKEND=redis://redis:6379/0
       - DEV=True
     depends_on:
-      - db
-      - redis
-      - webservice
+      - sensor_portal_db
+      - sensor_portal_redis
+      - sensor_portal_django
     restart: always
-  webservicebeat:
+  sensor_portal_beat:
     image: web_service_image
-    command: bash -c "celery -A Web_service beat --loglevel=INFO"
+    command: bash -c "celery -A Sensor_portal beat --loglevel=INFO"
     secrets:
-      - djangosecret
-      - captchasecret
     environment:
       - POSTGRES_NAME=postgres
       - POSTGRES_USER=postgres
@@ -102,51 +77,23 @@ services:
       - CELERY_BACKEND=redis://redis:6379/0
       - DEV=True
     depends_on:
-      - db
-      - redis
-      - webserviceworker
-      - webservice
+      - sensor_portal_db
+      - sensor_portal_redis
+      - sensor_portal_django
     restart: always
-  db:
+  sensor_portal_db:
     image: postgis/postgis:14-3.3
     volumes:
-      - ./data/db:/var/lib/postgresql/data
+      - ./sensor_portal_database:/var/lib/postgresql/data
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     restart: always
-  redis:
+  sensor_portal_redis:
       image: "redis:alpine"
       restart: always
-  birdnet:
-    build:
-      context: C:/Users/jevans/Documents/GitHub/BirdNET-Analyzer-celery
-    image: birdnet
-    command: bash -c "celery -A worker.worker worker --autoscale 10,1 --loglevel=INFO -Q birdnet"
-    restart: always 
-    volumes:
-      - ./exportdir:/media/exportdir
-    environment: 
-      - CELERY_BROKER=redis://redis:6379/0
-      - CELERY_BACKEND=redis://redis:6379/0
-    restart: always
 volumes:
-  exportdir:
-  logs:
-  db:
+  file_storage:
+  sensor_portal_database:
 secrets:
-  ftpsecret:
-    file: ./secrets/ftpsecret
-  sheetsecret:
-    file: ./secrets/sheetsecret
-  mailsecret:
-    file: ./secrets/mailsecret
-  surfsecret:
-    file: ./secrets/surfsecret
-  djangosecret:
-    file: ./secrets/djangosecret
-  captchasecret:
-    file: ./secrets/captchasecret
-  diopsissecret:
-    file: ./secrets/diopsissecret
