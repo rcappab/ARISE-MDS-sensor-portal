@@ -1,0 +1,4 @@
+*.bak
+secrets/
+file_storage/
+sensor_portal_database/
