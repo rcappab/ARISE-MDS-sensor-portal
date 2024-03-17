@@ -51,8 +51,10 @@ class DataFileViewset(viewsets.ModelViewSet):
         else:
             instance = response.validated_data
             #  check deployment availability
+            #  write to disk
 
-            return response
+            #return a job submitted response
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 

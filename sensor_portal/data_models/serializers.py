@@ -121,7 +121,7 @@ class DataFileUploadSerializer(serializers.Serializer):
         if any(is_not_image):
             raise serializers.ValidationError("Recording date times can only be extracted from images, \
                                               please provide 'recording_dt' or upload only images")
-        
+
         #  check recording_dt and number of files match
         if data.get('recording_dt') is not None:
             recording_dt = data.get('recording_dt')
