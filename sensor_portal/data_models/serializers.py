@@ -1,10 +1,11 @@
 from rest_framework_gis import serializers as geoserializers
 from rest_framework import serializers
 from .models import *
+import magic
 
 
 class OwnerMangerMixIn(serializers.ModelSerializer):
-    owner = serializers.StringRelatedField()
+    owner = serializers.StringRelatedField(read_only=True)
     managers = serializers.StringRelatedField(many=True)
 
     def to_representation(self, instance):
@@ -108,24 +109,25 @@ class DataFileUploadSerializer(serializers.Serializer):
         return validated_data
 
     def validate(self, data):
-        print("pre-validating")
-        print(data)
         data = super().validate(data)
-        print("super validating")
-        print(data)
-        """
-        Check a deployment or a device is supplied.
-        """
+
+        #  Check a deployment or device is supplied
         if data.get('deployment') is None and data.get('device') is None:
             raise serializers.ValidationError("A deployment or a device must be supplied")
 
         #  if not an image, user must supply the recording date time
-
+        files = self.data.get("files")
+        is_not_image = ["image" not in magic.from_buffer(x.read(),mime=True) for x in files]
+        if any(is_not_image):
+            raise serializers.ValidationError("Recording date times can only be extracted from images, \
+                                              please provide 'recording_dt' or upload only images")
+        
+        #  check recording_dt and number of files match
         if data.get('recording_dt') is not None:
             recording_dt = data.get('recording_dt')
             if len(recording_dt)>1 & len(recording_dt)!=len(data.get('files')):
                 raise serializers.ValidationError("More than one recording_dt was supplied, \
-                                                    but this does not match the number of files")
+                                                    but the number does not match the number of files")
 
         return data
 
