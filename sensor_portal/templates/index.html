@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div x-data="{deployments : []}",
+     x-init="deployments = await (await fetch(
+     'api/deployment',{
+      headers: {
+        'X-CSRF-TOKEN': document.head.querySelector('meta[name=csrf-token]').content
+      },
+     }
+     )).json()
+    ">
+
+    <template x-for="deployment in deployments">
+        <div>
+            <p x-text="`${deployment.deployment_deviceID} - ${deployment.site}`"></p>
+            <img x-bind:src=`${deployment.last_imageURL}`>
+        </div>
+    </template>
+
+</div>
+
+<div x-init="console.log('I\'m being initialized!')"></div>
+
+{% endblock %}

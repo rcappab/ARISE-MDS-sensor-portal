@@ -15,7 +15,11 @@ import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+MEDIA_ROOT = os.path.abspath('/media/file_storage')
+MEDIA_URL = 'media/'
 
+FILE_STORAGE_ROOT = '/media/file_storage'
+FILE_STORAGE_URL = 'storage/'
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
@@ -68,7 +72,7 @@ ROOT_URLCONF = 'sensor_portal.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, "templates")],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -89,8 +93,8 @@ WSGI_APPLICATION = 'sensor_portal.wsgi.application'
 
 DATABASES = {
     'default': {
-        #'ENGINE': 'django.db.backends.postgresql',
-        'ENGINE':'django.contrib.gis.db.backends.postgis',
+        # 'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'NAME': os.environ.get('POSTGRES_NAME'),
         'USER': os.environ.get('POSTGRES_USER'),
         'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
@@ -99,6 +103,11 @@ DATABASES = {
     }
 }
 AUTH_USER_MODEL = "user_management.User"
+
+AUTHENTICATION_BACKENDS = (
+ 'django.contrib.auth.backends.ModelBackend',
+ 'bridgekeeper.backends.RulePermissionBackend',
+)
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
@@ -130,11 +139,11 @@ USE_I18N = True
 
 USE_TZ = True
 
-USE_L10N = False # allow use of custom datetime formats
-DATE_FORMAT="Y-m-d"
+USE_L10N = False  # allow use of custom datetime formats
+DATE_FORMAT = "Y-m-d"
 DATETIME_FORMAT = 'c'
-TIME_FORMAT="H:i:s e"
-SHORT_DATETIME_FORMAT='Y-n-j G:i:s'
+TIME_FORMAT = "H:i:s e"
+SHORT_DATETIME_FORMAT = 'Y-n-j G:i:s'
 
 
 # Static files (CSS, JavaScript, Images)
@@ -148,8 +157,16 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
-    'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend']
+    'DEFAULT_FILTER_BACKENDS': ['bridgekeeper.rest_framework.RuleFilter',
+                                'django_filters.rest_framework.DjangoFilterBackend'],
+    'DEFAULT_PERMISSION_CLASSES': (
+        'bridgekeeper.rest_framework.RulePermissions',
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ]
 }
 
-#MY SETTINGS
-GLOBAL_PROJECT_ID = "GLOBAL"
+# SENSOR-PORTAL SETTINGS
+GLOBAL_PROJECT_ID = "GLOBAL"  # name of the global project all deployments will be added to

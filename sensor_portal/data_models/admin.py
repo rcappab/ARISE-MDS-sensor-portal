@@ -19,6 +19,11 @@ class DeviceAdmin(AddOwnerAdmin):
     search_fields = ['deviceID']
     list_filter = ['type']
 
+    #  admin form hack to make sure device user is assigned to managers
+    def save_related(self, request, form, formsets, change):
+        super(AddOwnerAdmin, self).save_related(request, form, formsets, change)
+        if form.instance.device_user:
+            form.instance.device_user.save()
 
 @admin.register(Project)
 class ProjectAdmin(AddOwnerAdmin):
@@ -34,6 +39,13 @@ class DeployAdmin(AddOwnerAdmin):
     list_filter = ['is_active', 'device_type']
     readonly_fields = GenericAdmin.readonly_fields + ['deployment_deviceID', 'combo_project']
     autocomplete_fields = ('device', 'project')
+
+    #  admin form hack to make sure global project is added
+    def save_related(self, request, form, formsets, change):
+        super(AddOwnerAdmin, self).save_related(request, form, formsets, change)
+        global_project = get_global_project()
+        if global_project not in form.instance.project.all():
+            form.instance.project.add(global_project)
 
 
 @admin.register(DataFile)
