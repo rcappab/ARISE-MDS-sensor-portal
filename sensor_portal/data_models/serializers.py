@@ -35,6 +35,8 @@ class DeploymentFieldsMixIn(OwnerMangerMixIn, serializers.ModelSerializer):
     site = serializers.StringRelatedField()
     site_id = serializers.PrimaryKeyRelatedField(read_only=True)
 
+    # check project permissions here or in viewpoint
+
     class Meta:
         model = Deployment
         exclude = ['last_image', 'last_file']
