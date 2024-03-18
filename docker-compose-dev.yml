@@ -16,8 +16,8 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
-      - CELERY_BROKER=redis://redis:6379/0
-      - CELERY_BACKEND=redis://redis:6379/0
+      - CELERY_BROKER=redis://sensor_portal_redis:6379/0
+      - CELERY_BACKEND=redis://sensor_portal_redis:6379/0
       - DEV=True
     depends_on:
       - sensor_portal_db
@@ -34,8 +34,8 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
-      - CELERY_BROKER=redis://redis:6379/0
-      - CELERY_BACKEND=redis://redis:6379/0
+      - CELERY_BROKER=redis://sensor_portal_redis:6379/0
+      - CELERY_BACKEND=redis://sensor_portal_redis:6379/0
       - DEV=True
     depends_on:
       - sensor_portal_db
@@ -53,8 +53,8 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
-      - CELERY_BROKER=redis://redis:6379/0
-      - CELERY_BACKEND=redis://redis:6379/0
+      - CELERY_BROKER=redis://sensor_portal_redis:6379/0
+      - CELERY_BACKEND=redis://sensor_portal_redis:6379/0
       - DEV=True
     depends_on:
       - sensor_portal_db
@@ -69,8 +69,8 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
-      - CELERY_BROKER=redis://redis:6379/0
-      - CELERY_BACKEND=redis://redis:6379/0
+      - CELERY_BROKER=redis://sensor_portal_redis:6379/0
+      - CELERY_BACKEND=redis://sensor_portal_redis:6379/0
       - DEV=True
     depends_on:
       - sensor_portal_db

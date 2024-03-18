@@ -2,11 +2,17 @@ from rest_framework_gis import serializers as geoserializers
 from rest_framework import serializers
 from .models import *
 import magic
+from PIL import Image, ExifTags
 
 
 class OwnerMangerMixIn(serializers.ModelSerializer):
     owner = serializers.StringRelatedField(read_only=True)
     managers = serializers.StringRelatedField(many=True)
+
+    def create(self, validated_data):
+        if self.context['request'].user:
+            validated_data['owner'] = self.context['request'].user
+        return super(OwnerMangerMixIn, self).create(validated_data)
 
     def to_representation(self, instance):
         initial_rep = super(OwnerMangerMixIn, self).to_representation(instance)
@@ -95,7 +101,6 @@ class DataFileSerializer(serializers.ModelSerializer):
 
 
 class DataFileUploadSerializer(serializers.Serializer):
-
     deployment = serializers.CharField(required=False)
     device = serializers.CharField(required=False)
     files = serializers.ListField(child=serializers.FileField(allow_empty_file=False, max_length=None))
@@ -104,6 +109,7 @@ class DataFileUploadSerializer(serializers.Serializer):
     autoupdate = serializers.BooleanField(default=False)
     rename = serializers.BooleanField(default=True)
     check_filename = serializers.BooleanField(default=True)
+    data_types = serializers.ListField(child = serializers.StringRelatedField(), required=False)
 
     def create(self, validated_data):
         return validated_data
@@ -116,18 +122,21 @@ class DataFileUploadSerializer(serializers.Serializer):
             raise serializers.ValidationError("A deployment or a device must be supplied")
 
         #  if not an image, user must supply the recording date time
-        files = self.data.get("files")
-        is_not_image = ["image" not in magic.from_buffer(x.read(),mime=True) for x in files]
+        files = data.get("files")
+        is_not_image = ["image" not in magic.from_buffer(x.read(), mime=True) for x in files]
         if any(is_not_image):
-            raise serializers.ValidationError("Recording date times can only be extracted from images, \
-                                              please provide 'recording_dt' or upload only images")
+            raise serializers.ValidationError("Recording date times can only be extracted from images, "
+                                              "please provide 'recording_dt' or upload only images")
 
         #  check recording_dt and number of files match
         if data.get('recording_dt') is not None:
             recording_dt = data.get('recording_dt')
-            if len(recording_dt)>1 & len(recording_dt)!=len(data.get('files')):
-                raise serializers.ValidationError("More than one recording_dt was supplied, \
-                                                    but the number does not match the number of files")
+            if len(recording_dt) > 1 & len(recording_dt) != len(data.get('files')):
+                raise serializers.ValidationError("More than one recording_dt was supplied, "
+                                                  "but the number does not match the number of files")
+
+        if data.get('recording_dt') is None:
+            data['recording_dt'] = [get_image_recording_dt(x) for x in files]
 
         return data
 
@@ -139,3 +148,17 @@ class DataFileUploadSerializer(serializers.Serializer):
         print("during save")
         print(self.validated_data)
 
+
+def get_image_recording_dt(uploaded_file):
+    si = uploaded_file.file
+    image = Image.open(si)
+    exif = image.getexif()
+    exif_tags = {ExifTags.TAGS[k]: v for k, v in exif.items() if k in ExifTags.TAGS}
+    recording_dt = exif_tags.get('DateTimeOriginal')
+    if recording_dt is None:
+        recording_dt = exif_tags.get('DateTime')
+    if recording_dt is None:
+        raise serializers.ValidationError(f"Unable to get recording_dt from image {uploaded_file.name}, "
+                                          f"consider supplying recording_dt manually")
+
+    return datetime.strptime(recording_dt, '%Y:%m:%d %H:%M:%S')

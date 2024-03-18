@@ -48,6 +48,9 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_gis",
     "rest_framework.authtoken",
+    # celery
+    'django_celery_results',
+    'django_celery_beat',
     # additional extensions
     'bridgekeeper',
     'debug_toolbar',
@@ -167,6 +170,26 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ]
 }
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': os.environ.get("CELERY_BROKER", "redis://redis:6379/0")
+    }
+}
+
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://redis:6379/0")
+CELERY_RESULT_BACKEND = 'django-db'#os.environ.get("CELERY_BROKER", "redis://redis:6379/0")
+CELERY_RESULT_EXTENDED = True
+
+
+CELERY_TASK_DEFAULT_QUEUE = 'main_worker'
+
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_ENABLE_UTC = False
+
+CELERY_BEAT_SCHEDULE = {}
 
 # SENSOR-PORTAL SETTINGS
 GLOBAL_PROJECT_ID = "GLOBAL"  # name of the global project all deployments will be added to

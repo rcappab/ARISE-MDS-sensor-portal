@@ -16,6 +16,7 @@ import dateutil.parser
 import traceback
 from datetime import datetime, timedelta, timezone, time
 import os
+from bridgekeeper import perms
 
 
 class Basemodel(models.Model):
@@ -113,7 +114,6 @@ class Device(Basemodel):
                               on_delete=models.SET_NULL, null=True)
     managers = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name="managed_devices")
 
-
     autoupdate = models.BooleanField(default=False)
     update_time = models.IntegerField(default=48)
 
@@ -135,12 +135,9 @@ class Device(Basemodel):
             mytz = pytz.timezone(settings.TIME_ZONE)
             dt = mytz.localize(dt)
 
-        if user is None:
-            all_deploys = self.deployments.all()
-
-        # else:
-        #    all_deploys, count = GetAllowedDeployments(user)
-        #    all_deploys = alldeploys.filter(device=self)
+        all_deploys = self.deployments.all()
+        if user is not None:
+            all_deploys = perms['data_models.change_deployment'].filter(user, all_deploys)
 
         # For deployments that have not ended - end date is shifted 100 years
 
@@ -175,7 +172,6 @@ class Device(Basemodel):
             return None
 
 
-
 @receiver(post_save, sender=Device)
 def post_save_device(sender, instance, created, **kwargs):
     if created:
@@ -188,7 +184,6 @@ def post_save_device(sender, instance, created, **kwargs):
         usergroup_profile = usergroup.profile
         usergroup_profile.device.add(instance)
         usergroup_profile.save()
-
 
 
 class Deployment(Basemodel):
@@ -266,13 +261,31 @@ class Deployment(Basemodel):
 
         return False
 
-    def set_last_file(self,newfile=None):
+    def check_dates(self, dt_list):
+
+        result_list = []
+
+        for dt in dt_list:
+            if type(dt) is str:
+                dt = dateutil.parser.parse(dt)
+
+            if dt.tzinfo is None:
+                mytz = pytz.timezone(settings.TIME_ZONE)
+                dt = mytz.localize(dt)
+
+            result_list.append(dt >= self.deploymentStart & (dt <= self.deploymentEnd | self.deploymentEnd is None))
+
+        return result_list
+
+    def set_last_file(self, newfile=None):
         try:
             if self.files.exists():
                 file_object = self.files.all().latest('recording_dt')
             elif newfile is not None:
                 if self.last_file is None:
                     file_object = newfile
+            else:
+                file_object = None
             if file_object is not None:
                 self.last_file = file_object
                 self.set_last_image()
@@ -284,10 +297,12 @@ class Deployment(Basemodel):
 
     def set_last_image(self):
         if self.last_file:
-            #check for thumbnail first
-            if self.last_file.file_format.lower() in [".jpg",".jpeg"]:
+            # check for thumbnail first
+            if self.last_file.file_format.lower() in [".jpg", ".jpeg"]:
                 self.last_image = self.last_file
                 self.last_imageURL = self.last_file.file_url
+
+
 @receiver(post_save, sender=Deployment)
 def post_save_deploy(sender, instance, created, **kwargs):
     if created:
@@ -315,6 +330,7 @@ def update_project(sender, instance, action, reverse, *args, **kwargs):
         combo_project = instance.get_combo_project()
         Deployment.objects.filter(pk=instance.pk).update(combo_project=combo_project)
 
+
 @receiver(post_delete, sender=Device)
 @receiver(post_delete, sender=Deployment)
 @receiver(post_delete, sender=Project)
@@ -328,6 +344,7 @@ def clear_user_groups(sender, instance, **kwargs):
     )
     all_groups.filter(all_is_null=True).delete()
 
+
 class DataFile(Basemodel):
     deployment = models.ForeignKey(Deployment, on_delete=models.CASCADE, related_name="files")
 
@@ -336,7 +353,7 @@ class DataFile(Basemodel):
     file_size = FileSizeField()
     file_format = models.CharField(max_length=100)
 
-    download_date = models.DateField(auto_now_add=True)
+    upload_date = models.DateField(auto_now_add=True)
     recording_dt = models.DateTimeField(null=True, db_index=True)
     path = models.CharField(max_length=500)
     local_path = models.CharField(max_length=500, blank=True)
@@ -370,6 +387,9 @@ class DataFile(Basemodel):
         self.favourite_of.remove(user)
         self.save()
 
+    def full_path(self):
+        return os.path.join(self.local_path,self.path,f"{self.file_name}{self.file_format}")
+
     def set_file_url(self):
         if self.localstorage:
 
@@ -387,23 +407,24 @@ class DataFile(Basemodel):
             self.file_url = None
 
     def clean_file(self, delete_obj=False):
+        print(f"clean {delete_obj}")
         if (self.do_not_remove or self.deployment_last_image.exists or self.deployment_last_file.exists) and not delete_obj:
             return
         if self.localstorage:
             try:
-                os.remove(self.fullpath())
-            except:
+                os.remove(self.full_path())
+            except OSError:
                 pass
 
         try:
             os.remove(self.thumbpath["filepath"])
-        except:
+        except OSError:
             pass
 
-        for v in self.extrareps.values():
+        for v in self.extra_reps.values():
             try:
                 os.remove(v["filepath"])
-            except:
+            except OSError:
                 pass
 
         if not delete_obj:
@@ -412,16 +433,14 @@ class DataFile(Basemodel):
             self.extra_reps = {}
             self.thumb_path = None
             self.save()
-        else:
-            self.deployment.set_last_file()
 
     def save(self, *args, **kwargs):
         self.set_file_url()
         super().save(*args, **kwargs)
 
 
-@receiver(post_save,sender=DataFile)
-def post_save_file(sender,instance,created, **kwargs):
+@receiver(post_save, sender=DataFile)
+def post_save_file(sender, instance, created, **kwargs):
     # if created:
     # print("Refresh file cache")
     # RefreshFileCache()
@@ -436,3 +455,7 @@ def post_save_file(sender,instance,created, **kwargs):
 def remove_file(sender, instance, **kwargs):
     # deletes the attached file form data storage
     instance.clean_file(True)
+
+@receiver(post_delete, sender=DataFile)
+def post_remove_file(sender, instance, **kwargs):
+    instance.deployment.set_last_file()

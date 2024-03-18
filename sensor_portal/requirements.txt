@@ -9,7 +9,9 @@ psycopg2==2.9.3
 celery==5.2.7
 redis==4.3.3
 hiredis==2.0.0
+celery==5.2.7
 django-celery-beat==2.3.0
+django-celery-results==2.5.1
 paramiko==2.11.0
 scp==0.14.4
 Pillow==9.1.1
