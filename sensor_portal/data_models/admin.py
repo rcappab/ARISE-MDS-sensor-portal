@@ -2,7 +2,7 @@ from django.contrib import admin
 from .models import *
 
 # Register your models here.
-@admin.register(DataType,Site)
+@admin.register(DataType)
 class GenericAdmin(admin.ModelAdmin):
      readonly_fields = ['created_on','modified_on']
 
@@ -12,6 +12,10 @@ class AddOwnerAdmin(GenericAdmin):
             obj.owner = request.user
         super().save_model(request, obj, form, change)
 
+@admin.register(Site)
+class SiteAdmin(GenericAdmin):
+    list_display = ['short_name', 'name']
+    search_fields = ['name', 'short_name']
 
 @admin.register(Device)
 class DeviceAdmin(AddOwnerAdmin):

@@ -1,18 +1,26 @@
 from rest_framework_gis import serializers as geoserializers
 from rest_framework import serializers
 from .models import *
+from user_management.models import User
 import magic
 from PIL import Image, ExifTags
 
 
+class SlugRelatedGetOrCreateField(serializers.SlugRelatedField):
+    def to_internal_value(self, data):
+        queryset = self.get_queryset()
+        try:
+            return queryset.get_or_create(**{self.slug_field: data})[0]
+        except (TypeError, ValueError):
+            self.fail("invalid")
+
+
 class OwnerMangerMixIn(serializers.ModelSerializer):
     owner = serializers.StringRelatedField(read_only=True)
-    managers = serializers.StringRelatedField(many=True)
-
-    def create(self, validated_data):
-        if self.context['request'].user:
-            validated_data['owner'] = self.context['request'].user
-        return super(OwnerMangerMixIn, self).create(validated_data)
+    managers = serializers.SlugRelatedField(many=True,
+                                            slug_field="username",
+                                            queryset=User.objects.all(),
+                                            allow_null=True)
 
     def to_representation(self, instance):
         initial_rep = super(OwnerMangerMixIn, self).to_representation(instance)
@@ -27,12 +35,16 @@ class OwnerMangerMixIn(serializers.ModelSerializer):
 
 
 class DeploymentFieldsMixIn(OwnerMangerMixIn, serializers.ModelSerializer):
-    device_type = serializers.StringRelatedField()
-    device = serializers.StringRelatedField()
+    device_type = serializers.SlugRelatedField(slug_field='name', queryset=DataType.objects.all())
+    device = serializers.SlugRelatedField(slug_field='deviceID', queryset=Device.objects.all())
     device_id = serializers.PrimaryKeyRelatedField(read_only=True)
-    project = serializers.StringRelatedField(many=True)
+    project = serializers.SlugRelatedField(many=True,
+                                           slug_field='projectID',
+                                           queryset=Project.objects.all(),
+                                           allow_null=True)
     project_ids = serializers.PrimaryKeyRelatedField(source="project", read_only=True, many=True)
-    site = serializers.StringRelatedField()
+    site = SlugRelatedGetOrCreateField(slug_field='short_name',
+                                                   queryset=Site.objects.all())
     site_id = serializers.PrimaryKeyRelatedField(read_only=True)
 
     # check project permissions here or in viewpoint
@@ -67,7 +79,9 @@ class ProjectSerializer(OwnerMangerMixIn, serializers.ModelSerializer):
 
 
 class DeviceSerializer(OwnerMangerMixIn, serializers.ModelSerializer):
-    device_type = serializers.StringRelatedField()
+    device_type = serializers.SlugRelatedField(slug_field='name',
+                                               queryset=DataType.objects.all(),
+                                               allow_null=True)
     username = serializers.CharField()
     authentication = serializers.CharField()
 
@@ -86,14 +100,14 @@ class DeviceSerializer(OwnerMangerMixIn, serializers.ModelSerializer):
             "authentication",
         ]
         user_is_manager = self.context['request'].user.has_perm(self.management_perm, obj=instance)
-        print(user_is_manager)
         if not user_is_manager:
             [initial_rep.pop(field, '') for field in fields_to_pop]
         return initial_rep
 
 
 class DataFileSerializer(serializers.ModelSerializer):
-    deployment = serializers.StringRelatedField()
+    deployment = serializers.SlugRelatedField(slug_field='deployment_deviceID',
+                                              queryset=Deployment.objects.all())
     deployment_id = serializers.PrimaryKeyRelatedField(read_only=True)
     file_type = serializers.StringRelatedField()
 
@@ -111,7 +125,9 @@ class DataFileUploadSerializer(serializers.Serializer):
     autoupdate = serializers.BooleanField(default=False)
     rename = serializers.BooleanField(default=True)
     check_filename = serializers.BooleanField(default=True)
-    data_types = serializers.ListField(child = serializers.StringRelatedField(), required=False)
+    data_types = serializers.ListField(child=serializers.SlugRelatedField(slug_field='name',
+                                                                          queryset=DataType.objects.all()),
+                                       required=False)
 
     def create(self, validated_data):
         return validated_data
@@ -146,9 +162,7 @@ class DataFileUploadSerializer(serializers.Serializer):
         # Not used
         pass
 
-    def save(self):
-        print("during save")
-        print(self.validated_data)
+
 
 
 def get_image_recording_dt(uploaded_file):

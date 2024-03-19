@@ -6,7 +6,11 @@ from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.exceptions import PermissionDenied
 
 
-class DeploymentViewset(viewsets.ModelViewSet):
+class AddOwnerViewSet(viewsets.ModelViewSet):
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
+class DeploymentViewset(AddOwnerViewSet):
     queryset = Deployment.objects.all()
 
     def get_serializer_class(self):
@@ -16,15 +20,31 @@ class DeploymentViewset(viewsets.ModelViewSet):
         else:
             return DeploymentSerializer
 
-class AddOwnerMixIn(viewsets.ModelViewSet):
-    
+    def perform_create(self, serializer):
+        self.check_attachment(serializer)
+        super(DeploymentViewset,self).perform_create(serializer)
 
-class ProjectViewset(viewsets.ModelViewSet):
+    def perform_update(self, serializer):
+        self.check_attachment(serializer)
+        super(DeploymentViewset,self).perform_create(serializer)
+
+    def check_attachment(self, serializer):
+        project_objects = serializer.validated_data.get('project')
+        for project_object in project_objects:
+            if not self.request.user.has_perm('data_models.change_project', project_object):
+                raise PermissionDenied(
+                    f"You don't have permission to add a deployment to {project_object.projectID}")
+        device_object = serializer.validated_data.get('device')
+        if not self.request.user.has_perm('data_models.change_device', device_object):
+            raise PermissionDenied(f"You don't have permission to deploy {device_object.deviceID}")
+
+
+class ProjectViewset(AddOwnerViewSet):
     serializer_class = ProjectSerializer
     queryset = Project.objects.all()
 
 
-class DeviceViewset(viewsets.ModelViewSet):
+class DeviceViewset(AddOwnerViewSet):
     serializer_class = DeviceSerializer
     queryset = Device.objects.all()
 
@@ -36,6 +56,16 @@ from rest_framework.response import Response
 class DataFileViewset(viewsets.ModelViewSet):
     serializer_class = DataFileSerializer
     queryset = DataFile.objects.all()
+
+    def perform_update(self, serializer):
+        self.check_attachment(serializer)
+        super(DeploymentViewset,self).perform_create(serializer)
+
+    def check_attachment(self, serializer):
+        deployment_object = serializer.validated_data.get('device')
+        if not self.request.user.has_perm('data_models.change_deployment', deployment_object):
+            raise PermissionDenied(f"You don't have permission to add a datafile"
+                                   f" to {deployment_object.deployment_deviceID}")
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -89,7 +119,7 @@ class DataFileViewset(viewsets.ModelViewSet):
             except ObjectDoesNotExist:
                 raise serializers.ValidationError("Incorrect deployment")
 
-            if not request.user.has_perm('data_models.change_deployments', deployment_object):
+            if not request.user.has_perm('data_models.change_deployment', deployment_object):
                 raise PermissionDenied("You do not have permission to add files to this deployment")
 
             valid_files = deployment_object.check_dates(recording_dt)
