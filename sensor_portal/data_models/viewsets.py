@@ -16,6 +16,8 @@ class DeploymentViewset(viewsets.ModelViewSet):
         else:
             return DeploymentSerializer
 
+class AddOwnerMixIn(viewsets.ModelViewSet):
+    
 
 class ProjectViewset(viewsets.ModelViewSet):
     serializer_class = ProjectSerializer
