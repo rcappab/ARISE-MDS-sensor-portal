@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, Group
 from rest_framework.authtoken.models import Token
 from django.dispatch import receiver
-from django.db.models.signals import post_save, m2m_changed
+from django.db.models.signals import post_save, pre_save, m2m_changed
 from django.db.models import Q, BooleanField, ExpressionWrapper
 from data_models.models import Project, Deployment, Device
 from django.core.exceptions import ObjectDoesNotExist
@@ -60,7 +60,13 @@ def post_save_device(sender, instance, created, **kwargs):
     instance.managers.add(device_user)
 
 
-
+@receiver(pre_save, sender=DeviceUser)
+@receiver(pre_save, sender=User)
+def pre_user_save(sender, instance, **kwargs):
+    if isinstance(instance, DeviceUser):
+        instance.is_active = True
+    elif instance.is_superuser:
+        instance.is_active = True
 
 @receiver(post_save, sender=DeviceUser)
 @receiver(post_save, sender=User)
@@ -75,6 +81,7 @@ def create_user_token(sender, instance, created, **kwargs):
     if isinstance(instance, DeviceUser):
         if ((instance.password is None) | (instance.password == "")):
             User.objects.filter(pk=instance.pk).update(password=make_password(instance.auth_token.key))
+
 
 
 class GroupProfile(models.Model):

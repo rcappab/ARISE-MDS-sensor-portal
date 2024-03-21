@@ -4,7 +4,7 @@ from django.conf import settings
 from django.dispatch import receiver
 from django.contrib.auth.models import Group
 from django.db.models.signals import post_save, pre_delete, m2m_changed, post_delete
-from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned, ValidationError
 from django.db.models import Sum, F, Q, BooleanField, ExpressionWrapper, Case, When, DateTimeField
 from django.utils import timezone as djtimezone
 from sizefield.models import FileSizeField
@@ -17,7 +17,24 @@ import traceback
 from datetime import datetime, timedelta, timezone, time
 import os
 from bridgekeeper import perms
+from . import validators
 
+
+
+def check_dt(dt, device_timezone = None):
+    if dt is None:
+        return dt
+
+    if device_timezone is None:
+        device_timezone = settings.TIME_ZONE
+    if type(dt) is str:
+        dt = dateutil.parser.parse(dt)
+
+    if dt.tzinfo is None:
+        mytz = pytz.timezone(device_timezone)
+        dt = mytz.localize(dt)
+
+    return dt
 
 class Basemodel(models.Model):
     created_on = models.DateTimeField(auto_now_add=True)
@@ -128,12 +145,7 @@ class Device(Basemodel):
         return reverse('device-detail', kwargs={'pk': self.pk})
 
     def deployment_from_date(self, dt, user=None):
-        if type(dt) is str:
-            dt = dateutil.parser.parse(dt)
-
-        if dt.tzinfo is None:
-            mytz = pytz.timezone(settings.TIME_ZONE)
-            dt = mytz.localize(dt)
+        dt = check_dt(dt)
 
         all_deploys = self.deployments.all()
         if user is not None:
@@ -170,6 +182,35 @@ class Device(Basemodel):
             all_true_deployments = all_deploys.filter(in_deployment=True)
             print(f"Error: found {all_true_deployments.count()} deployments")
             return None
+
+    def check_overlap(self, new_start, new_end):
+        new_start = check_dt(new_start)
+        if new_end is None:
+            new_end = new_start+timedelta(days=365*100)
+        else:
+            new_end = check_dt(new_end)
+
+        all_deploys = self.deployments.all()
+        all_deploys = all_deploys.annotate(deploymentEnd_indefinite=
+        Case(
+            When(deploymentEnd__isnull=True,
+                 then=ExpressionWrapper(
+                     F('deploymentStart') + timedelta(days=365 * 100),
+                     output_field=DateTimeField()
+                 )
+                 ),
+            default=F('deploymentEnd')
+        )
+        )
+        all_deploys = all_deploys.annotate(in_deployment=
+        ExpressionWrapper(
+            Q(Q(deploymentStart__lte=new_start) | Q(deploymentEnd_indefinite__gte=new_end)),
+            output_field=BooleanField()
+        )
+        )
+
+        overlapping_deploys = all_deploys.filter(in_deployment=True)
+        return list(overlapping_deploys.values_list('deployment_deviceID',flat=True))
 
 
 @receiver(post_save, sender=Device)
@@ -228,6 +269,15 @@ class Deployment(Basemodel):
     def __str__(self):
         return self.deployment_deviceID
 
+    def clean(self):
+        result, message = validators.deployment_start_time_after_end_time(self.deploymentStart, self.deploymentEnd)
+        if not result:
+            raise ValidationError(message)
+        result, message = validators.deployment_check_overlap(self.deploymentStart, self.deploymentEnd, self.device)
+        if not result:
+            raise ValidationError(message)
+        super(Deployment, self).clean()
+
     def save(self, *args, **kwargs):
         self.deployment_deviceID = f"{self.deploymentID}_{self.device_type.name}_{self.device_n}"
         self.is_active = self.check_active()
@@ -254,10 +304,9 @@ class Deployment(Basemodel):
             return ""
 
     def check_active(self):
-        if self.id:
-            if self.deploymentStart <= djtimezone.now():
-                if self.deploymentEnd is None or self.deploymentEnd >= djtimezone.now():
-                    return True
+        if self.deploymentStart <= djtimezone.now():
+            if self.deploymentEnd is None or self.deploymentEnd >= djtimezone.now():
+                return True
 
         return False
 
@@ -266,12 +315,7 @@ class Deployment(Basemodel):
         result_list = []
 
         for dt in dt_list:
-            if type(dt) is str:
-                dt = dateutil.parser.parse(dt)
-
-            if dt.tzinfo is None:
-                mytz = pytz.timezone(settings.TIME_ZONE)
-                dt = mytz.localize(dt)
+            dt = check_dt(dt)
 
             result_list.append(dt >= self.deploymentStart & (dt <= self.deploymentEnd | self.deploymentEnd is None))
 
@@ -437,6 +481,12 @@ class DataFile(Basemodel):
     def save(self, *args, **kwargs):
         self.set_file_url()
         super().save(*args, **kwargs)
+
+    def clean(self):
+        result, message = validators.data_file_in_deployment(self.recording_dt, self.deployment)
+        if not result:
+            raise ValidationError(message)
+        super(DataFile, self).clean()
 
 
 @receiver(post_save, sender=DataFile)

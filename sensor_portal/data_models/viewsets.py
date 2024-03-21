@@ -4,11 +4,14 @@ from rest_framework import viewsets
 import django_filters.rest_framework
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.exceptions import PermissionDenied
+from rest_framework import status
+from rest_framework.response import Response
 
 
 class AddOwnerViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+
 
 class DeploymentViewset(AddOwnerViewSet):
     queryset = Deployment.objects.all()
@@ -49,8 +52,7 @@ class DeviceViewset(AddOwnerViewSet):
     queryset = Device.objects.all()
 
 
-from rest_framework import status
-from rest_framework.response import Response
+
 
 
 class DataFileViewset(viewsets.ModelViewSet):
@@ -79,7 +81,6 @@ class DataFileViewset(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.validated_data)
         upload_date = str(djtimezone.now().date())
         instance = serializer.validated_data
-        print(instance)
 
         files = instance.get('files')
         recording_dt = instance.get('recording_dt')

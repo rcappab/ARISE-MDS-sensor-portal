@@ -4,6 +4,7 @@ from .models import *
 from user_management.models import User
 import magic
 from PIL import Image, ExifTags
+from . import validators
 
 
 class SlugRelatedGetOrCreateField(serializers.SlugRelatedField):
@@ -56,6 +57,19 @@ class DeploymentFieldsMixIn(OwnerMangerMixIn, serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         self.management_perm = 'data_models.change_deployment'
         super(DeploymentFieldsMixIn, self).__init__(*args, **kwargs)
+
+    def validate(self, data):
+        data = super().validate(data)
+        result, message = validators.deployment_start_time_after_end_time(data.get('deploymentStart'),
+                                                                          data.get('deploymentEnd'))
+        if not result:
+            raise serializers.ValidationError(message)
+        result, message = validators.deployment_check_overlap(data.get('deploymentStart'),
+                                                              data.get('deploymentEnd'),
+                                                              data.get('device'))
+        if not result:
+            raise serializers.ValidationError(message)
+        return data
 
 
 class DeploymentSerializer(DeploymentFieldsMixIn, serializers.ModelSerializer):
@@ -115,6 +129,12 @@ class DataFileSerializer(serializers.ModelSerializer):
         model = DataFile
         exclude = ["do_not_remove"]
 
+    def validate(self, data):
+        data = super().validate(data)
+        result, message = validators.data_file_in_deployment(data.get('recording_dt'), data.get('deployment'))
+        if not result:
+            raise serializers.ValidationError(message)
+        return data
 
 class DataFileUploadSerializer(serializers.Serializer):
     deployment = serializers.CharField(required=False)
@@ -149,7 +169,7 @@ class DataFileUploadSerializer(serializers.Serializer):
         #  check recording_dt and number of files match
         if data.get('recording_dt') is not None:
             recording_dt = data.get('recording_dt')
-            if len(recording_dt) > 1 & len(recording_dt) != len(data.get('files')):
+            if len(recording_dt) > 1 and len(recording_dt) != len(data.get('files')):
                 raise serializers.ValidationError("More than one recording_dt was supplied, "
                                                   "but the number does not match the number of files")
 
