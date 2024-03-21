@@ -230,13 +230,14 @@ def post_save_device(sender, instance, created, **kwargs):
 class Deployment(Basemodel):
     deployment_deviceID = models.CharField(max_length=100, blank=True, editable=False, unique=True)
     deploymentID = models.CharField(max_length=50)
-    device_type = models.ForeignKey(DataType, models.PROTECT, related_name="deployments")
+    device_type = models.ForeignKey(DataType, models.PROTECT, related_name="deployments", null=True)
     device_n = models.IntegerField(default=1)
 
     deploymentStart = models.DateTimeField(default=djtimezone.now)
     deploymentEnd = models.DateTimeField(blank=True, null=True)
 
     device = models.ForeignKey(Device, on_delete=models.PROTECT, related_name="deployments")
+    site = models.ForeignKey(Site, models.PROTECT, related_name="deployments")
     project = models.ManyToManyField(Project, related_name="deployments", blank=True)
 
     Latitude = models.DecimalField(max_digits=8, decimal_places=6, blank=True, null=True)
@@ -247,7 +248,7 @@ class Deployment(Basemodel):
         spatial_index=True
     )
 
-    site = models.ForeignKey(Site, models.PROTECT, related_name="deployments")
+
     extra_info = models.JSONField(default=dict, blank=True)
     is_active = models.BooleanField(default=True)
 
@@ -270,6 +271,9 @@ class Deployment(Basemodel):
         return self.deployment_deviceID
 
     def clean(self):
+        result, message = validators.deployment_check_type(self.device_type, self.device)
+        if not result:
+            raise ValidationError(message)
         result, message = validators.deployment_start_time_after_end_time(self.deploymentStart, self.deploymentEnd)
         if not result:
             raise ValidationError(message)
@@ -279,8 +283,11 @@ class Deployment(Basemodel):
         super(Deployment, self).clean()
 
     def save(self, *args, **kwargs):
-        self.deployment_deviceID = f"{self.deploymentID}_{self.device_type.name}_{self.device_n}"
+        self.deployment_deviceID = f"{self.deploymentID}_{self.device.type.name}_{self.device_n}"
         self.is_active = self.check_active()
+
+        if not self.device_type:
+            self.device_type = self.device.type
 
         if self.Longitude and self.Latitude:
             self.point = Point(

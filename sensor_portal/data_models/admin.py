@@ -1,10 +1,12 @@
 from django.contrib import admin
 from .models import *
 
+
 # Register your models here.
 @admin.register(DataType)
 class GenericAdmin(admin.ModelAdmin):
-     readonly_fields = ['created_on','modified_on']
+    readonly_fields = ['created_on', 'modified_on']
+
 
 class AddOwnerAdmin(GenericAdmin):
     def save_model(self, request, obj, form, change):
@@ -12,10 +14,12 @@ class AddOwnerAdmin(GenericAdmin):
             obj.owner = request.user
         super().save_model(request, obj, form, change)
 
+
 @admin.register(Site)
 class SiteAdmin(GenericAdmin):
     list_display = ['short_name', 'name']
     search_fields = ['name', 'short_name']
+
 
 @admin.register(Device)
 class DeviceAdmin(AddOwnerAdmin):
@@ -29,11 +33,12 @@ class DeviceAdmin(AddOwnerAdmin):
         if form.instance.device_user:
             form.instance.device_user.save()
 
+
+
 @admin.register(Project)
 class ProjectAdmin(AddOwnerAdmin):
     list_display = ['projectID', 'projectName']
     search_fields = ['projectID', 'projectName']
-
 
 
 @admin.register(Deployment)
@@ -41,7 +46,7 @@ class DeployAdmin(AddOwnerAdmin):
     list_display = ['deployment_deviceID', 'device_type', 'is_active', 'modified_on', 'combo_project']
     search_fields = ['deployment_deviceID']
     list_filter = ['is_active', 'device_type']
-    readonly_fields = GenericAdmin.readonly_fields + ['deployment_deviceID', 'combo_project']
+    readonly_fields = GenericAdmin.readonly_fields + ['deployment_deviceID', 'combo_project', 'device_type']
     autocomplete_fields = ('device', 'project')
 
     #  admin form hack to make sure global project is added

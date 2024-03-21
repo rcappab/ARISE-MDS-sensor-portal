@@ -36,7 +36,7 @@ class OwnerMangerMixIn(serializers.ModelSerializer):
 
 
 class DeploymentFieldsMixIn(OwnerMangerMixIn, serializers.ModelSerializer):
-    device_type = serializers.SlugRelatedField(slug_field='name', queryset=DataType.objects.all())
+    device_type = serializers.SlugRelatedField(slug_field='name', queryset=DataType.objects.all(), required=False)
     device = serializers.SlugRelatedField(slug_field='deviceID', queryset=Device.objects.all())
     device_id = serializers.PrimaryKeyRelatedField(read_only=True)
     project = serializers.SlugRelatedField(many=True,
@@ -60,6 +60,10 @@ class DeploymentFieldsMixIn(OwnerMangerMixIn, serializers.ModelSerializer):
 
     def validate(self, data):
         data = super().validate(data)
+        result, message = validators.deployment_check_type(data.get('device_type'),
+                                                           data.get('device'))
+        if not result:
+            raise serializers.ValidationError(message)
         result, message = validators.deployment_start_time_after_end_time(data.get('deploymentStart'),
                                                                           data.get('deploymentEnd'))
         if not result:
