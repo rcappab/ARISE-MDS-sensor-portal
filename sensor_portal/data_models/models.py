@@ -11,15 +11,13 @@ from sizefield.models import FileSizeField
 from django.contrib.gis.geos import Point
 from django.contrib.gis.db import models as gis_models
 
-
 import traceback
 from datetime import datetime, timedelta, timezone, time
 import os
 from bridgekeeper import perms
+
 from . import validators
 from utils.general import check_dt
-
-
 
 
 class Basemodel(models.Model):
@@ -172,7 +170,7 @@ class Device(Basemodel):
     def check_overlap(self, new_start, new_end):
         new_start = check_dt(new_start)
         if new_end is None:
-            new_end = new_start+timedelta(days=365*100)
+            new_end = new_start + timedelta(days=365 * 100)
         else:
             new_end = check_dt(new_end)
 
@@ -196,7 +194,7 @@ class Device(Basemodel):
         )
 
         overlapping_deploys = all_deploys.filter(in_deployment=True)
-        return list(overlapping_deploys.values_list('deployment_deviceID',flat=True))
+        return list(overlapping_deploys.values_list('deployment_deviceID', flat=True))
 
 
 @receiver(post_save, sender=Device)
@@ -425,7 +423,7 @@ class DataFile(Basemodel):
         self.save()
 
     def full_path(self):
-        return os.path.join(self.local_path,self.path,f"{self.file_name}{self.file_format}")
+        return os.path.join(self.local_path, self.path, f"{self.file_name}{self.file_format}")
 
     def set_file_url(self):
         if self.localstorage:
@@ -445,7 +443,8 @@ class DataFile(Basemodel):
 
     def clean_file(self, delete_obj=False):
         print(f"clean {delete_obj}")
-        if (self.do_not_remove or self.deployment_last_image.exists or self.deployment_last_file.exists) and not delete_obj:
+        if (
+                self.do_not_remove or self.deployment_last_image.exists or self.deployment_last_file.exists) and not delete_obj:
             return
         if self.localstorage:
             try:
@@ -502,6 +501,7 @@ def post_save_file(sender, instance, created, **kwargs):
 def remove_file(sender, instance, **kwargs):
     # deletes the attached file form data storage
     instance.clean_file(True)
+
 
 @receiver(post_delete, sender=DataFile)
 def post_remove_file(sender, instance, **kwargs):

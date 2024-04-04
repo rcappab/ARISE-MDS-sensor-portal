@@ -37,7 +37,7 @@ class DeploymentFieldsMixIn(OwnerMangerMixIn, serializers.ModelSerializer):
                                            allow_null=True)
     project_ids = serializers.PrimaryKeyRelatedField(source="project", read_only=True, many=True)
     site = SlugRelatedGetOrCreateField(slug_field='short_name',
-                                                   queryset=Site.objects.all())
+                                       queryset=Site.objects.all())
     site_id = serializers.PrimaryKeyRelatedField(read_only=True)
 
     # check project permissions here or in viewpoint

@@ -32,6 +32,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+print("ARGH!")
 
 # Application definition
 
@@ -56,7 +57,8 @@ INSTALLED_APPS = [
     'debug_toolbar',
     # my apps
     'data_models',
-    'user_management'
+    'user_management',
+    'utils'
 ]
 
 MIDDLEWARE = [
@@ -165,6 +167,8 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'bridgekeeper.rest_framework.RulePermissions',
     ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 1,
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
