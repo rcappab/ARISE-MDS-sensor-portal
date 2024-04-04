@@ -8,12 +8,13 @@ from rest_framework import status
 from rest_framework.response import Response
 
 
+
 class AddOwnerViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
 
-class DeploymentViewset(AddOwnerViewSet):
+class DeploymentViewSet(AddOwnerViewSet):
     queryset = Deployment.objects.all()
 
     def get_serializer_class(self):
@@ -25,11 +26,11 @@ class DeploymentViewset(AddOwnerViewSet):
 
     def perform_create(self, serializer):
         self.check_attachment(serializer)
-        super(DeploymentViewset,self).perform_create(serializer)
+        super(DeploymentViewSet, self).perform_create(serializer)
 
     def perform_update(self, serializer):
         self.check_attachment(serializer)
-        super(DeploymentViewset,self).perform_create(serializer)
+        super(DeploymentViewSet, self).perform_create(serializer)
 
     def check_attachment(self, serializer):
         project_objects = serializer.validated_data.get('project')
@@ -42,12 +43,12 @@ class DeploymentViewset(AddOwnerViewSet):
             raise PermissionDenied(f"You don't have permission to deploy {device_object.deviceID}")
 
 
-class ProjectViewset(AddOwnerViewSet):
+class ProjectViewSet(AddOwnerViewSet):
     serializer_class = ProjectSerializer
     queryset = Project.objects.all()
 
 
-class DeviceViewset(AddOwnerViewSet):
+class DeviceViewSet(AddOwnerViewSet):
     serializer_class = DeviceSerializer
     queryset = Device.objects.all()
 
@@ -61,7 +62,7 @@ class DataFileViewset(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         self.check_attachment(serializer)
-        super(DeploymentViewset,self).perform_create(serializer)
+        super(DeploymentViewSet, self).perform_create(serializer)
 
     def check_attachment(self, serializer):
         deployment_object = serializer.validated_data.get('device')

@@ -3,6 +3,7 @@ from django.contrib.auth.models import Group
 from bridgekeeper.rules import R
 from django.db.models import Q
 
+
 # Some utility functions
 def final_query(accumulated_q):
     if len(accumulated_q) == 0:
@@ -27,8 +28,9 @@ def check_super(user):
 
     return None
 
+
 ## PROJECT RULES
-class is_project_owner(R):
+class IsProjectOwner(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
@@ -47,7 +49,7 @@ class is_project_owner(R):
             return final_query(accumulated_q)
 
 
-class is_project_manager(R):
+class IsProjectManager(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
@@ -66,7 +68,7 @@ class is_project_manager(R):
             return final_query(accumulated_q)
 
 
-class in_project_viewer_group(R):
+class InProjectViewerGroup(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
@@ -91,7 +93,7 @@ class in_project_viewer_group(R):
             return final_query(accumulated_q)
 
 
-class can_view_deployment_in_project(R):
+class CanViewDeploymentInProject(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
@@ -124,7 +126,7 @@ class can_view_deployment_in_project(R):
 
         return final_query(accumulated_q)
 
-class can_view_device_in_project(R):
+class CanViewDeviceInProject(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
@@ -159,7 +161,7 @@ class can_view_device_in_project(R):
 
 
 ## DEVICE RULES
-class is_device_owner(R):
+class IsDeviceOwner(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
@@ -178,7 +180,7 @@ class is_device_owner(R):
             return final_query(accumulated_q)
 
 
-class is_device_manager(R):
+class IsDeviceManager(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
@@ -197,7 +199,7 @@ class is_device_manager(R):
             return final_query(accumulated_q)
 
 
-class in_device_viewer_group(R):
+class InDeviceViewerGroup(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
@@ -224,7 +226,7 @@ class in_device_viewer_group(R):
             return final_query(accumulated_q)
 
 
-class can_view_project_containing_device(R):
+class CanViewProjectContainingDevice(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
@@ -260,8 +262,7 @@ class can_view_project_containing_device(R):
         return final_query(accumulated_q)
 
 
-
-class is_deployment_owner(R):
+class IsDeploymentOwner(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
@@ -280,7 +281,7 @@ class is_deployment_owner(R):
             return final_query(accumulated_q)
 
 
-class is_deployment_manager(R):
+class IsDeploymentManager(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
@@ -299,7 +300,7 @@ class is_deployment_manager(R):
             return final_query(accumulated_q)
 
 
-class in_deployment_viewer_group(R):
+class InDeploymentViewerGroup(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
@@ -324,7 +325,7 @@ class in_deployment_viewer_group(R):
             return final_query(accumulated_q)
 
 
-class can_manage_project_containing_deployment(R):
+class CanManageProjectContainingDeployment(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
@@ -353,7 +354,7 @@ class can_manage_project_containing_deployment(R):
         return final_query(accumulated_q)
 
 
-class can_view_project_containing_deployment(R):
+class CanViewProjectContainingDeployment(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
@@ -379,7 +380,7 @@ class can_view_project_containing_deployment(R):
         return final_query(accumulated_q)
 
 
-class can_view_deployed_device(R):
+class CanViewDeployedDevice(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
@@ -414,7 +415,7 @@ class can_view_deployed_device(R):
 
         return final_query(accumulated_q)
 
-class can_manage_project_containing_datafile(R):
+class CanManageProjectContainingDataFile(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
@@ -442,7 +443,7 @@ class can_manage_project_containing_datafile(R):
 
         return final_query(accumulated_q)
 
-class can_view_project_containing_datafile(R):
+class CanViewProjectContainingDataFile(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
@@ -467,7 +468,7 @@ class can_view_project_containing_datafile(R):
 
         return final_query(accumulated_q)
 
-class can_manage_deployment_containing_datafile(R):
+class CanManageDeploymentContainingDataFile(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
@@ -495,7 +496,7 @@ class can_manage_deployment_containing_datafile(R):
 
         return final_query(accumulated_q)
 
-class can_view_deployment_containing_datafile(R):
+class CanViewDeploymentContainingDataFile(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
@@ -520,7 +521,7 @@ class can_view_deployment_containing_datafile(R):
 
         return final_query(accumulated_q)
 
-class can_manage_device_containing_datafile(R):
+class CanManageDeviceContainingDataFile(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
@@ -548,7 +549,7 @@ class can_manage_device_containing_datafile(R):
 
         return final_query(accumulated_q)
 
-class can_view_device_containing_datafile(R):
+class CanViewDeviceContainingDataFile(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
