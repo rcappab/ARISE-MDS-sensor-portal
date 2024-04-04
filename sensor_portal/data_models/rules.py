@@ -22,7 +22,6 @@ def query_super(user):
 
 
 def check_super(user):
-
     if user.is_superuser:
         return True
 
@@ -125,6 +124,7 @@ class CanViewDeploymentInProject(R):
             accumulated_q = accumulated_q | Q(deployments__pk__in=user.owned_deployments)
 
         return final_query(accumulated_q)
+
 
 class CanViewDeviceInProject(R):
     def check(self, user, instance=None):
@@ -346,7 +346,7 @@ class CanManageProjectContainingDeployment(R):
             # can manage/own a deployment within project
             # manage
             accumulated_q = Q(pk__in=user.managed_projects.
-                                              values_list('deployments__pk', flat=True).distinct())
+                              values_list('deployments__pk', flat=True).distinct())
             # own
             accumulated_q = accumulated_q | Q(pk__in=user.owned_projects.
                                               values_list('deployments__pk', flat=True).distinct())
@@ -415,6 +415,7 @@ class CanViewDeployedDevice(R):
 
         return final_query(accumulated_q)
 
+
 class CanManageProjectContainingDataFile(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
@@ -436,12 +437,13 @@ class CanManageProjectContainingDataFile(R):
             # can view/manage/own a deployment within project
             # view
             accumulated_q = Q(pk__in=user.managed_projects.
-                                              values_list('deployments__datafiles__pk', flat=True).distinct())
+                              values_list('deployments__datafiles__pk', flat=True).distinct())
             # own
             accumulated_q = accumulated_q | Q(pk__in=user.owned_projects.
                                               values_list('deployments__datafiles__pk', flat=True).distinct())
 
         return final_query(accumulated_q)
+
 
 class CanViewProjectContainingDataFile(R):
     def check(self, user, instance=None):
@@ -468,6 +470,7 @@ class CanViewProjectContainingDataFile(R):
 
         return final_query(accumulated_q)
 
+
 class CanManageDeploymentContainingDataFile(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
@@ -489,12 +492,13 @@ class CanManageDeploymentContainingDataFile(R):
             # can view/manage/own a deployment within project
             # view
             accumulated_q = Q(pk__in=user.managed_projects.
-                                              values_list('datafiles__pk', flat=True).distinct())
+                              values_list('datafiles__pk', flat=True).distinct())
             # own
             accumulated_q = accumulated_q | Q(pk__in=user.owned_projects.
                                               values_list('datafiles__pk', flat=True).distinct())
 
         return final_query(accumulated_q)
+
 
 class CanViewDeploymentContainingDataFile(R):
     def check(self, user, instance=None):
@@ -521,6 +525,7 @@ class CanViewDeploymentContainingDataFile(R):
 
         return final_query(accumulated_q)
 
+
 class CanManageDeviceContainingDataFile(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
@@ -542,12 +547,13 @@ class CanManageDeviceContainingDataFile(R):
             # can view/manage/own a deployment within project
             # view
             accumulated_q = Q(pk__in=user.managed_devices.
-                                              values_list('deployments__datafiles__pk', flat=True).distinct())
+                              values_list('deployments__datafiles__pk', flat=True).distinct())
             # own
             accumulated_q = accumulated_q | Q(pk__in=user.owned_devices.
                                               values_list('deployments__datafiles__pk', flat=True).distinct())
 
         return final_query(accumulated_q)
+
 
 class CanViewDeviceContainingDataFile(R):
     def check(self, user, instance=None):
