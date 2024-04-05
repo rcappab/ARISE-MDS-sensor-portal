@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import *
-
+from utils.general import get_global_project
 
 # Register your models here.
 @admin.register(DataType)

@@ -1,7 +1,4 @@
-from .models import *
-from .serializers import *
 from rest_framework import viewsets
-import django_filters.rest_framework
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.exceptions import PermissionDenied
 from rest_framework import status
@@ -11,21 +8,11 @@ from utils.general import handle_uploaded_file, get_new_name
 from django.conf import settings
 from rest_framework_gis import filters as filters_gis
 
-class DeploymentFilter(django_filters.FilterSet):
-    class Meta:
-        model = Deployment
-        fields = {
-            'deployment_deviceID': ['exact', 'icontains','in'],
-            'is_active': ['exact'],
-            'deploymentStart': ['exact', 'lte', 'gte'],
-            'deploymentEnd': ['exact', 'lte', 'gte'],
-            'site': ['exact', 'in'],
-            'site__name': ['exact', 'icontains','in'],
-            'site__short_name': ['exact', 'icontains', 'in'],
-            'device': ['exact', 'in'],
-            'device__deviceID': ['exact', 'icontains', 'in'],
-            'device__name': ['exact', 'icontains', 'in'],
-        }
+
+from .serializers import *
+from .filtersets import *
+
+
 
 class AddOwnerViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
@@ -34,13 +21,13 @@ class AddOwnerViewSet(viewsets.ModelViewSet):
 
 class DeploymentViewSet(AddOwnerViewSet, OptionalPaginationViewSet):
     queryset = Deployment.objects.all()
-
     filterset_class = DeploymentFilter
     filter_backends = viewsets.ModelViewSet.filter_backends + [filters_gis.InBBoxFilter]
 
     def get_serializer_class(self):
         print(self.request.GET)
         if 'geoJSON' in self.request.GET.keys():
+
             return DeploymentSerializer_GeoJSON
         else:
             return DeploymentSerializer
@@ -67,16 +54,18 @@ class DeploymentViewSet(AddOwnerViewSet, OptionalPaginationViewSet):
 class ProjectViewSet(AddOwnerViewSet, OptionalPaginationViewSet):
     serializer_class = ProjectSerializer
     queryset = Project.objects.all()
+    filterset_class = ProjectFilter
 
 
 class DeviceViewSet(AddOwnerViewSet, OptionalPaginationViewSet):
     serializer_class = DeviceSerializer
     queryset = Device.objects.all()
-
+    filterset_class = DeviceFilter
 
 class DataFileViewSet(OptionalPaginationViewSet):
     serializer_class = DataFileSerializer
     queryset = DataFile.objects.all()
+    filterset_class = DataFileFilter
 
     def perform_update(self, serializer):
         self.check_attachment(serializer)
@@ -139,8 +128,7 @@ class DataFileViewSet(OptionalPaginationViewSet):
             except ObjectDoesNotExist:
                 raise serializers.ValidationError("Incorrect deployment")
 
-            if not request.user.has_perm('data_models.change_deployment', deployment_object):
-                raise PermissionDenied("You do not have permission to add files to this deployment")
+            self.check_attachment(serializer)
 
             valid_files = deployment_object.check_dates(recording_dt)
             if all([not x for x in valid_files]):

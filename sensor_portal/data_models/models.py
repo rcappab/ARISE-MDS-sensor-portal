@@ -17,7 +17,7 @@ import os
 from bridgekeeper import perms
 
 from . import validators
-from utils.general import check_dt
+from utils.general import check_dt, get_global_project
 
 
 class Basemodel(models.Model):
@@ -74,19 +74,7 @@ class Project(Basemodel):
         return reverse('project-detail', kwargs={'pk': self.pk})
 
 
-def get_global_project():
-    try:
-        global_project = Project.objects.get(projectID=settings.GLOBAL_PROJECT_ID)
-        return global_project
-    except ObjectDoesNotExist:
-        global_project = Project(projectID=settings.GLOBAL_PROJECT_ID,
-                                 projectName=settings.GLOBAL_PROJECT_ID,
-                                 projectObjectives="Global project for all deployments")
-        global_project.save()
-        return global_project
-    except:
-        print(" Error: " + traceback.format_exc())
-        pass
+
 
 
 @receiver(post_save, sender=Project)

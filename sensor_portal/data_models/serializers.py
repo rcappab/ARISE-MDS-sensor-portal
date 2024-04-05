@@ -75,7 +75,7 @@ class DeploymentSerializer(DeploymentFieldsMixIn, serializers.ModelSerializer):
 class DeploymentSerializer_GeoJSON(DeploymentFieldsMixIn, geoserializers.GeoFeatureModelSerializer):
     def __init__(self, *args, **kwargs):
         self.Meta.geo_field = "point"
-        super(DeploymentFieldsMixIn, self).__init__(*args, **kwargs)
+        super(DeploymentSerializer_GeoJSON, self).__init__(*args, **kwargs)
 
 
 class ProjectSerializer(OwnerMangerMixIn, serializers.ModelSerializer):
@@ -89,7 +89,7 @@ class ProjectSerializer(OwnerMangerMixIn, serializers.ModelSerializer):
 
 
 class DeviceSerializer(OwnerMangerMixIn, serializers.ModelSerializer):
-    device_type = serializers.SlugRelatedField(slug_field='name',
+    type = serializers.SlugRelatedField(slug_field='name',
                                                queryset=DataType.objects.all(),
                                                allow_null=True)
     username = serializers.CharField()
