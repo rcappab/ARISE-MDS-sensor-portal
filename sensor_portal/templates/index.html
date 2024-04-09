@@ -1,26 +1,140 @@
 {% extends 'base.html' %}
 
 {% block content %}
+{% include 'navbar.html' %}
 
-<div x-data="{deployments : []}",
-     x-init="deployments = await (await fetch(
-     'api/deployment',{
-      headers: {
-        'X-CSRF-TOKEN': document.head.querySelector('meta[name=csrf-token]').content
-      },
-     }
-     )).json()
-    ">
+<style>
+	.card {
+		max-width: 15rem;
+		width:15rem;
+		height: 20rem;
+		max-height: 20rem;
+		margin:1rem;
+		}
+	.modal {
+		display: block;
+	}
+	.wide-modal{
+		max-width: 75%
+	}
+</style>
 
-    <template x-for="deployment in deployments">
-        <div>
-            <p x-text="`${deployment.deployment_deviceID} - ${deployment.site}`"></p>
-            <img x-bind:src=`${deployment.last_imageURL}`>
-        </div>
-    </template>
+<div class="container">
+	<div x-data="allData" x-init="refreshData">
 
+		<div>
+			<form @submit.prevent="refreshData" x-data="{ status: 'normal', errors: {} }" id="searchform">
+				
+				<input name="page" type="number" value="1"/>  
+				<input name="page_size" type="number" value="1"/> 
+				<button>
+				Submit
+				</button>
+			</form>
+		</div>
+
+		<div class = "modal" role="dialog" x-show="showModal === true; $el.scrollTo({top: 0, behavior: 'instant'});" 
+		x-transition @click.self="showModal=false;" aria-labelledby="exampleModalLabel">
+			<div class="modal-dialog wide-modal">
+
+				<div class ="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" x-text="modalData[titleKey]" id="exampleModalLabel"></h5>
+						<button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" @click.prevent="showModal=false;"></button>
+					</div>
+					<div class="modal-body">
+						<template x-for="(key, value) in modalData">
+							<div>
+								<p class="card-text" x-text=`${key}`></p>
+								<p class="card-text" x-text=`${value}`></p>
+							</div>
+						</template>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div x-show="isReady === true" class="card-group">
+			<template x-for="(deployment, index) in returnedData">
+					<div class="card" @click.prevent="openDetail($event)" x-data="cardData(index)" x-bind:id=`card_${index}`>
+						<img class="card-img-top" src="...">
+						<div class="card-body">
+						<h5 class="card-title" x-text=`${deployment.deployment_deviceID}`></h5>
+						<p class="card-text" x-text=`${deployment.site}`><small class="text-muted"></small></p>
+						</div>
+					</div>
+			</template>
+		</div>
+
+
+		<div x-show="isReady === false"> I AM NOT DONE </div>
+
+	</div>
 </div>
 
-<div x-init="console.log('I\'m being initialized!')"></div>
+
+<script>
+
+	// Get data from API
+	async function getData(e){
+		
+		if(e){
+			formData = new FormData(e.target);
+			
+		}else{
+			formData = new FormData(document.getElementById("searchform"));
+		}
+		
+		let params = new URLSearchParams(formData).toString()
+		let url = `api/${datatype}/?${params}`
+		
+		response =  await fetch(url,
+		{
+		headers: {
+			'X-CSRF-TOKEN': document.head.querySelector('meta[name=csrf-token]').content
+		},
+		}
+		)
+		
+		response_json = await response.json()
+		return response_json['results']
+	}
+
+	function cardData(index){
+		return{
+			card_index:index,
+			openDetail(e){
+				test = this.returnedData[this.card_index]
+				this.modalData = test
+				this.showModal = true;
+			}
+		}
+	}
+
+	const datatype = 'deployment'
+	const titleKey = 'deployment_deviceID'
+
+	// Inititalise main DOM
+	document.addEventListener('alpine:init', () => {
+	Alpine.data('allData', () => ({
+		showModal: false,
+		isReady: false,
+		returnedData: [],
+		modalData:{},
+		async refreshData(e){
+			this.returnedData=[]
+			this.isReady = false
+			api_response_data = await getData(e)
+			
+			this.isReady = true
+			this.returnedData = api_response_data
+		}
+		}))
+		
+	})
+
+
+
+</script>
 
 {% endblock %}

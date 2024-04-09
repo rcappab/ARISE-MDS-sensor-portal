@@ -163,12 +163,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ['bridgekeeper.rest_framework.RuleFilter',
-                                'django_filters.rest_framework.DjangoFilterBackend',
-                                'filters.SearchFilter'],
+                                'django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_PERMISSION_CLASSES': (
         'bridgekeeper.rest_framework.RulePermissions',
     ),
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'DEFAULT_PAGINATION_CLASS': 'utils.paginators.VariablePagePaginator',
     'PAGE_SIZE': 1,
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',

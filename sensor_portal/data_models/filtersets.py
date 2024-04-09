@@ -92,5 +92,6 @@ class DataFileFilter(GenericFilter, ExtraInfoFilterMixIn):
             'recording_dt': ['exact', 'date__exact', 'gte', 'lte', 'date__gte', 'date__lte', 'time__gte', 'time__lte'],
             'localstorage': ['exact'],
             'archived': ['exact'],
-            'original_name': ['exact', 'icontains', 'in']
+            'original_name': ['exact', 'icontains', 'in'],
+            'favourite_of': ['contains']
         })

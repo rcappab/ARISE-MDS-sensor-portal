@@ -486,7 +486,7 @@ def post_save_file(sender, instance, created, **kwargs):
 
 
 @receiver(pre_delete, sender=DataFile)
-def remove_file(sender, instance, **kwargs):
+def pre_remove_file(sender, instance, **kwargs):
     # deletes the attached file form data storage
     instance.clean_file(True)
 
