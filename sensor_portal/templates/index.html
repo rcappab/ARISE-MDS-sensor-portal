@@ -56,7 +56,14 @@
 
 		<div x-show="isReady === true" class="card-group">
 			<template x-for="(deployment, index) in returnedData">
-					<div class="card" @click.prevent="openDetail($event)" x-data="cardData(index)" x-bind:id=`card_${index}`>
+					<div class="card" 
+					@mouseover="card_highlighted = true" 
+					@mouseleave="card_highlighted = false" 
+					@click.prevent="openDetail($event)" 
+					x-data="cardData(index)" 
+					x-bind:id="`card_${index}`"
+					:class="card_highlighted ? 'bg-success' : ''"
+					>
 						<img class="card-img-top" src="...">
 						<div class="card-body">
 						<h5 class="card-title" x-text=`${deployment.deployment_deviceID}`></h5>
@@ -103,6 +110,7 @@
 	function cardData(index){
 		return{
 			card_index:index,
+			card_highlighted:false,
 			openDetail(e){
 				test = this.returnedData[this.card_index]
 				this.modalData = test
