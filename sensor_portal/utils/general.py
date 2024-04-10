@@ -4,7 +4,13 @@ import dateutil.parser
 import os
 import datetime
 
+from django.core.exceptions import ObjectDoesNotExist
+import traceback
+
+
+
 def get_global_project():
+    from data_models.models import Project
     try:
         global_project = Project.objects.get(projectID=settings.GLOBAL_PROJECT_ID)
         return global_project

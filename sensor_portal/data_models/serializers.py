@@ -62,14 +62,18 @@ class DeploymentFieldsMixIn(OwnerMangerMixIn, serializers.ModelSerializer):
             raise serializers.ValidationError(message)
         result, message = validators.deployment_check_overlap(data.get('deploymentStart'),
                                                               data.get('deploymentEnd'),
-                                                              data.get('device'))
+                                                              data.get('device'),
+                                                              data.get('id'))
         if not result:
             raise serializers.ValidationError(message)
         return data
 
 
 class DeploymentSerializer(DeploymentFieldsMixIn, serializers.ModelSerializer):
-    pass
+
+    class Meta:
+        model = Deployment
+        exclude = DeploymentFieldsMixIn.Meta.exclude+['point']
 
 
 class DeploymentSerializer_GeoJSON(DeploymentFieldsMixIn, geoserializers.GeoFeatureModelSerializer):

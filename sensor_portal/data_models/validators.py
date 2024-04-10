@@ -21,8 +21,8 @@ def deployment_start_time_after_end_time(start_dt, end_dt):
     return False, error_message
 
 
-def deployment_check_overlap(start_dt, end_dt, device):
-    overlapping_deployments = device.check_overlap(start_dt, end_dt)
+def deployment_check_overlap(start_dt, end_dt, device, deployment):
+    overlapping_deployments = device.check_overlap(start_dt, end_dt, deployment)
     if len(overlapping_deployments) == 0:
         return True, ""
     error_message = f"this deployment of {device.deviceID} would overlap with {','.join(overlapping_deployments)}"

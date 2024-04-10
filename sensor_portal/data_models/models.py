@@ -155,14 +155,14 @@ class Device(Basemodel):
             print(f"Error: found {all_true_deployments.count()} deployments")
             return None
 
-    def check_overlap(self, new_start, new_end):
+    def check_overlap(self, new_start, new_end, deployment_pk):
         new_start = check_dt(new_start)
         if new_end is None:
             new_end = new_start + timedelta(days=365 * 100)
         else:
             new_end = check_dt(new_end)
 
-        all_deploys = self.deployments.all()
+        all_deploys = self.deployments.all().exclude(pk=deployment_pk)
         all_deploys = all_deploys.annotate(deploymentEnd_indefinite=
         Case(
             When(deploymentEnd__isnull=True,
@@ -248,7 +248,7 @@ class Deployment(Basemodel):
         result, message = validators.deployment_start_time_after_end_time(self.deploymentStart, self.deploymentEnd)
         if not result:
             raise ValidationError(message)
-        result, message = validators.deployment_check_overlap(self.deploymentStart, self.deploymentEnd, self.device)
+        result, message = validators.deployment_check_overlap(self.deploymentStart, self.deploymentEnd, self.device, self.pk)
         if not result:
             raise ValidationError(message)
         super(Deployment, self).clean()
@@ -340,6 +340,8 @@ def post_save_deploy(sender, instance, created, **kwargs):
         usergroup_profile.save()
 
     global_project = get_global_project()
+    print(global_project)
+    print(instance.project.all())
     if global_project not in instance.project.all():
         instance.project.add(global_project)
         # RefreshDeploymentCache()
