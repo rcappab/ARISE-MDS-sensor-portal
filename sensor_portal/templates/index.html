@@ -7,16 +7,23 @@
 	.card {
 		max-width: 15rem;
 		width:15rem;
-		height: 20rem;
 		max-height: 20rem;
-		margin:1rem;
-		}
+	}
+
 	.modal {
 		display: block;
 	}
-	.wide-modal{
-		max-width: 75%
+
+	.detail-table{
+		width:min-content;
+		margin:auto;
 	}
+
+	.extra-info-table{
+		padding-inline: 0;
+	}
+
+	[x-cloak] { display: none !important; }
 </style>
 
 <div class="container">
@@ -25,7 +32,7 @@
 		<div>
 			<form @submit.prevent="refreshData" x-data="{ status: 'normal', errors: {} }" id="searchform">
 				
-				<input name="page" type="number" value="1"/>  
+				<input name="page" type="number" value="1" x-model.number="pageNum"/>  
 				<input name="page_size" type="number" value="1"/> 
 				<button>
 				Submit
@@ -34,47 +41,106 @@
 		</div>
 
 		<div class = "modal" role="dialog" x-show="showModal === true; $el.scrollTo({top: 0, behavior: 'instant'});" 
-		x-transition @click.self="showModal=false;" aria-labelledby="exampleModalLabel">
-			<div class="modal-dialog wide-modal">
-
+		x-transition @click.self="showModal=false;" aria-labelledby="exampleModalLabel" x-cloak>
+			<div class="modal-dialog modal-lg">
 				<div class ="modal-content">
 					<div class="modal-header">
 						<h5 class="modal-title" x-text="modalData[titleKey]" id="exampleModalLabel"></h5>
 						<button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" @click.prevent="showModal=false;"></button>
 					</div>
 					<div class="modal-body">
-						<template x-for="(key, value) in modalData">
-							<div>
-								<p class="card-text" x-text=`${key}`></p>
-								<p class="card-text" x-text=`${value}`></p>
-							</div>
-						</template>
+						<table class="table detail-table">
+							<tbody>
+								<template x-for="(value, key) in modalData":key="key">
+									<template x-if="!hideKeys.includes(key)">
+									<tr>
+										<th scope="row" x-text=`${key}`></th>
+										<template x-if="key != 'extra_info'">
+											<td x-text=`${value}`></td>
+										</template>
+										<template x-if="key == 'extra_info'">
+											<td>
+												<div class="extra-info-table">
+													<table class="table table-sm table-striped mb-0 align-middle text-center">
+														<tbody>
+															<template x-for="(e_iValue, e_iKey) in value":key="e_iKey">
+																<tr>
+																	<th scope="row" x-text=`${e_iKey}`></th>
+																	<td x-text=`${e_iValue}`></td>
+																</tr>
+															</template>	
+														</tbody>
+													</table>
+												</div>
+											</td>
+										</template>
+									</tr>
+									
+										
+									
+								</template>
+								</template>
+							</tbody>
+						</table>
 					</div>
 				</div>
 			</div>
 		</div>
+		<div x-show="isReady === true">
+			<nav aria-label="Page navigation">
+				<ul class="pagination justify-content-center">
+					<li class="page-item">
+					<a class="page-link" href="#" aria-label="Previous" 
+					x-on:click="if(pageNum-1>0){ pageNum-=1; refreshData()}" 
+					:class="{'disabled':pageNum==1}">
+						<span aria-hidden="true">&laquo;</span>
+					</a>
+					</li>
 
-		<div x-show="isReady === true" class="card-group">
-			<template x-for="(deployment, index) in returnedData">
-					<div class="card" 
-					@mouseover="card_highlighted = true" 
-					@mouseleave="card_highlighted = false" 
-					@click.prevent="openDetail($event)" 
-					x-data="cardData(index)" 
-					x-bind:id="`card_${index}`"
-					:class="card_highlighted ? 'bg-success' : ''"
-					>
-						<img class="card-img-top" src="...">
-						<div class="card-body">
-						<h5 class="card-title" x-text=`${deployment.deployment_deviceID}`></h5>
-						<p class="card-text" x-text=`${deployment.site}`><small class="text-muted"></small></p>
+					<li class="page-item">
+					<a class="page-link" href="#" aria-label="Next" x-on:click="pageNum+=1; refreshData()">
+						<span aria-hidden="true">&raquo;</span>
+					</a>
+					</li>
+				</ul>
+			</nav>
+			<div class="row row-cols-1 row-cols-md-2" x-cloak>
+				<template x-for="(deployment, index) in returnedData">
+						<div class="card m-2 p-2" 
+						@mouseover="card_highlighted = true" 
+						@mouseleave="card_highlighted = false" 
+						@click.prevent="openDetail($event)" 
+						x-data="cardData(index)" 
+						x-bind:id="`card_${index}`"
+						:class="{'border-dark border-2':card_highlighted, 'text-white bg-secondary':!deployment.is_active } "
+						>
+							
+							<template x-if="deployment.last_imageURL">
+								<img class="card-img" src="deployment.last_imageURL">
+							</template>
+							<template x-if="!deployment.last_imageURL">
+								<svg class="bd-placeholder-img card-img" width="100%" height="140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: Image cap" preserveAspectRatio="xMidYMid slice" focusable="false">
+									<title>Placeholder</title>
+									<rect width="100%" height="100%" fill="#868e96">
+										
+									</rect>
+								</svg>
+							</template>
+							<div class="card-body">
+								<h6 class="card-title" x-text=`${deployment.deployment_deviceID}`></h6>
+								<p class="card-text" x-text=`${deployment.site}`><small class="text-muted"></small></p>
+							</div>
 						</div>
-					</div>
-			</template>
+				</template>
+			</div>
 		</div>
 
 
-		<div x-show="isReady === false"> I AM NOT DONE </div>
+		<div class="text-center" x-show="isReady === false" style="padding-block: 10rem;">
+			<div class="spinner-border" role="status" style="width: 4rem; height: 4rem;">
+			  <span class="visually-hidden">Loading...</span>
+			</div>
+		</div>
 
 	</div>
 </div>
@@ -104,7 +170,7 @@
 		)
 		
 		response_json = await response.json()
-		return response_json['results']
+		return response_json;
 	}
 
 	function cardData(index){
@@ -112,8 +178,8 @@
 			card_index:index,
 			card_highlighted:false,
 			openDetail(e){
-				test = this.returnedData[this.card_index]
-				this.modalData = test
+				newModalData = this.returnedData[this.card_index]
+				this.modalData = newModalData;
 				this.showModal = true;
 			}
 		}
@@ -121,6 +187,7 @@
 
 	const datatype = 'deployment'
 	const titleKey = 'deployment_deviceID'
+	const hideKeys = ['id','device_id','site_id','project_ids','owner','managers','combo_project','last_imageURL']
 
 	// Inititalise main DOM
 	document.addEventListener('alpine:init', () => {
@@ -129,13 +196,13 @@
 		isReady: false,
 		returnedData: [],
 		modalData:{},
+		pageNum:1,
 		async refreshData(e){
 			this.returnedData=[]
 			this.isReady = false
 			api_response_data = await getData(e)
-			
 			this.isReady = true
-			this.returnedData = api_response_data
+			this.returnedData = api_response_data['results'];
 		}
 		}))
 		
