@@ -23,62 +23,192 @@
 		padding-inline: 0;
 	}
 
+	.pagination .page-input{
+		height:100%;
+		width:4rem;
+		border-left-style: none;
+  		border-width: thin;
+  		border-color: gray;
+		padding-inline: 0.3rem;
+	}
+
+	.pagination .page-description{
+		border: gray;
+  		border-block-style: solid;
+  		border-block-width: thin;
+	}
+
+	.pagination .page-count{
+		padding-top: 0.5rem;
+		padding-inline: 1rem;
+	}
+
+	.pagination .button-left{
+		border-top-right-radius: 0%;
+  		border-bottom-right-radius: 0%;
+	}
+
+	.pagination .button-right{
+		border-top-left-radius: 0%;
+  		border-bottom-left-radius: 0%;
+	}
+
+	.detail-modal .modal-header{
+		background:steelblue;
+		padding: 0.1rem;
+		color: whitesmoke;
+	}
+
+	.detail-modal .paginator-button{
+		--bs-btn-hover-color: white;
+		--bs-btn-hover-bg: transparent;
+		--bs-btn-border-color: transparent;
+		--bs-btn-hover-border-color: transparent;
+		--bs-btn-active-bg: transparent;
+		--bs-btn-color: #ffffffbf;
+		--bs-btn-active-color: #ffffffbf;
+	}
+
+	.detail-modal .paginator-button.disabled{
+		border-color: transparent;
+	}
+
+	.detail-modal .close-button{
+		--bs-btn-close-hover-opacity: 1 !important;
+		--bs-btn-close-opacity: 0.5 !important;
+	}
+
+	.detail-modal .paginator-arrow{
+		font-weight: bolder;
+		font-size: 2rem !important;
+		margin-bottom: 0.25rem !important;
+	}
+
+	.card.highlighted{
+		padding: 7px !important;
+		border-width: 2px !important;
+		--bs-border-opacity: 1;
+  		border-color: rgba(var(--bs-dark-rgb),var(--bs-border-opacity)) !important;
+	}
+
 	[x-cloak] { display: none !important; }
 </style>
 
 <div class="container">
-	<div x-data="allData" x-init="refreshData">
+	<div x-data="allData" x-init="$watch('pageNum', (value, oldValue) => {
+		console.log(`${oldValue} ${value}`)
+		let pageChange = clampPages(); 
+		console.log(`page change from watch ${pageChange}`); 
+		if(pageChange){
+			$nextTick(() =>{refreshData()})
+		}
+	})
+	$nextTick(() =>{
+		refreshData();
+	})
+	">
 
 		<div>
-			<form @submit.prevent="refreshData" x-data="{ status: 'normal', errors: {} }" id="searchform">
-				
-				<input name="page" type="number" value="1" x-model.number="pageNum"/>  
-				<input name="page_size" type="number" value="1"/> 
-				<button>
-				Submit
-				</button>
+			<form @submit.prevent="clampPages() ; $nextTick(() =>{refreshData($event)})" x-data="{ status: 'normal', errors: {} }" id="searchform">
+				<input name="page" class="d-none" type="number" x-model.number="pageNum"/>  
+				<input name="page_size" type="number" x-model.number="pageSize"/> 
+				<button>Submit</button>
 			</form>
+		</div>
+		<div>
+			<nav aria-label="Page navigation">
+				<ul class="pagination justify-content-center">
+					<li class="page-item">
+						<a class="btn btn-outline-primary button-left" aria-label="Previous" 
+						x-on:click="if(returnedData['previous']!=null){ pageNum-=1;}" 
+						:class="{'btn-outline-dark disabled':returnedData['previous']==null}">
+							<span aria-hidden="true">&laquo;</span>
+						</a>
+					</li>
+					<li class="page-item">
+						<input name="pagination-page" class="page-input" type="number" min="1" x-bind:max="totalPages"
+						x-model.number.lazy="pageNum"
+						/>  
+					</li>
+					<li class="page-item page-description">
+						<span class="text-center align-middle page-count" x-text="`of ${totalPages}`"></span>
+					</li>
+					<li class="page-item">
+						<a class="btn btn-outline-primary button-right" aria-label="Next" 
+						x-on:click="if(returnedData['next']!=null){ pageNum+=1;}" 
+						:class="{'btn-outline-dark disabled':returnedData['next']==null}">
+							<span aria-hidden="true">&raquo;</span>
+						</a>
+					</li>
+				</ul>
+			</nav>
+			<div class="text-center align-middle">
+				<span  x-show="isReady === true" x-text="`${objectRangeMin} - ${objectRangeMax} of ${returnedData['count']}`" x-cloak></span>
+			</div>
 		</div>
 
 		<div class = "modal" role="dialog" x-show="showModal === true; $el.scrollTo({top: 0, behavior: 'instant'});" 
-		x-transition @click.self="showModal=false;" aria-labelledby="exampleModalLabel" x-cloak>
-			<div class="modal-dialog modal-lg">
-				<div class ="modal-content">
+		x-transition @click.self="showModal=false;" aria-labelledby="modalLabel" x-cloak>
+			<div class="modal-dialog modal-lg detail-modal">
+				<div class ="modal-content shadow">
 					<div class="modal-header">
+
+						<a class="btn btn-outline-light paginator-button modal-title"  aria-label="Previous" 
+						x-on:click="openCardDetail($event,cardIndex,-1)" 
+						:class="{'disabled': (returnedData['results']!=null && 
+							((cardIndex-1)<0)
+							&&
+							(pageNum == 1)
+						)}"
+						x-cloak
+						>
+							<h5 class="paginator-arrow" aria-hidden="true">&laquo;</h5>
+						</a>
+
 						<h5 class="modal-title" x-text="modalData[titleKey]" id="exampleModalLabel"></h5>
-						<button type="button" class="btn-close" data-dismiss="modal" aria-label="Close" @click.prevent="showModal=false;"></button>
+
+						<button type="button" class="btn-close btn-close-white close-button" data-dismiss="modal" aria-label="Close" @click.prevent="showModal=false;"></button>
+						<a class="btn btn-outline-light paginator-button modal-title ms-1" aria-label="Next" 
+						x-on:click="openCardDetail($event,cardIndex,+1)"
+						:class="{'disabled': (returnedData['results']!=null && 
+						((cardIndex+1)>=returnedData['results'].length)
+						&& 
+						((objectRangeMin+cardIndex+1) > returnedData['count'])
+						)}"
+						x-cloak
+						>
+							<h5 class="paginator-arrow" aria-hidden="true">&raquo;</h5>
+						</a>
+
 					</div>
 					<div class="modal-body">
 						<table class="table detail-table">
 							<tbody>
 								<template x-for="(value, key) in modalData":key="key">
 									<template x-if="!hideKeys.includes(key)">
-									<tr>
-										<th scope="row" x-text=`${key}`></th>
-										<template x-if="key != 'extra_info'">
-											<td x-text=`${value}`></td>
-										</template>
-										<template x-if="key == 'extra_info'">
-											<td>
-												<div class="extra-info-table">
-													<table class="table table-sm table-striped mb-0 align-middle text-center">
-														<tbody>
-															<template x-for="(e_iValue, e_iKey) in value":key="e_iKey">
-																<tr>
-																	<th scope="row" x-text=`${e_iKey}`></th>
-																	<td x-text=`${e_iValue}`></td>
-																</tr>
-															</template>	
-														</tbody>
-													</table>
-												</div>
-											</td>
-										</template>
-									</tr>
-									
-										
-									
-								</template>
+										<tr>
+											<th scope="row" x-text=`${key}`></th>
+											<template x-if="key != 'extra_info'">
+												<td x-text=`${value}`></td>
+											</template>
+											<template x-if="key == 'extra_info'">
+												<td>
+													<div class="extra-info-table">
+														<table class="table table-sm table-striped mb-0 align-middle text-center">
+															<tbody>
+																<template x-for="(e_iValue, e_iKey) in value":key="e_iKey">
+																	<tr>
+																		<th scope="row" x-text=`${e_iKey}`></th>
+																		<td x-text=`${e_iValue}`></td>
+																	</tr>
+																</template>	
+															</tbody>
+														</table>
+													</div>
+												</td>
+											</template>
+										</tr>
+									</template>
 								</template>
 							</tbody>
 						</table>
@@ -86,37 +216,21 @@
 				</div>
 			</div>
 		</div>
-		<div x-show="isReady === true">
-			<nav aria-label="Page navigation">
-				<ul class="pagination justify-content-center">
-					<li class="page-item">
-					<a class="page-link" href="#" aria-label="Previous" 
-					x-on:click="if(pageNum-1>0){ pageNum-=1; refreshData()}" 
-					:class="{'disabled':pageNum==1}">
-						<span aria-hidden="true">&laquo;</span>
-					</a>
-					</li>
 
-					<li class="page-item">
-					<a class="page-link" href="#" aria-label="Next" x-on:click="pageNum+=1; refreshData()">
-						<span aria-hidden="true">&raquo;</span>
-					</a>
-					</li>
-				</ul>
-			</nav>
+		<div x-show="isReady === true">
 			<div class="row row-cols-1 row-cols-md-2" x-cloak>
-				<template x-for="(deployment, index) in returnedData">
+				<template x-for="(deployment, index) in returnedData['results']">
 						<div class="card m-2 p-2" 
 						@mouseover="card_highlighted = true" 
 						@mouseleave="card_highlighted = false" 
 						@click.prevent="openDetail($event)" 
 						x-data="cardData(index)" 
 						x-bind:id="`card_${index}`"
-						:class="{'border-dark border-2':card_highlighted, 'text-white bg-secondary':!deployment.is_active } "
+						:class="{'highlighted shadow':card_highlighted, 'text-white bg-secondary':!deployment.is_active } "
 						>
 							
 							<template x-if="deployment.last_imageURL">
-								<img class="card-img" src="deployment.last_imageURL">
+								<img class="card-img" x-bind:src="deployment.last_imageURL">
 							</template>
 							<template x-if="!deployment.last_imageURL">
 								<svg class="bd-placeholder-img card-img" width="100%" height="140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Placeholder: Image cap" preserveAspectRatio="xMidYMid slice" focusable="false">
@@ -148,6 +262,9 @@
 
 <script>
 
+	//calculate number of pages from page_size
+
+
 	// Get data from API
 	async function getData(e){
 		
@@ -157,6 +274,7 @@
 		}else{
 			formData = new FormData(document.getElementById("searchform"));
 		}
+		console.log(formData)
 		
 		let params = new URLSearchParams(formData).toString()
 		let url = `api/${datatype}/?${params}`
@@ -170,6 +288,7 @@
 		)
 		
 		response_json = await response.json()
+		
 		return response_json;
 	}
 
@@ -178,9 +297,7 @@
 			card_index:index,
 			card_highlighted:false,
 			openDetail(e){
-				newModalData = this.returnedData[this.card_index]
-				this.modalData = newModalData;
-				this.showModal = true;
+				this.openCardDetail(e,this.card_index,open=true)
 			}
 		}
 	}
@@ -188,6 +305,8 @@
 	const datatype = 'deployment'
 	const titleKey = 'deployment_deviceID'
 	const hideKeys = ['id','device_id','site_id','project_ids','owner','managers','combo_project','last_imageURL']
+
+	const dataReturnedEvent = new Event("dataReturnedEvent");
 
 	// Inititalise main DOM
 	document.addEventListener('alpine:init', () => {
@@ -197,14 +316,75 @@
 		returnedData: [],
 		modalData:{},
 		pageNum:1,
+		pageSize:25,
+		totalPages:1,
+		objectRangeMin:0,
+		objectRangeMax:25,
+		cardIndex:0,
+		async openCardDetail(e,currCardIndex,offset=0,open=true){
+			let pageChange = false
+			if(offset!=0 && ((currCardIndex+offset)>-1 && (currCardIndex+offset)<(this.returnedData['results'].length))){
+				newIndex = currCardIndex+offset
+			}else if((offset==-1) && ((currCardIndex+offset)<0) && ((this.pageNum-1) > 0)){
+				this.pageNum+=offset
+				newIndex = this.pageSize-1
+				pageChange = true
+			}else if((offset==1) && ((currCardIndex+offset) >= this.returnedData['results'].length) && ((this.pageNum+1) <= this.totalPages)){
+				this.pageNum+=offset
+				newIndex = 0
+				pageChange = true
+			}else{
+				newIndex = currCardIndex
+			}
+			console.log(newIndex)
+			this.cardIndex = newIndex;
+			console.log(this.cardIndex)
+			if (pageChange==false){
+				this.setModalData()
+			}else{
+				addEventListener("dataReturnedEvent", function handler(){
+					this.setModalData
+					removeEventListener("dataReturnedEvent", handler)
+				});
+
+			}
+		},
+		setModalData(open=true){
+			newModalData = this.returnedData['results'][this.cardIndex]
+			this.modalData = newModalData;
+			this.showModal = true;
+		},
 		async refreshData(e){
 			this.returnedData=[]
 			this.isReady = false
 			api_response_data = await getData(e)
 			this.isReady = true
-			this.returnedData = api_response_data['results'];
+			this.returnedData = api_response_data;
+			this.clampPages();
+			dispatchEvent(dataReturnedEvent);
+			
+
+		},
+		getPages(){
+			this.totalPages = Math.ceil(this.returnedData['count']/this.pageSize)
+			this.objectRangeMin = ((this.pageNum-1)*this.pageSize)+1
+			this.objectRangeMax = Math.min((this.objectRangeMin+this.pageSize)-1, this.returnedData['count'])
+		},
+		clampPages(){
+			this.getPages();
+			if (this.pageNum>this.totalPages){
+				console.log('change page number from clamp')
+				this.pageNum = this.totalPages;
+				return false;
+			}else if(this.pageNum<1){
+				console.log('change page number from clamp')
+				this.pageNum = 1;
+				return false;
+			}
+			return true;
 		}
 		}))
+		
 		
 	})
 
