@@ -95,18 +95,7 @@
 </style>
 
 <div class="container">
-	<div x-data="allData" x-init="$watch('pageNum', (value, oldValue) => {
-		console.log(`${oldValue} ${value}`)
-		let pageChange = clampPages(); 
-		console.log(`page change from watch ${pageChange}`); 
-		if(pageChange){
-			$nextTick(() =>{refreshData()})
-		}
-	})
-	$nextTick(() =>{
-		refreshData();
-	})
-	">
+	<div x-data="allData">
 
 		<div>
 			<form @submit.prevent="clampPages() ; $nextTick(() =>{refreshData($event)})" x-data="{ status: 'normal', errors: {} }" id="searchform">
@@ -151,15 +140,11 @@
 		x-transition @click.self="showModal=false;" aria-labelledby="modalLabel" x-cloak>
 			<div class="modal-dialog modal-lg detail-modal">
 				<div class ="modal-content shadow">
-					<div class="modal-header">
+					<div class="modal-header" x-data="detailModalData">
 
 						<a class="btn btn-outline-light paginator-button modal-title"  aria-label="Previous" 
 						x-on:click="openCardDetail($event,cardIndex,-1)" 
-						:class="{'disabled': (returnedData['results']!=null && 
-							((cardIndex-1)<0)
-							&&
-							(pageNum == 1)
-						)}"
+						:class="{'disabled': checkLeftDisabled()}"
 						x-cloak
 						>
 							<h5 class="paginator-arrow" aria-hidden="true">&laquo;</h5>
@@ -170,11 +155,7 @@
 						<button type="button" class="btn-close btn-close-white close-button" data-dismiss="modal" aria-label="Close" @click.prevent="showModal=false;"></button>
 						<a class="btn btn-outline-light paginator-button modal-title ms-1" aria-label="Next" 
 						x-on:click="openCardDetail($event,cardIndex,+1)"
-						:class="{'disabled': (returnedData['results']!=null && 
-						((cardIndex+1)>=returnedData['results'].length)
-						&& 
-						((objectRangeMin+cardIndex+1) > returnedData['count'])
-						)}"
+						:class="{'disabled': checkRightDisabled()}"
 						x-cloak
 						>
 							<h5 class="paginator-arrow" aria-hidden="true">&raquo;</h5>
@@ -297,16 +278,37 @@
 			card_index:index,
 			card_highlighted:false,
 			openDetail(e){
-				this.openCardDetail(e,this.card_index,open=true)
+				this.openCardDetail(e,this.card_index,0)
 			}
 		}
 	}
 
-	const datatype = 'deployment'
-	const titleKey = 'deployment_deviceID'
-	const hideKeys = ['id','device_id','site_id','project_ids','owner','managers','combo_project','last_imageURL']
+	function detailModalData(){
+		return{
+			checkLeftDisabled(){
+				return (this.returnedData['results']!=null && 
+				((this.cardIndex-1)<0)
+				&&
+				(this.pageNum == 1)
+			)
+			},
+			checkRightDisabled(){
+				return (this.returnedData['results']!=null && 
+						((this.cardIndex+1)>=this.returnedData['results'].length)
+						&& 
+						((this.objectRangeMin+this.cardIndex+1) > this.returnedData['count'])
+						)
+			}
+		}
+	}
 
-	const dataReturnedEvent = new Event("dataReturnedEvent");
+	//from backend
+	//const datatype = 'deployment'
+	const datatype = 'deployment'
+	//const titleKey = 'deployment_deviceID'
+	const titleKey = 'deployment_deviceID'
+	//const hideKeys = ['id','device_id','site_id','project_ids','owner','managers','combo_project','last_imageURL']
+	const hideKeys = ['id','device_id','site_id','project_ids','owner','managers','combo_project','last_imageURL']
 
 	// Inititalise main DOM
 	document.addEventListener('alpine:init', () => {
@@ -321,6 +323,20 @@
 		objectRangeMin:0,
 		objectRangeMax:25,
 		cardIndex:0,
+		init(){
+			this.$watch('pageNum', (value, oldValue) => {
+				console.log(`${oldValue} ${value}`)
+				let pageChange = this.clampPages(); 
+				console.log(`page change from watch ${pageChange}`); 
+				if(pageChange){
+					this.$nextTick(() =>{this.refreshData()})
+				}
+			})
+			this.$nextTick(() =>{
+				this.refreshData();
+			})
+		},
+
 		async openCardDetail(e,currCardIndex,offset=0,open=true){
 			let pageChange = false
 			if(offset!=0 && ((currCardIndex+offset)>-1 && (currCardIndex+offset)<(this.returnedData['results'].length))){
@@ -341,18 +357,14 @@
 			console.log(this.cardIndex)
 			if (pageChange==false){
 				this.setModalData()
-			}else{
-				addEventListener("dataReturnedEvent", function handler(){
-					this.setModalData
-					removeEventListener("dataReturnedEvent", handler)
-				});
-
 			}
 		},
 		setModalData(open=true){
 			newModalData = this.returnedData['results'][this.cardIndex]
 			this.modalData = newModalData;
-			this.showModal = true;
+			if (open){
+				this.showModal = true;
+			}
 		},
 		async refreshData(e){
 			this.returnedData=[]
@@ -361,8 +373,7 @@
 			this.isReady = true
 			this.returnedData = api_response_data;
 			this.clampPages();
-			dispatchEvent(dataReturnedEvent);
-			
+			this.setModalData(open=false)
 
 		},
 		getPages(){
