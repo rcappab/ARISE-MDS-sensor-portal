@@ -20,6 +20,7 @@ class AddOwnerViewSet(viewsets.ModelViewSet):
 
 
 class DeploymentViewSet(AddOwnerViewSet, OptionalPaginationViewSet):
+    search_fields = ['deployment_deviceID', 'device__name', 'device__deviceID']
     queryset = Deployment.objects.all()
     filterset_class = DeploymentFilter
     filter_backends = viewsets.ModelViewSet.filter_backends + [filters_gis.InBBoxFilter]
@@ -55,17 +56,23 @@ class ProjectViewSet(AddOwnerViewSet, OptionalPaginationViewSet):
     serializer_class = ProjectSerializer
     queryset = Project.objects.all()
     filterset_class = ProjectFilter
+    search_fields = ['projectID', 'projectName', 'organizationName']
 
 
 class DeviceViewSet(AddOwnerViewSet, OptionalPaginationViewSet):
     serializer_class = DeviceSerializer
     queryset = Device.objects.all()
     filterset_class = DeviceFilter
+    search_fields = ['deviceID', 'name', 'model', 'make']
 
 class DataFileViewSet(OptionalPaginationViewSet):
     serializer_class = DataFileSerializer
     queryset = DataFile.objects.all()
     filterset_class = DataFileFilter
+    search_fields = ['file_name',
+                     'deployment__deployment_deviceID',
+                     'deployment__device__name',
+                     'deployment__device__deviceID']
 
     def perform_update(self, serializer):
         self.check_attachment(serializer)

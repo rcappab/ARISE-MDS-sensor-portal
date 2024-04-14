@@ -163,7 +163,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ['bridgekeeper.rest_framework.RuleFilter',
-                                'django_filters.rest_framework.DjangoFilterBackend'],
+                                'django_filters.rest_framework.DjangoFilterBackend',
+                                'rest_framework.filters.SearchFilter'],
     'DEFAULT_PERMISSION_CLASSES': (
         'bridgekeeper.rest_framework.RulePermissions',
     ),

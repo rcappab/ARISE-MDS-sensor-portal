@@ -96,12 +96,36 @@
 
 <div class="container">
 	<div x-data="allData">
-
 		<div>
 			<form @submit.prevent="clampPages() ; $nextTick(() =>{refreshData($event)})" x-data="{ status: 'normal', errors: {} }" id="searchform">
-				<input name="page" class="d-none" type="number" x-model.number="pageNum"/>  
-				<input name="page_size" type="number" x-model.number="pageSize"/> 
-				<button>Submit</button>
+
+				<div class="form-floating">
+					<input name="search" id="search" class="form-control" placeholder="">
+					<label for="search">Search</label>
+				</div>
+
+				<div class="form-floating">
+					<select class="form-control form-select" name="is_active" id="is_active" placeholder="">
+						<option selected value="">Select value</option>
+						<option value="True">True</option>
+						<option value="False">False</option>
+					</select>
+					<label for="is_active">Deployment active?</label>
+				</div>
+
+				<div class="form-floating">
+					<select class="form-control form-select" name="is_active" id="is_active" placeholder="">
+					</select>
+					<label for="is_active">Deployment active?</label>
+				</div>
+
+				<div class="form-floating">
+					<input class="form-control" name="page_size" type="number" min="5" max="100" step="5" x-model.number="pageSize">
+					<label for="page_size">Results per page</label>
+				</div>
+				 
+				<input name="page" class="d-none" type="number" x-model.number="pageNum">  
+				<button class="btn btn-primary">Search</button>
 			</form>
 		</div>
 		<div>
@@ -336,7 +360,6 @@
 				this.refreshData();
 			})
 		},
-
 		async openCardDetail(e,currCardIndex,offset=0,open=true){
 			let pageChange = false
 			if(offset!=0 && ((currCardIndex+offset)>-1 && (currCardIndex+offset)<(this.returnedData['results'].length))){
@@ -374,7 +397,6 @@
 			this.returnedData = api_response_data;
 			this.clampPages();
 			this.setModalData(open=false)
-
 		},
 		getPages(){
 			this.totalPages = Math.ceil(this.returnedData['count']/this.pageSize)
