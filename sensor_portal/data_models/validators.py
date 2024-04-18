@@ -21,8 +21,8 @@ def deployment_start_time_after_end_time(start_dt, end_dt):
     return False, error_message
 
 
-def deployment_check_overlap(start_dt, end_dt, device, deployment):
-    overlapping_deployments = device.check_overlap(start_dt, end_dt, deployment)
+def deployment_check_overlap(start_dt, end_dt, device, deployment_pk):
+    overlapping_deployments = device.check_overlap(start_dt, end_dt, deployment_pk)
     if len(overlapping_deployments) == 0:
         return True, ""
     error_message = f"this deployment of {device.deviceID} would overlap with {','.join(overlapping_deployments)}"
@@ -34,5 +34,16 @@ def deployment_check_type(device_type, device):
         return True, ""
     error_message = f"{device.deviceID} is not a {device_type.name} device"
     return False, error_message
+
+def check_two_keys(primary_key,secondary_key, data, target_model):
+
+    if data.get(primary_key) is None and data.get(secondary_key) is None:
+        message = f"Either {primary_key} or {secondary_key} must be given."
+        return False, message, data
+    elif data.get(primary_key) is None:
+        data[primary_key] = target_model.objects.get(pk=data.get(secondary_key))
+        
+    return True, "", data
+    
 
 

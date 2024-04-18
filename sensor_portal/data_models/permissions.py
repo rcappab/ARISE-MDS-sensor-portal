@@ -63,3 +63,13 @@ perms['data_models.view_datafile'] = is_authenticated & (is_staff
                                                          | CanViewProjectContainingDataFile()
                                                          | CanViewDeploymentContainingDataFile()
                                                          | CanViewDeviceContainingDataFile()) & is_active
+
+perms['data_models.view_site'] = is_authenticated & is_active #should check if a user can view a deployment at that site
+perms['data_models.add_site'] = is_authenticated & is_active
+perms['data_models.change_site'] = is_authenticated & is_staff
+perms['data_models.delete_site'] = is_authenticated & is_staff
+
+perms['data_models.view_datatype'] = is_authenticated & is_active
+perms['data_models.add_datatype'] = is_authenticated & is_active
+perms['data_models.change_datatype'] = is_authenticated & is_staff
+perms['data_models.delete_datatype'] = is_authenticated & is_staff

@@ -156,12 +156,14 @@ class Device(Basemodel):
             return None
 
     def check_overlap(self, new_start, new_end, deployment_pk):
+        
         new_start = check_dt(new_start)
         if new_end is None:
             new_end = new_start + timedelta(days=365 * 100)
         else:
             new_end = check_dt(new_end)
-
+        
+        print(deployment_pk)
         all_deploys = self.deployments.all().exclude(pk=deployment_pk)
         all_deploys = all_deploys.annotate(deploymentEnd_indefinite=
         Case(
@@ -174,9 +176,10 @@ class Device(Basemodel):
             default=F('deploymentEnd')
         )
         )
+        print(all_deploys.values('deploymentEnd','deploymentEnd_indefinite'))
         all_deploys = all_deploys.annotate(in_deployment=
         ExpressionWrapper(
-            Q(Q(deploymentStart__lte=new_start) | Q(deploymentEnd_indefinite__gte=new_end)),
+            Q(Q(deploymentEnd_indefinite__gte=new_start) & Q(deploymentStart__lte=new_start)),
             output_field=BooleanField()
         )
         )
@@ -344,6 +347,7 @@ def post_save_deploy(sender, instance, created, **kwargs):
     print(instance.project.all())
     if global_project not in instance.project.all():
         instance.project.add(global_project)
+        print("add global project")
         # RefreshDeploymentCache()
         # print("Clear deployment cache")
         # cache.delete_many(["allowed_deployments_{0}".format(x) for x in User.objects.all().values_list("username",flat=True)])
@@ -352,6 +356,7 @@ def post_save_deploy(sender, instance, created, **kwargs):
 @receiver(m2m_changed, sender=Deployment.project.through)
 def update_project(sender, instance, action, reverse, *args, **kwargs):
     if (action == 'post_add' or action == 'post_remove') and not reverse:
+        print(f"project {action}")
         combo_project = instance.get_combo_project()
         Deployment.objects.filter(pk=instance.pk).update(combo_project=combo_project)
 

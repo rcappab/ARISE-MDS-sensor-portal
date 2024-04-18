@@ -39,14 +39,16 @@ class DeploymentViewSet(AddOwnerViewSet, OptionalPaginationViewSet):
 
     def perform_update(self, serializer):
         self.check_attachment(serializer)
-        super(DeploymentViewSet, self).perform_create(serializer)
+        super(DeploymentViewSet, self).perform_update(serializer)
 
     def check_attachment(self, serializer):
+        
         project_objects = serializer.validated_data.get('project')
-        for project_object in project_objects:
-            if not self.request.user.has_perm('data_models.change_project', project_object):
-                raise PermissionDenied(
-                    f"You don't have permission to add a deployment to {project_object.projectID}")
+        if project_objects is not None:
+            for project_object in project_objects:
+                if not self.request.user.has_perm('data_models.change_project', project_object):
+                    raise PermissionDenied(
+                        f"You don't have permission to add a deployment to {project_object.projectID}")
         device_object = serializer.validated_data.get('device')
         if not self.request.user.has_perm('data_models.change_device', device_object):
             raise PermissionDenied(f"You don't have permission to deploy {device_object.deviceID}")
@@ -233,6 +235,17 @@ class DataFileViewSet(OptionalPaginationViewSet):
             deployment.set_last_file()
         return Response({"uploaded_files": returned_data.data, "invalid_files": invalid_files},
                         status=status.HTTP_201_CREATED, headers=headers)
+
+class SiteViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSet):
+    serializer_class = SiteSerializer
+    queryset = Site.objects.all()
+    search_fields = ['name','short_name']
+
+class DataTypeViewset(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSet):
+    serializer_class = DataTypeSerializer
+    queryset = DataType.objects.all()
+    search_fields = ['name']
+
 
 
 

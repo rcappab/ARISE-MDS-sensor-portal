@@ -6,14 +6,25 @@ import magic
 from PIL import Image, ExifTags
 from . import validators
 from utils.serializers import SlugRelatedGetOrCreateField
+from django.utils import timezone as djtimezone
 
+
+
+class InstanceGetMixIn():
+    def instance_get(self, attr_name, data):
+        if attr_name in data:
+            return data[attr_name]
+        if self.instance and hasattr(self.instance, attr_name):
+            return getattr(self.instance, attr_name)
+        return None
 
 class OwnerMangerMixIn(serializers.ModelSerializer):
     owner = serializers.StringRelatedField(read_only=True)
     managers = serializers.SlugRelatedField(many=True,
                                             slug_field="username",
                                             queryset=User.objects.all(),
-                                            allow_null=True)
+                                            allow_null=True,
+                                            required=False)
 
     def to_representation(self, instance):
         initial_rep = super(OwnerMangerMixIn, self).to_representation(instance)
@@ -27,18 +38,29 @@ class OwnerMangerMixIn(serializers.ModelSerializer):
         return initial_rep
 
 
-class DeploymentFieldsMixIn(OwnerMangerMixIn, serializers.ModelSerializer):
+class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, serializers.ModelSerializer):
     device_type = serializers.SlugRelatedField(slug_field='name', queryset=DataType.objects.all(), required=False)
-    device = serializers.SlugRelatedField(slug_field='deviceID', queryset=Device.objects.all())
-    device_id = serializers.PrimaryKeyRelatedField(read_only=True)
+    device_type_id = serializers.PrimaryKeyRelatedField(queryset=DataType.objects.all().values_list('pk', flat=True),
+                                                        required=False)
+    device = serializers.SlugRelatedField(slug_field='deviceID', queryset=Device.objects.all(), required = False)
+    device_id = serializers.PrimaryKeyRelatedField(queryset=Device.objects.all().values_list('pk', flat=True),
+                                                   required=False)
     project = serializers.SlugRelatedField(many=True,
                                            slug_field='projectID',
                                            queryset=Project.objects.all(),
                                            allow_null=True)
-    project_ids = serializers.PrimaryKeyRelatedField(source="project", read_only=True, many=True)
+    project_id = serializers.PrimaryKeyRelatedField(source="project", 
+                                                    many=True, 
+                                                    queryset=Project.objects.all().values_list('pk', flat=True),
+                                                    required=False,
+                                                    allow_null=True)
     site = SlugRelatedGetOrCreateField(slug_field='short_name',
-                                       queryset=Site.objects.all())
-    site_id = serializers.PrimaryKeyRelatedField(read_only=True)
+                                       queryset=Site.objects.all(), 
+                                       required=False)
+    site_id = serializers.PrimaryKeyRelatedField(queryset=Site.objects.all().values_list('pk', flat=True),
+                                                 required=False)
+    deploymentStart = serializers.DateTimeField(default = djtimezone.now())
+    
 
     # check project permissions here or in viewpoint
 
@@ -50,20 +72,61 @@ class DeploymentFieldsMixIn(OwnerMangerMixIn, serializers.ModelSerializer):
         self.management_perm = 'data_models.change_deployment'
         super(DeploymentFieldsMixIn, self).__init__(*args, **kwargs)
 
+    def create(self, *args, **kwargs):
+        instance = super(DeploymentFieldsMixIn, self).create(*args, **kwargs)
+        instance.save()
+        return instance
+
     def validate(self, data):
         data = super().validate(data)
-        result, message = validators.deployment_check_type(data.get('device_type'),
-                                                           data.get('device'))
+
+        # #check if a device type has been set via either method
+        # result, message, data = validators.check_two_keys(
+        #     'device_type',
+        #     'device_type_id',
+        #     data,
+        #     DataType
+        # )
+        # if not result:
+        #     raise serializers.ValidationError(message)
+        
+        if not self.partial:
+            #check if a device has been attached (via either method)
+            result, message, data = validators.check_two_keys(
+                'device',
+                'device_id',
+                data,
+                Device
+            )
+            if not result:
+                raise serializers.ValidationError(message)
+
+            #check if a site has been attached (via either method)
+            result, message, data = validators.check_two_keys(
+                'site',
+                'site_id',
+                data,
+                Site
+            )
+            if not result:
+                raise serializers.ValidationError(message)
+            
+
+        result, message = validators.deployment_check_type(self.instance_get('device_type', data),
+                                                           self.instance_get('device', data))
         if not result:
             raise serializers.ValidationError(message)
         result, message = validators.deployment_start_time_after_end_time(data.get('deploymentStart'),
                                                                           data.get('deploymentEnd'))
         if not result:
             raise serializers.ValidationError(message)
-        result, message = validators.deployment_check_overlap(data.get('deploymentStart'),
-                                                              data.get('deploymentEnd'),
-                                                              data.get('device'),
-                                                              data.get('id'))
+        
+        print(data)
+        
+        result, message = validators.deployment_check_overlap(self.instance_get('deploymentStart', data),
+                                                              self.instance_get('deploymentEnd', data),
+                                                              self.instance_get('device', data),
+                                                              self.instance_get('id', data))
         if not result:
             raise serializers.ValidationError(message)
         return data
@@ -183,6 +246,15 @@ class DataFileUploadSerializer(serializers.Serializer):
         # Not used
         pass
 
+class SiteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Site
+        fields = '__all__'
+
+class DataTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DataType
+        fields = '__all__'
 
 def get_image_recording_dt(uploaded_file):
     si = uploaded_file.file

@@ -4,14 +4,39 @@
 {% include 'navbar.html' %}
 
 <style>
+
+	.hovertooltip {
+	position: relative;
+	display: inline-block;
+	}
+
+	/* Tooltip text */
+	.tooltiptext {
+	width: 120px;
+	background-color: black;
+	color: #fff;
+	text-align: center;
+	padding: 5px 0;
+	border-radius: 6px;
+	position: absolute;
+  	z-index: 1;
+	}
+
+	.tooltiptext.tooltipright{
+  		top: -5px;
+  		left: 105%;
+	}
+
 	.card {
 		max-width: 15rem;
 		width:15rem;
 		max-height: 20rem;
+		cursor: pointer;
 	}
 
 	.modal {
 		display: block;
+		background-color: #5050506e;
 	}
 
 	.detail-table{
@@ -91,44 +116,111 @@
   		border-color: rgba(var(--bs-dark-rgb),var(--bs-border-opacity)) !important;
 	}
 
+	.ts-control{
+		padding-top: 1.625rem !important;
+  		padding-bottom: .625rem !important;
+  		font-size: 1rem !important;
+	}
+
+	.ts-control input, .ts-wrapper{
+		color:black;
+		cursor: text !important;
+	}
+
+
 	[x-cloak] { display: none !important; }
 </style>
 
 <div class="container">
 	<div x-data="allData">
-		<div>
-			<form @submit.prevent="clampPages() ; $nextTick(() =>{refreshData($event)})" x-data="{ status: 'normal', errors: {} }" id="searchform">
+		<div id="search-form-div">
+			<form class="row gy-2 gx-3 mb-3 align-items-center"
+			x-data="FormData"
+			@submit.prevent="formSubmit" 
+			@reset.prevent="formReset"
+			id="search-form">
 
+			<div class="col-lg-5">
 				<div class="form-floating">
-					<input name="search" id="search" class="form-control" placeholder="">
+					<input name="search" id="search" class="form-control" placeholder="" x-model="formSearch">
 					<label for="search">Search</label>
 				</div>
+			</div>
 
+			<div class="col-lg-2">
 				<div class="form-floating">
-					<select class="form-control form-select" name="is_active" id="is_active" placeholder="">
-						<option selected value="">Select value</option>
-						<option value="True">True</option>
-						<option value="False">False</option>
+					<select class="form-control form-select" name="is_active" id="select-is_active" placeholder="" x-model="formIsActive">
+						<option :selected="formIsActive === ''" value=""></option>
+						<option :selected="formIsActive === 'True'" value="True">True</option>
+						<option :selected="formIsActive === 'False'" value="False">False</option>
 					</select>
-					<label for="is_active">Deployment active?</label>
+					<label for="select-is_active">Deployment active?</label>
 				</div>
+			</div>
 
+			<div class="col-lg-2">
 				<div class="form-floating">
-					<select class="form-control form-select" name="is_active" id="is_active" placeholder="">
+					<select class="form-control-lg  form-select" name="site" id="select-site" placeholder="" x-model="formSite">
+							<option  value=""></option>
+							<template x-for="(site, index) in siteData">
+								<option x-bind:value="site['id']" x-text="site['short_name']"></option>
+							</template>
 					</select>
-					<label for="is_active">Deployment active?</label>
+					<label for="select-site">Site</label>
 				</div>
+			</div>
 
+			<div class="col-lg-2">
 				<div class="form-floating">
-					<input class="form-control" name="page_size" type="number" min="5" max="100" step="5" x-model.number="pageSize">
+					<select class="form-control-lg  form-select" name="data_type" id="select-datatype" placeholder="" x-model="formDataType">
+							<option value=""></option>
+							<template x-for="(datatype, index) in typeData">
+								<option x-bind:value="datatype['id']" x-text="datatype['name']"></option>
+							</template>
+					</select>
+					<label for="select-datatype">Device type</label>
+				</div>
+			</div>
+
+			<div class="col-lg-2 col-sm-6">
+				<div class="form-floating">
+					<input class="form-control" type="datetime-local" form-control" id="start_date" name="deploymentStart__gte" x-model="formStartDt">
+					<label for="start_date">Deployment started after</label>
+				</div>
+			</div>
+
+			<div class="col-lg-2 col-sm-6">
+				<div class="form-floating">
+					<input class="form-control" type="datetime-local" form-control" id="end_date" name="deploymentEnd__lte" x-model="formEndDt">
+					<label for="end_date">Deployment ended before</label>
+				</div>
+			</div>
+
+			<div class="col-lg-2">
+				<div class="form-floating">
+					<input class="form-control" name="page_size" type="number" min="1" max="100" step="5" x-model.number="pageSize">
 					<label for="page_size">Results per page</label>
 				</div>
+			</div>
 				 
-				<input name="page" class="d-none" type="number" x-model.number="pageNum">  
-				<button class="btn btn-primary">Search</button>
+			<div class="col-lg-auto col-sm-12">
+				<div class="d-grid gap-2 d-md-block mx-auto">
+					<button class="btn btn-primary btn-lg">Search</button>
+					<input type="reset" class="btn btn-danger btn-lg"> </input>
+				</div>
+			</div>
+
+			<input name="page" class="d-none" type="number" x-model.number="pageNum">  
+			<input name="id" class="d-none" id="deployment"  placeholder="" x-model="formId">
+
+
+			<!-- <input name="project" class="d-none" id="project"  placeholder="" x-model="formProject"> -->
+			<input name="device" class="d-none" id="device"  placeholder="" x-model="formDevice">
+
 			</form>
 		</div>
-		<div>
+
+		<div id="page-controls" x-show="isReady === false | (isReady === true && returnedData['results']!=null) ">
 			<nav aria-label="Page navigation">
 				<ul class="pagination justify-content-center">
 					<li class="page-item">
@@ -156,30 +248,60 @@
 				</ul>
 			</nav>
 			<div class="text-center align-middle">
-				<span  x-show="isReady === true" x-text="`${objectRangeMin} - ${objectRangeMax} of ${returnedData['count']}`" x-cloak></span>
+				<span  x-show="isReady === true && returnedData['results']!=null && returnedData['results'].length>0" x-text="`${objectRangeMin} - ${objectRangeMax} of ${returnedData['count']}`" x-cloak></span>
+				<span x-show="isReady === true && returnedData['results']!=null && returnedData['results'].length===0" x-cloak> No results</span>
 			</div>
 		</div>
 
-		<div class = "modal" role="dialog" x-show="showModal === true; $el.scrollTo({top: 0, behavior: 'instant'});" 
-		x-transition @click.self="showModal=false;" aria-labelledby="modalLabel" x-cloak>
+		<div id="detail-modal" class = "modal" role="dialog" x-show="showModal === true; $el.scrollTo({top: 0, behavior: 'instant'});" 
+		x-transition @click.self="showModal=false; formId=''" aria-labelledby="modalLabel" x-cloak>
 			<div class="modal-dialog modal-lg detail-modal">
 				<div class ="modal-content shadow">
 					<div class="modal-header" x-data="detailModalData">
 
 						<a class="btn btn-outline-light paginator-button modal-title"  aria-label="Previous" 
 						x-on:click="openCardDetail($event,cardIndex,-1)" 
-						:class="{'disabled': checkLeftDisabled()}"
+						:class="{'disabled': (!isReady)||checkLeftDisabled()}"
 						x-cloak
 						>
 							<h5 class="paginator-arrow" aria-hidden="true">&laquo;</h5>
 						</a>
+						
 
-						<h5 class="modal-title" x-text="modalData[titleKey]" id="exampleModalLabel"></h5>
+						<h5 class="modal-title" id="detailTitle"><a class="text-reset text-decoration-none" :href="modalData['detail_url']" x-text="modalData[titleKey]"></a></h5>
+						
+						<div class="hovertooltip">
+							<a id="copyButton" class="btn btn-outline-light paginator-button modal-title ms-2"  
+							x-on:click="navigator.clipboard.writeText(modalData['detail_url']); tooltipText = 'Copied address to clipboard'; tooltipWait=true; "
+							x-on:mouseover.self="if(!tooltipWait){tooltip = true; tooltipText = 'Copy address to clipboard'}" 
+							x-on:mouseleave.self="tooltip = false; tooltipWait = false" 
+							x-data="{tooltip:false,tooltipText:'', tooltipWait:false}"
+							:class="{'disabled': (!isReady)}"
+							>
+							
+								
+								<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard" viewBox="0 0 16 16">
+									<path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1z"/>
+									<path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0z"/>
+									</svg>
+								
+								<span class="tooltiptext tooltipright" x-show="tooltip" x-text="tooltipText"></span>
+							
+							</a>
+						</div>
 
-						<button type="button" class="btn-close btn-close-white close-button" data-dismiss="modal" aria-label="Close" @click.prevent="showModal=false;"></button>
+						<a class="btn btn-outline-light paginator-button modal-title"  aria-label="Edit" 
+						x-on:click="editDetail ? editDetail=false : editDetail=true" 
+						:class="{'disabled': (!isReady)||editDetail}"
+						x-cloak
+						>
+							Edit
+						</a>
+
+						<button type="button" class="btn-close btn-close-white close-button" data-dismiss="modal" aria-label="Close" @click.prevent="showModal=false; formId=''; editDetail=false"></button>
 						<a class="btn btn-outline-light paginator-button modal-title ms-1" aria-label="Next" 
 						x-on:click="openCardDetail($event,cardIndex,+1)"
-						:class="{'disabled': checkRightDisabled()}"
+						:class="{'disabled': (!isReady)||checkRightDisabled()}"
 						x-cloak
 						>
 							<h5 class="paginator-arrow" aria-hidden="true">&raquo;</h5>
@@ -187,42 +309,109 @@
 
 					</div>
 					<div class="modal-body">
-						<table class="table detail-table">
-							<tbody>
-								<template x-for="(value, key) in modalData":key="key">
-									<template x-if="!hideKeys.includes(key)">
-										<tr>
-											<th scope="row" x-text=`${key}`></th>
-											<template x-if="key != 'extra_info'">
-												<td x-text=`${value}`></td>
+						<div x-show="editDetail===true && isReady === true">
+							<form @submit.prevent="detailformSubmit" id="detailForm">
+							<input name="id" class="d-none" id="post-id"  placeholder="">
+
+
+								<div class="form-floating">
+									<input name="deploymentID" class="form-control" id="post-deployment"  placeholder="">
+									<label for="post-deployment">deployment ID</label>
+								</div>
+
+								<div class="form-floating">
+									<select class="form-control-lg  form-select" name="device_type" id="post-datatype" placeholder="">
+										<option value=""></option>
+										<template x-for="(datatype, index) in typeData">
+											<option x-bind:value="datatype['name']" x-text="datatype['name']"></option>
+										</template>
+								</select>
+								<label for="post-datatype">Device type</label>
+								</div>
+
+								<div class="form-floating">
+									<input name="device_n" class="form-control" id="post-device_n"  placeholder="1">
+									<label for="post-device_n">number</label>
+								</div>
+
+								<div class="form-floating">
+									<select class="form-control-lg  form-select" name="project" id="post-project" placeholder="" multiple>
+										<option value=""></option>
+										<template x-for="(project, index) in projectData">
+											<option x-bind:value="project['projectID']" x-text="project['projectName']"></option>
+										</template>
+								</select>
+								<label for="post-project">Project</label>
+								</div>
+
+								<div class="form-floating">
+									<select class="form-control-lg  form-select" name="site" id="post-site" placeholder="">
+											<template x-for="(site, index) in siteData">
+												<option x-bind:value="site['short_name']" x-text="site['name']"></option>
 											</template>
-											<template x-if="key == 'extra_info'">
-												<td>
-													<div class="extra-info-table">
-														<table class="table table-sm table-striped mb-0 align-middle text-center">
-															<tbody>
-																<template x-for="(e_iValue, e_iKey) in value":key="e_iKey">
-																	<tr>
-																		<th scope="row" x-text=`${e_iKey}`></th>
-																		<td x-text=`${e_iValue}`></td>
-																	</tr>
-																</template>	
-															</tbody>
-														</table>
-													</div>
-												</td>
-											</template>
-										</tr>
+									</select>
+									<label for="post-site">Site</label>
+								</div>
+
+								<div class="form-floating">
+									<select class="form-control-lg  form-select" name="device" id="post-device" placeholder="">
+									</select>
+									<label for="post-site">Device</label>
+								</div>
+
+
+								<div class="d-grid gap-2 d-md-block mx-auto">
+									<button class="btn btn-primary btn-lg">Save</button>
+									<button class="btn btn-danger btn-lg" x-on:click="editDetail=false"> Cancel </button>
+								</div>
+							</form>
+						</div>
+						
+						<div id="detail-display" x-show="editDetail===false && isReady===true">
+							<table class="table detail-table">
+								<tbody>
+									<template x-for="(value, key) in modalData":key="key">
+										<template x-if="!hideKeys.includes(key)">
+											<tr>
+												<th scope="row" x-text=`${key}`></th>
+												<template x-if="key != 'extra_info'">
+													<td x-text=`${value}`></td>
+												</template>
+												<template x-if="key == 'extra_info'">
+													<td>
+														<div class="extra-info-table">
+															<table class="table table-sm table-striped mb-0 align-middle text-center">
+																<tbody>
+																	<template x-for="(e_iValue, e_iKey) in value":key="e_iKey">
+																		<tr>
+																			<th scope="row" x-text=`${e_iKey}`></th>
+																			<td x-text=`${e_iValue}`></td>
+																		</tr>
+																	</template>	
+																</tbody>
+															</table>
+														</div>
+													</td>
+												</template>
+											</tr>
+										</template>
 									</template>
-								</template>
-							</tbody>
-						</table>
+								</tbody>
+							</table>
+						</div>
+
+						<div id="detail-loading-div" class="text-center" x-show="isReady === false" style="padding-block: 10rem; height:40rem;">
+							<div class="spinner-border" role="status" style="width: 4rem; height: 4rem;">
+							  
+							</div>
+							<span style="display:block;">Loading...</span>
+						</div>
 					</div>
 				</div>
 			</div>
 		</div>
 
-		<div x-show="isReady === true">
+		<div id="results-grid" x-show="isReady === true & returnedData['results']!=null ">
 			<div class="row row-cols-1 row-cols-md-2" x-cloak>
 				<template x-for="(deployment, index) in returnedData['results']">
 						<div class="card m-2 p-2" 
@@ -255,10 +444,11 @@
 		</div>
 
 
-		<div class="text-center" x-show="isReady === false" style="padding-block: 10rem;">
+		<div id="loading-div" class="text-center" x-show="isReady === false" style="padding-block: 1rem;">
 			<div class="spinner-border" role="status" style="width: 4rem; height: 4rem;">
-			  <span class="visually-hidden">Loading...</span>
+			  
 			</div>
+			<span style="display:block;">Loading...</span>
 		</div>
 
 	</div>
@@ -269,25 +459,29 @@
 
 	//calculate number of pages from page_size
 
+	async function SubmitData(url, data){
+		response =  await fetch(url,
+		{
+		method: "POST",
+		headers: {
+			'X-CSRFToken': document.head.querySelector('meta[name=csrf-token]').content,
+		},
+		mode: 'same-origin',
+		body: data,
+		}
+		)
+		
+		response_json = await response.json()
+		return response_json;
+	}
 
 	// Get data from API
-	async function getData(e){
-		
-		if(e){
-			formData = new FormData(e.target);
+	async function getData(url){
 			
-		}else{
-			formData = new FormData(document.getElementById("searchform"));
-		}
-		console.log(formData)
-		
-		let params = new URLSearchParams(formData).toString()
-		let url = `api/${datatype}/?${params}`
-		
 		response =  await fetch(url,
 		{
 		headers: {
-			'X-CSRF-TOKEN': document.head.querySelector('meta[name=csrf-token]').content
+			'X-CSRFToken': document.head.querySelector('meta[name=csrf-token]').content,
 		},
 		}
 		)
@@ -310,7 +504,8 @@
 	function detailModalData(){
 		return{
 			checkLeftDisabled(){
-				return (this.returnedData['results']!=null && 
+				return (
+				this.returnedData['results']!=null && 
 				((this.cardIndex-1)<0)
 				&&
 				(this.pageNum == 1)
@@ -331,23 +526,117 @@
 	const datatype = 'deployment'
 	//const titleKey = 'deployment_deviceID'
 	const titleKey = 'deployment_deviceID'
-	//const hideKeys = ['id','device_id','site_id','project_ids','owner','managers','combo_project','last_imageURL']
-	const hideKeys = ['id','device_id','site_id','project_ids','owner','managers','combo_project','last_imageURL']
+	//const hideKeys
+	const hideKeys = ['id','device_type_id','device_id','site_id','project_id','owner','managers','combo_project','last_imageURL','detail_url']
 
 	// Inititalise main DOM
 	document.addEventListener('alpine:init', () => {
+
+	Alpine.data('FormData', () => ({
+		async init(){
+			this.formReset()
+			console.log('form init')
+			await this.getSites();
+			await this.getDataTypes();
+			this.formSearch = this.urlQuery.get('search')|| ""
+			this.formIsActive = this.urlQuery.get('is_active')|| ""
+			this.formStartDt = this.urlQuery.get('deploymentStart__gte')|| ""
+			this.formEndDt = this.urlQuery.get('deploymentEnd__lte')|| ""
+			this.formId = this.urlQuery.get('id')|| ""
+			this.formProject = this.urlQuery.get('project')|| ""
+			this.formDevice = this.urlQuery.get('device')|| ""
+			this.$nextTick(() =>{
+				this.refreshData();
+				this.prepareDetailForm();
+			})
+			console.log(this.urlQuery)
+			document.querySelectorAll("#search-form").forEach((formElement) => {
+    			formElement.addEventListener("reset", (event) => {
+					event.target
+					.querySelectorAll(".tomselected")
+					.forEach((tomselectedElement) => {
+						tomselectedElement.tomselect.clear();
+					});
+				});
+  			});
+		},
+		formReset(){
+			this.formSearch = ""
+			this.formIsActive = ""
+			this.formDataType = ""
+			this.formStartDt = ""
+			this.formEndDt = ""
+			this.formSite = ""
+			this.formId = ""
+			this.formProject = ""
+			this.formDevice = ""
+			
+		},
+		formSubmit(){
+			pageNum = 1 ; 
+			this.$nextTick(() =>{this.refreshData(this.$event);})
+		},
+		async getSites(){
+			this.formSite = this.urlQuery.get('site')|| ""
+			let url = `api/site/`
+			let api_response_data = await getData(url)
+			this.siteData = api_response_data
+			this.$nextTick(() =>{
+				new TomSelect("#select-site",{
+					allowEmptyOption:true,
+					hidePlaceholder:false,
+					items:[this.formSite],
+					sortField: {
+						field: "text",
+						direction: "asc"
+					}
+				});
+			})
+		},
+		async getDataTypes(){
+			this.formDataType = this.urlQuery.get('data_type')|| ""
+			let url = `api/datatype/`
+			let api_response_data = await getData(url)
+			this.typeData = api_response_data
+			this.$nextTick(() =>{
+				new TomSelect("#select-datatype",{
+					allowEmptyOption:true,
+					hidePlaceholder:false,
+					items:[this.formDataType],
+					sortField: {
+						field: "text",
+						direction: "asc"
+					}
+				});
+			})
+		},
+	}))
+
+
 	Alpine.data('allData', () => ({
+		urlQuery: new URLSearchParams(location.search),
 		showModal: false,
-		isReady: false,
+		editDetail: false,
+		pageNum:1,
+		pageSize:1,
 		returnedData: [],
 		modalData:{},
-		pageNum:1,
-		pageSize:25,
 		totalPages:1,
 		objectRangeMin:0,
 		objectRangeMax:25,
 		cardIndex:0,
+		isReady: false,
+		siteData: [],
+		typeData: [],
+		projectData: [],
+		deviceData: [],
+		deviceDataType:0,
 		init(){
+			console.log('main init')
+			this.showModal = (this.urlQuery.get('detail') || 'false').toLowerCase() == 'true'
+			this.cardIndex = Number(this.urlQuery.get('detail_index')) || 0
+			this.pageNum = Number(this.urlQuery.get('page'))|| this.pageNum
+			this.pageSize = Number(this.urlQuery.get('page_size'))|| this.pageSize
 			this.$watch('pageNum', (value, oldValue) => {
 				console.log(`${oldValue} ${value}`)
 				let pageChange = this.clampPages(); 
@@ -356,47 +645,186 @@
 					this.$nextTick(() =>{this.refreshData()})
 				}
 			})
+			this.$watch('showModal', value => this.setSearchURL())
+			this.$watch('cardIndex', value => this.setSearchURL())
+		},
+		async prepareDetailForm(){
+			let deviceselect = new TomSelect("#post-datatype",{
+					allowEmptyOption:false,
+					hidePlaceholder:false,
+					sortField: {
+						field: "text",
+						direction: "asc"
+					}
+			});
+			
+			
+			new TomSelect("#post-site",{
+				allowEmptyOption:false,
+				hidePlaceholder:false,
+				createOnBlur: true,
+				create: true,
+				sortField: {
+					field: "text",
+					direction: "asc"
+				}
+			});
+			let url = `api/project/`
+			let api_response_data = await getData(url)
+			this.projectData = api_response_data
 			this.$nextTick(() =>{
-				this.refreshData();
-			})
+			new TomSelect("#post-project",{
+					allowEmptyOption:true,
+					hidePlaceholder:false,
+					maxItems:null,
+					sortField: {
+						field: "text",
+						direction: "asc"
+					}
+				});
+				new TomSelect("#post-device",{
+					allowEmptyOption:false,
+					hidePlaceholder:false,
+					sortField: {
+						field: "text",
+						direction: "asc"
+					}
+				});
+				deviceselect.on('change',()=>{this.getDetailDevices()})
+			});			
+		},
+		async getDetailDevices(){
+			
+			let deviceInput = document.querySelector('#post-device').tomselect
+			let newDeviceDataType = document.querySelector('#post-datatype').value
+			if(newDeviceDataType!='' && newDeviceDataType!=this.deviceDataType){
+				console.log('refresh devices')
+				this.deviceDataType = newDeviceDataType
+				deviceInput.clear()
+				deviceInput.clearOptions()
+				let url = `api/device/?type_name=${newDeviceDataType}`
+				let api_response_data = await getData(url)
+				this.deviceData = api_response_data
+				
+				for (device of this.deviceData){
+					deviceInput.addOption({text:`${device['deviceID']} - ${device['name']}`,value:device['deviceID']});
+				}
+				deviceInput.refreshOptions(false);
+				
+				if(this.modalData && this.modalData['device']!=undefined){
+					deviceInput.addItem(this.modalData['device'])
+				}
+				deviceInput.refreshItems()
+			}
+
 		},
 		async openCardDetail(e,currCardIndex,offset=0,open=true){
 			let pageChange = false
-			if(offset!=0 && ((currCardIndex+offset)>-1 && (currCardIndex+offset)<(this.returnedData['results'].length))){
+			let resultslength = this.returnedData['results'].length;
+			if(offset!=0 && ((currCardIndex+offset)>-1 && (currCardIndex+offset)<(resultslength))){
 				newIndex = currCardIndex+offset
 			}else if((offset==-1) && ((currCardIndex+offset)<0) && ((this.pageNum-1) > 0)){
 				this.pageNum+=offset
 				newIndex = this.pageSize-1
 				pageChange = true
-			}else if((offset==1) && ((currCardIndex+offset) >= this.returnedData['results'].length) && ((this.pageNum+1) <= this.totalPages)){
+			}else if((offset==1) && ((currCardIndex+offset) >= resultslength) && ((this.pageNum+1) <= this.totalPages)){
+				console.log('increment page')
 				this.pageNum+=offset
 				newIndex = 0
 				pageChange = true
 			}else{
 				newIndex = currCardIndex
 			}
-			console.log(newIndex)
+
 			this.cardIndex = newIndex;
-			console.log(this.cardIndex)
 			if (pageChange==false){
 				this.setModalData()
 			}
 		},
-		setModalData(open=true){
+		setModalData(open=true, edit=false){
+			//should check for results
 			newModalData = this.returnedData['results'][this.cardIndex]
+			let url = new URL(window.location.href);
+			url.searchParams.set('detail', true);
+			url.searchParams.set('detailIndex', 0);
+			url.searchParams.set('id', newModalData['id']);
+			newModalData['detail_url'] = url.toString()
 			this.modalData = newModalData;
+			let { elements } = document.querySelector('#detailForm')
+			
+			for ( [ key, value ] of Object.entries(newModalData) ) {
+				const field = elements.namedItem(key)
+				if(field && field.classList.contains('tomselected')){
+					console.log(field)
+					field.tomselect.clear()
+					let value_ids = newModalData[key];
+					value_ids = value_ids ? [].concat(value_ids) : [];
+					for (value_id of value_ids){
+						field.tomselect.addItem(value_id)
+						console.log(value_id)
+					}
+					field.tomselect.refreshItems()
+				}else{
+					field && (field.value = value)
+				}
+				
+			}
+			if (edit){
+				this.edit = true
+			}
 			if (open){
 				this.showModal = true;
+				this.setSearchURL();
 			}
 		},
 		async refreshData(e){
+			if(e){
+				formData = new FormData(e.target);
+			}
+			else
+			{
+				formData = new FormData(document.getElementById("search-form"));
+			}
+			console.log(formData)
+			let searchParams = new URLSearchParams(formData)
+			let queryString = searchParams.toString()
+			let apiURL = `api/${datatype}/?${queryString}`
 			this.returnedData=[]
+			this.modalData={}
 			this.isReady = false
-			api_response_data = await getData(e)
+			let api_response_data = await getData(apiURL)
+			//check here for errors
+			console.log(api_response_data)
+			
 			this.isReady = true
+			if(!('results' in api_response_data)){
+				api_response_data['results'] = []
+			}
 			this.returnedData = api_response_data;
-			this.clampPages();
-			this.setModalData(open=false)
+			if(this.returnedData['results'].length>0){
+				this.setModalData(open=false)
+			}
+			this.getPages()
+			this.setSearchURL(searchParams)
+
+		},
+		async detailformSubmit(e){
+			formData = new FormData(e.target);
+
+			let apiURL = `api/${datatype}/`
+
+			let api_response_data = await SubmitData(apiURL,formData)
+			console.log(api_response_data)
+		},
+		setSearchURL(searchParams){
+			if(!searchParams){
+				searchParams = new URLSearchParams(formData)
+			}
+			searchParams.set('detail',this.showModal)
+			searchParams.set('detail_index',this.cardIndex)
+			url = new URL(window.location.href);
+			url.search = searchParams
+    		history.pushState(null, document.title, url.toString());
 		},
 		getPages(){
 			this.totalPages = Math.ceil(this.returnedData['count']/this.pageSize)
