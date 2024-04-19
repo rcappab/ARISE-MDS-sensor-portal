@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+
 class SlugRelatedGetOrCreateField(serializers.SlugRelatedField):
     def to_internal_value(self, data):
         queryset = self.get_queryset()

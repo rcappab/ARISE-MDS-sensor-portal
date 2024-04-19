@@ -40,7 +40,7 @@
 	}
 
 	.detail-table{
-		width:min-content;
+		width:fit-content;
 		margin:auto;
 	}
 
@@ -356,9 +356,23 @@
 								<div class="form-floating">
 									<select class="form-control-lg  form-select" name="device" id="post-device" placeholder="">
 									</select>
-									<label for="post-site">Device</label>
+									<label for="post-device">Device</label>
 								</div>
 
+								<div class="form-floating">
+									<input class="form-control" step="0.001" type="datetime-local"  id="post-start_date" name="deploymentStart">
+									<label for="post-start_date">Deployment started</label>
+								</div>
+
+								<div class="form-floating">
+									<select class="form-control-lg  form-select dropdownTimeZone" id="post-start_date-tz" name="deploymentStart_TZ"></select>
+									<label>Timezone</label>
+								</div>
+
+								<div class="form-floating">
+									<input class="form-control" step="1" type="datetime-local"  id="post-end_date" name="deploymentEnd">
+									<label for="post-end_date">Deployment ended</label>
+								</div>
 
 								<div class="d-grid gap-2 d-md-block mx-auto">
 									<button class="btn btn-primary btn-lg">Save</button>
@@ -375,7 +389,7 @@
 											<tr>
 												<th scope="row" x-text=`${key}`></th>
 												<template x-if="key != 'extra_info'">
-													<td x-text=`${value}`></td>
+													<td x-text="(timeKeys.includes(key)&&value!=null) ? dtFormat.format(value) : value"></td>
 												</template>
 												<template x-if="key == 'extra_info'">
 													<td>
@@ -459,10 +473,10 @@
 
 	//calculate number of pages from page_size
 
-	async function SubmitData(url, data){
+	async function SubmitData(url, data, method = "POST"){
 		response =  await fetch(url,
 		{
-		method: "POST",
+		method: method,
 		headers: {
 			'X-CSRFToken': document.head.querySelector('meta[name=csrf-token]').content,
 		},
@@ -523,11 +537,14 @@
 
 	//from backend
 	//const datatype = 'deployment'
-	const datatype = 'deployment'
+	const modelType = 'deployment'
 	//const titleKey = 'deployment_deviceID'
 	const titleKey = 'deployment_deviceID'
 	//const hideKeys
 	const hideKeys = ['id','device_type_id','device_id','site_id','project_id','owner','managers','combo_project','last_imageURL','detail_url']
+
+	const timeKeys = ['created_on', 'modified_on', 'recording_dt', 'deploymentStart', 'deploymentEnd']
+	loadTimeZoneList()
 
 	// Inititalise main DOM
 	document.addEventListener('alpine:init', () => {
@@ -749,23 +766,42 @@
 			url.searchParams.set('detailIndex', 0);
 			url.searchParams.set('id', newModalData['id']);
 			newModalData['detail_url'] = url.toString()
+
+			//convert timezone to local timezone
+			for(key of timeKeys){
+				if(key in newModalData){
+					let currentTime = newModalData[key]
+					if (currentTime){
+						console.log(newModalData[key])
+						let dateTime = new Date(currentTime)
+						console.log(dateTime)
+						newModalData[key] = dateTime
+					}
+				}
+			}
+
 			this.modalData = newModalData;
 			let { elements } = document.querySelector('#detailForm')
 			
 			for ( [ key, value ] of Object.entries(newModalData) ) {
 				const field = elements.namedItem(key)
 				if(field && field.classList.contains('tomselected')){
-					console.log(field)
+					
 					field.tomselect.clear()
 					let value_ids = newModalData[key];
 					value_ids = value_ids ? [].concat(value_ids) : [];
 					for (value_id of value_ids){
 						field.tomselect.addItem(value_id)
-						console.log(value_id)
+						
 					}
 					field.tomselect.refreshItems()
+				}else if(field && timeKeys.includes(key)){
+					field.valueAsDate = value
 				}else{
 					field && (field.value = value)
+					field && (console.log(field))
+					field && (console.log(value))
+					field && (console.log(field.value))
 				}
 				
 			}
@@ -788,7 +824,7 @@
 			console.log(formData)
 			let searchParams = new URLSearchParams(formData)
 			let queryString = searchParams.toString()
-			let apiURL = `api/${datatype}/?${queryString}`
+			let apiURL = `api/${modelType}/?${queryString}`
 			this.returnedData=[]
 			this.modalData={}
 			this.isReady = false
@@ -810,10 +846,13 @@
 		},
 		async detailformSubmit(e){
 			formData = new FormData(e.target);
-
-			let apiURL = `api/${datatype}/`
-
-			let api_response_data = await SubmitData(apiURL,formData)
+			let method = "POST"
+			let apiURL = `api/${modelType}/`
+			if (formData.get('id')!=''){
+				apiURL+=`${formData.get('id')}/`
+				method = "PATCH"
+			}
+			let api_response_data = await SubmitData(apiURL,formData, method)
 			console.log(api_response_data)
 		},
 		setSearchURL(searchParams){

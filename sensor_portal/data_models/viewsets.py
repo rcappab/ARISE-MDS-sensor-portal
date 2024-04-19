@@ -1,17 +1,16 @@
-from rest_framework import viewsets
-from django.core.exceptions import ObjectDoesNotExist
-from rest_framework.exceptions import PermissionDenied
-from rest_framework import status
-from rest_framework.response import Response
-from utils.viewsets import OptionalPaginationViewSet
-from utils.general import handle_uploaded_file, get_new_name
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
+from rest_framework import status, viewsets
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.response import Response
 from rest_framework_gis import filters as filters_gis
 
+from utils.general import get_new_name, handle_uploaded_file
+from utils.viewsets import OptionalPaginationViewSet
 
-from .serializers import *
 from .filtersets import *
-
+from .models import *
+from .serializers import *
 
 
 class AddOwnerViewSet(viewsets.ModelViewSet):
@@ -23,7 +22,8 @@ class DeploymentViewSet(AddOwnerViewSet, OptionalPaginationViewSet):
     search_fields = ['deployment_deviceID', 'device__name', 'device__deviceID']
     queryset = Deployment.objects.all()
     filterset_class = DeploymentFilter
-    filter_backends = viewsets.ModelViewSet.filter_backends + [filters_gis.InBBoxFilter]
+    filter_backends = viewsets.ModelViewSet.filter_backends + \
+        [filters_gis.InBBoxFilter]
 
     def get_serializer_class(self):
         print(self.request.GET)
@@ -42,7 +42,6 @@ class DeploymentViewSet(AddOwnerViewSet, OptionalPaginationViewSet):
         super(DeploymentViewSet, self).perform_update(serializer)
 
     def check_attachment(self, serializer):
-        
         project_objects = serializer.validated_data.get('project')
         if project_objects is not None:
             for project_object in project_objects:
@@ -50,8 +49,10 @@ class DeploymentViewSet(AddOwnerViewSet, OptionalPaginationViewSet):
                     raise PermissionDenied(
                         f"You don't have permission to add a deployment to {project_object.projectID}")
         device_object = serializer.validated_data.get('device')
-        if not self.request.user.has_perm('data_models.change_device', device_object):
-            raise PermissionDenied(f"You don't have permission to deploy {device_object.deviceID}")
+        if device_object is not None:
+            if not self.request.user.has_perm('data_models.change_device', device_object):
+                raise PermissionDenied(
+                    f"You don't have permission to deploy {device_object.deviceID}")
 
 
 class ProjectViewSet(AddOwnerViewSet, OptionalPaginationViewSet):
@@ -66,6 +67,7 @@ class DeviceViewSet(AddOwnerViewSet, OptionalPaginationViewSet):
     queryset = Device.objects.all()
     filterset_class = DeviceFilter
     search_fields = ['deviceID', 'name', 'model', 'make']
+
 
 class DataFileViewSet(OptionalPaginationViewSet):
     serializer_class = DataFileSerializer
@@ -115,17 +117,21 @@ class DataFileViewSet(OptionalPaginationViewSet):
                 DataFile.objects.filter(original_name__in=filenames).values_list('original_name', flat=True))
             not_duplicated = [x not in db_filenames for x in filenames]
             files = [x for x, y in zip(files, not_duplicated) if y]
-            invalid_files += [f"{x} - already in database" for x, y in zip(filenames, not_duplicated) if not y]
-            if len(files)==0:
+            invalid_files += [f"{x} - already in database" for x,
+                              y in zip(filenames, not_duplicated) if not y]
+            if len(files) == 0:
                 return Response({"uploaded_files": [], "invalid_files": invalid_files},
                                 status=status.HTTP_201_CREATED, headers=headers)
             if len(recording_dt) > 1:
-                recording_dt = [x for x, y in zip(recording_dt, not_duplicated) if y]
+                recording_dt = [x for x, y in zip(
+                    recording_dt, not_duplicated) if y]
             if len(extra_info) > 1:
-                extra_info = [x for x, y in zip(extra_info, not_duplicated) if y]
+                extra_info = [x for x, y in zip(
+                    extra_info, not_duplicated) if y]
             if data_types is not None:
                 if len(data_types) > 1:
-                    data_types = [x for x, y in zip(data_types, not_duplicated) if y]
+                    data_types = [x for x, y in zip(
+                        data_types, not_duplicated) if y]
 
         if deployment:
             deployment_pk = None
@@ -141,7 +147,8 @@ class DataFileViewSet(OptionalPaginationViewSet):
 
             valid_files = deployment_object.check_dates(recording_dt)
             if all([not x for x in valid_files]):
-                serializers.ValidationError(f"deployment {deployment} is invalid for all files")
+                serializers.ValidationError(
+                    f"deployment {deployment} is invalid for all files")
             deployment_objects = list(deployment_object)
         else:
 
@@ -149,21 +156,26 @@ class DataFileViewSet(OptionalPaginationViewSet):
             if device.isnumeric():
                 device_pk = int(device)
             try:
-                device_object = Device.objects.get(Q(Q(deviceID=device) | Q(pk=device_pk)))
+                device_object = Device.objects.get(
+                    Q(Q(deviceID=device) | Q(pk=device_pk)))
             except ObjectDoesNotExist:
                 raise serializers.ValidationError("Incorrect device")
 
-            deployment_objects = [device_object.deployment_from_date(x, request.user) for x in recording_dt]
+            deployment_objects = [device_object.deployment_from_date(
+                x, request.user) for x in recording_dt]
             print(deployment_objects)
             valid_files = [x is not None for x in deployment_objects]
             print(valid_files)
             if all([not x for x in valid_files]):
-                raise serializers.ValidationError(f"No deployments found in device {device_object.deviceID}")
+                raise serializers.ValidationError(
+                    f"No deployments found in device {device_object.deviceID}")
             # Filter to only valids
-            deployment_objects = [x for x in deployment_objects if x is not None]
+            deployment_objects = [
+                x for x in deployment_objects if x is not None]
 
         #  split off invalid  files
-        invalid_files += [f"{x.name} - no suitable deployment found" for x, y in zip(files, valid_files) if not y]
+        invalid_files += [f"{x.name} - no suitable deployment found" for x,
+                          y in zip(files, valid_files) if not y]
         files = [x for x, y in zip(files, valid_files) if y]
         if len(recording_dt) > 1:
             recording_dt = [x for x, y in zip(recording_dt, valid_files) if y]
@@ -199,8 +211,10 @@ class DataFileViewSet(OptionalPaginationViewSet):
                 else:
                     file_data_type = data_types[0]
 
-            file_local_path = os.path.join(settings.FILE_STORAGE_ROOT, file_data_type.name)
-            file_path = os.path.join(file_deployment.deployment_deviceID, upload_date)
+            file_local_path = os.path.join(
+                settings.FILE_STORAGE_ROOT, file_data_type.name)
+            file_path = os.path.join(
+                file_deployment.deployment_deviceID, upload_date)
             filename = file.name
             file_extension = os.path.splitext(filename)[1]
             new_file_name = get_new_name(file_deployment,
@@ -209,7 +223,8 @@ class DataFileViewSet(OptionalPaginationViewSet):
                                          file_path
                                          )
             file_size = os.fstat(file.fileno()).st_size
-            file_fullpath = os.path.join(file_local_path, file_path, f"{new_file_name}{file_extension}")
+            file_fullpath = os.path.join(
+                file_local_path, file_path, f"{new_file_name}{file_extension}")
             handle_uploaded_file(file, file_fullpath)
             new_datafile_obj = DataFile(
                 deployment=file_deployment,
@@ -236,19 +251,14 @@ class DataFileViewSet(OptionalPaginationViewSet):
         return Response({"uploaded_files": returned_data.data, "invalid_files": invalid_files},
                         status=status.HTTP_201_CREATED, headers=headers)
 
+
 class SiteViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSet):
     serializer_class = SiteSerializer
     queryset = Site.objects.all()
-    search_fields = ['name','short_name']
+    search_fields = ['name', 'short_name']
+
 
 class DataTypeViewset(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSet):
     serializer_class = DataTypeSerializer
     queryset = DataType.objects.all()
     search_fields = ['name']
-
-
-
-
-
-
-

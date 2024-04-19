@@ -10,8 +10,8 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
-from pathlib import Path
 import os
+from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -110,8 +110,8 @@ DATABASES = {
 AUTH_USER_MODEL = "user_management.User"
 
 AUTHENTICATION_BACKENDS = (
- 'django.contrib.auth.backends.ModelBackend',
- 'bridgekeeper.backends.RulePermissionBackend',
+    'django.contrib.auth.backends.ModelBackend',
+    'bridgekeeper.backends.RulePermissionBackend',
 )
 
 # Password validation
@@ -176,7 +176,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
-        #'rest_framework.renderers.BrowsableAPIRenderer'
+        # 'rest_framework.renderers.BrowsableAPIRenderer'
         'utils.api.BrowsableAPIRendererWithoutForms',
     ),
 }
@@ -190,7 +190,8 @@ CACHES = {
 
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://redis:6379/0")
-CELERY_RESULT_BACKEND = 'django-db'#os.environ.get("CELERY_BROKER", "redis://redis:6379/0")
+# os.environ.get("CELERY_BROKER", "redis://redis:6379/0")
+CELERY_RESULT_BACKEND = 'django-db'
 CELERY_RESULT_EXTENDED = True
 
 
@@ -202,4 +203,5 @@ CELERY_ENABLE_UTC = False
 CELERY_BEAT_SCHEDULE = {}
 
 # SENSOR-PORTAL SETTINGS
-GLOBAL_PROJECT_ID = "GLOBAL"  # name of the global project all deployments will be added to
+# name of the global project all deployments will be added to
+GLOBAL_PROJECT_ID = "GLOBAL"

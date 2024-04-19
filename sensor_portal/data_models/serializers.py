@@ -1,13 +1,14 @@
-from rest_framework_gis import serializers as geoserializers
-from rest_framework import serializers
-from .models import *
-from user_management.models import User
 import magic
-from PIL import Image, ExifTags
-from . import validators
-from utils.serializers import SlugRelatedGetOrCreateField
 from django.utils import timezone as djtimezone
+from PIL import ExifTags, Image
+from rest_framework import serializers
+from rest_framework_gis import serializers as geoserializers
 
+from user_management.models import User
+from utils.serializers import SlugRelatedGetOrCreateField
+
+from . import validators
+from .models import *
 
 
 class InstanceGetMixIn():
@@ -17,6 +18,12 @@ class InstanceGetMixIn():
         if self.instance and hasattr(self.instance, attr_name):
             return getattr(self.instance, attr_name)
         return None
+
+
+class CreatedModifiedMixIn(serializers.ModelSerializer):
+    created_on = serializers.DateTimeField(default_timezone=djtimezone.utc)
+    modified_on = serializers.DateTimeField(default_timezone=djtimezone.utc)
+
 
 class OwnerMangerMixIn(serializers.ModelSerializer):
     owner = serializers.StringRelatedField(read_only=True)
@@ -32,35 +39,41 @@ class OwnerMangerMixIn(serializers.ModelSerializer):
             "owner",
             "managers",
         ]
-        user_is_manager = self.context['request'].user.has_perm(self.management_perm, obj=instance)
+        user_is_manager = self.context['request'].user.has_perm(
+            self.management_perm, obj=instance)
         if not user_is_manager:
             [initial_rep.pop(field, '') for field in fields_to_pop]
         return initial_rep
 
 
-class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, serializers.ModelSerializer):
-    device_type = serializers.SlugRelatedField(slug_field='name', queryset=DataType.objects.all(), required=False)
+class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedMixIn, serializers.ModelSerializer):
+    device_type = serializers.SlugRelatedField(
+        slug_field='name', queryset=DataType.objects.all(), required=False)
     device_type_id = serializers.PrimaryKeyRelatedField(queryset=DataType.objects.all().values_list('pk', flat=True),
                                                         required=False)
-    device = serializers.SlugRelatedField(slug_field='deviceID', queryset=Device.objects.all(), required = False)
+    device = serializers.SlugRelatedField(
+        slug_field='deviceID', queryset=Device.objects.all(), required=False)
     device_id = serializers.PrimaryKeyRelatedField(queryset=Device.objects.all().values_list('pk', flat=True),
                                                    required=False)
     project = serializers.SlugRelatedField(many=True,
                                            slug_field='projectID',
                                            queryset=Project.objects.all(),
                                            allow_null=True)
-    project_id = serializers.PrimaryKeyRelatedField(source="project", 
-                                                    many=True, 
+    project_id = serializers.PrimaryKeyRelatedField(source="project",
+                                                    many=True,
                                                     queryset=Project.objects.all().values_list('pk', flat=True),
                                                     required=False,
                                                     allow_null=True)
     site = SlugRelatedGetOrCreateField(slug_field='short_name',
-                                       queryset=Site.objects.all(), 
+                                       queryset=Site.objects.all(),
                                        required=False)
     site_id = serializers.PrimaryKeyRelatedField(queryset=Site.objects.all().values_list('pk', flat=True),
                                                  required=False)
-    deploymentStart = serializers.DateTimeField(default = djtimezone.now())
-    
+
+    # always return in UTC regardless of server setting
+    deploymentStart = serializers.DateTimeField(
+        default=djtimezone.now(), default_timezone=djtimezone.utc)
+    deploymentEnd = serializers.DateTimeField(default_timezone=djtimezone.utc)
 
     # check project permissions here or in viewpoint
 
@@ -89,9 +102,9 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, serializers.Mode
         # )
         # if not result:
         #     raise serializers.ValidationError(message)
-        
+
         if not self.partial:
-            #check if a device has been attached (via either method)
+            # check if a device has been attached (via either method)
             result, message, data = validators.check_two_keys(
                 'device',
                 'device_id',
@@ -101,7 +114,7 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, serializers.Mode
             if not result:
                 raise serializers.ValidationError(message)
 
-            #check if a site has been attached (via either method)
+            # check if a site has been attached (via either method)
             result, message, data = validators.check_two_keys(
                 'site',
                 'site_id',
@@ -110,22 +123,23 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, serializers.Mode
             )
             if not result:
                 raise serializers.ValidationError(message)
-            
 
         result, message = validators.deployment_check_type(self.instance_get('device_type', data),
                                                            self.instance_get('device', data))
         if not result:
             raise serializers.ValidationError(message)
-        result, message = validators.deployment_start_time_after_end_time(data.get('deploymentStart'),
-                                                                          data.get('deploymentEnd'))
+        result, message = validators.deployment_start_time_after_end_time(self.instance_get('deploymentStart', data),
+                                                                          self.instance_get('deploymentEnd', data))
         if not result:
             raise serializers.ValidationError(message)
-        
+
         print(data)
-        
+
         result, message = validators.deployment_check_overlap(self.instance_get('deploymentStart', data),
-                                                              self.instance_get('deploymentEnd', data),
-                                                              self.instance_get('device', data),
+                                                              self.instance_get(
+                                                                  'deploymentEnd', data),
+                                                              self.instance_get(
+                                                                  'device', data),
                                                               self.instance_get('id', data))
         if not result:
             raise serializers.ValidationError(message)
@@ -145,7 +159,7 @@ class DeploymentSerializer_GeoJSON(DeploymentFieldsMixIn, geoserializers.GeoFeat
         super(DeploymentSerializer_GeoJSON, self).__init__(*args, **kwargs)
 
 
-class ProjectSerializer(OwnerMangerMixIn, serializers.ModelSerializer):
+class ProjectSerializer(OwnerMangerMixIn, CreatedModifiedMixIn, serializers.ModelSerializer):
     class Meta:
         model = Project
         exclude = []
@@ -155,10 +169,10 @@ class ProjectSerializer(OwnerMangerMixIn, serializers.ModelSerializer):
         super(ProjectSerializer, self).__init__(*args, **kwargs)
 
 
-class DeviceSerializer(OwnerMangerMixIn, serializers.ModelSerializer):
+class DeviceSerializer(OwnerMangerMixIn, CreatedModifiedMixIn, serializers.ModelSerializer):
     type = serializers.SlugRelatedField(slug_field='name',
-                                               queryset=DataType.objects.all(),
-                                               allow_null=True)
+                                        queryset=DataType.objects.all(),
+                                        allow_null=True)
     username = serializers.CharField()
     authentication = serializers.CharField()
 
@@ -176,17 +190,19 @@ class DeviceSerializer(OwnerMangerMixIn, serializers.ModelSerializer):
             "username",
             "authentication",
         ]
-        user_is_manager = self.context['request'].user.has_perm(self.management_perm, obj=instance)
+        user_is_manager = self.context['request'].user.has_perm(
+            self.management_perm, obj=instance)
         if not user_is_manager:
             [initial_rep.pop(field, '') for field in fields_to_pop]
         return initial_rep
 
 
-class DataFileSerializer(serializers.ModelSerializer):
+class DataFileSerializer(CreatedModifiedMixIn, serializers.ModelSerializer):
     deployment = serializers.SlugRelatedField(slug_field='deployment_deviceID',
                                               queryset=Deployment.objects.all())
     deployment_id = serializers.PrimaryKeyRelatedField(read_only=True)
     file_type = serializers.StringRelatedField()
+    recording_dt = serializers.DateTimeField(default_timezone=djtimezone.utc)
 
     class Meta:
         model = DataFile
@@ -194,7 +210,8 @@ class DataFileSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         data = super().validate(data)
-        result, message = validators.data_file_in_deployment(data.get('recording_dt'), data.get('deployment'))
+        result, message = validators.data_file_in_deployment(
+            data.get('recording_dt'), data.get('deployment'))
         if not result:
             raise serializers.ValidationError(message)
         return data
@@ -203,9 +220,11 @@ class DataFileSerializer(serializers.ModelSerializer):
 class DataFileUploadSerializer(serializers.Serializer):
     deployment = serializers.CharField(required=False)
     device = serializers.CharField(required=False)
-    files = serializers.ListField(child=serializers.FileField(allow_empty_file=False, max_length=None))
+    files = serializers.ListField(child=serializers.FileField(
+        allow_empty_file=False, max_length=None))
     extra_info = serializers.JSONField(required=False)
-    recording_dt = serializers.ListField(child=serializers.DateTimeField(), required=False)
+    recording_dt = serializers.ListField(
+        child=serializers.DateTimeField(), required=False)
     autoupdate = serializers.BooleanField(default=False)
     rename = serializers.BooleanField(default=True)
     check_filename = serializers.BooleanField(default=True)
@@ -221,11 +240,13 @@ class DataFileUploadSerializer(serializers.Serializer):
 
         #  Check a deployment or device is supplied
         if data.get('deployment') is None and data.get('device') is None:
-            raise serializers.ValidationError("A deployment or a device must be supplied")
+            raise serializers.ValidationError(
+                "A deployment or a device must be supplied")
 
         #  if not an image, user must supply the recording date time
         files = data.get("files")
-        is_not_image = ["image" not in magic.from_buffer(x.read(), mime=True) for x in files]
+        is_not_image = ["image" not in magic.from_buffer(
+            x.read(), mime=True) for x in files]
         if any(is_not_image):
             raise serializers.ValidationError("Recording date times can only be extracted from images, "
                                               "please provide 'recording_dt' or upload only images")
@@ -246,21 +267,25 @@ class DataFileUploadSerializer(serializers.Serializer):
         # Not used
         pass
 
+
 class SiteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Site
         fields = '__all__'
+
 
 class DataTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = DataType
         fields = '__all__'
 
+
 def get_image_recording_dt(uploaded_file):
     si = uploaded_file.file
     image = Image.open(si)
     exif = image.getexif()
-    exif_tags = {ExifTags.TAGS[k]: v for k, v in exif.items() if k in ExifTags.TAGS}
+    exif_tags = {ExifTags.TAGS[k]: v for k,
+                 v in exif.items() if k in ExifTags.TAGS}
     recording_dt = exif_tags.get('DateTimeOriginal')
     if recording_dt is None:
         recording_dt = exif_tags.get('DateTime')
