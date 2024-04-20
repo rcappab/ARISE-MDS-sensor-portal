@@ -374,6 +374,15 @@
 									<label for="post-end_date">Deployment ended</label>
 								</div>
 
+								<div class="form-floating">
+									<select class="form-control-lg  form-select dropdownTimeZone" id="post-end_date-tz" name="deploymentEnd_TZ"></select>
+									<label>Timezone</label>
+								</div>
+
+								MAP GOES here
+
+								EXTRA INFO GOES HERE
+
 								<div class="d-grid gap-2 d-md-block mx-auto">
 									<button class="btn btn-primary btn-lg">Save</button>
 									<button class="btn btn-danger btn-lg" x-on:click="editDetail=false"> Cancel </button>
@@ -795,8 +804,11 @@
 						
 					}
 					field.tomselect.refreshItems()
-				}else if(field && timeKeys.includes(key)){
-					field.valueAsDate = value
+				}else if(field && value && timeKeys.includes(key)){
+					let newvalue = nativeTZ(value);
+					elements.namedItem(`${key}_TZ`).tomselect.addItem(getTimeZoneCode(value))
+					field.value = newvalue
+					
 				}else{
 					field && (field.value = value)
 					field && (console.log(field))
@@ -846,6 +858,17 @@
 		},
 		async detailformSubmit(e){
 			formData = new FormData(e.target);
+			
+			for ([key,value] of formData.entries()) {
+				if(timeKeys.includes(key) && !(value==="")){
+					//get timezone offset
+					let tzcode = formData.get(`${key}_TZ`)
+					let offset = getOffset(tzcode, true)
+					newTimeString = value+offset
+					formData.set(key , newTimeString)
+				}
+			}
+
 			let method = "POST"
 			let apiURL = `api/${modelType}/`
 			if (formData.get('id')!=''){

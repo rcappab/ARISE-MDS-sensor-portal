@@ -68,10 +68,12 @@
         }
 
         function getOffset(timeZoneCode, removeUTC = false){
-            let offset = timezonesWithoffsets.find((element) => element['abbreviation']==timeZoneCode)['offset']
+            timeZone = timezonesWithoffsets.find((element) => element['abbreviation']===timeZoneCode)
+            let offset = timeZone['offset']
             if (removeUTC){
-                offset.replace('UTC','')
+                offset = offset.replace('UTC','')
             }
+            return offset
         }
 
         const dtFormat = new Intl.DateTimeFormat(navigator.languages[0], {
@@ -83,6 +85,20 @@
   			second: "numeric",
             timeZoneName: 'short',
         })
+
+        function tzStringFromTimeZoneCode(timeZoneCode){
+            let timeZone = timezonesWithoffsets.find((element) => element['abbreviation']==timeZoneCode)['timeZone']
+            return timeZone
+        }
+
+        function nativeTZ(date){
+            let newdate = `${date.getFullYear()}-${padInt(date.getMonth()+1)}-${padInt(date.getDate())}T${padInt(date.getHours())}:${padInt(date.getMinutes())}:${padInt(date.getSeconds())}.${date.getMilliseconds()}`
+            return newdate
+        }
+
+        function padInt(n){
+            return String(n).padStart(2, '0')
+        }
     </script>
 
     {% block content %}

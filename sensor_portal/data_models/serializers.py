@@ -73,7 +73,8 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedM
     # always return in UTC regardless of server setting
     deploymentStart = serializers.DateTimeField(
         default=djtimezone.now(), default_timezone=djtimezone.utc)
-    deploymentEnd = serializers.DateTimeField(default_timezone=djtimezone.utc)
+    deploymentEnd = serializers.DateTimeField(
+        default_timezone=djtimezone.utc, required=False)
 
     # check project permissions here or in viewpoint
 
