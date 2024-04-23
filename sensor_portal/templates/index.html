@@ -128,10 +128,13 @@
 	}
 
 
+
+
+
 	[x-cloak] { display: none !important; }
 </style>
 
-<div class="container">
+<div class="container-lg">
 	<div x-data="allData">
 		<div id="search-form-div">
 			<form class="row gy-2 gx-3 mb-3 align-items-center"
@@ -203,11 +206,15 @@
 				</div>
 			</div>
 				 
-			<div class="col-lg-auto col-sm-12">
-				<div class="d-grid gap-2 d-md-block mx-auto">
-					<button class="btn btn-primary btn-lg">Search</button>
-					<input type="reset" class="btn btn-danger btn-lg"> </input>
+			<div class="col col-lg-5 col-sm-12">
+				<div class="gap-2 mx-auto">
+					<button class="btn btn-primary btn-lg my-sm-1 col-sm-12 col-lg-2">Search</button>
+					<input type="reset" class="btn btn-danger btn-lg my-sm-1 col-sm-12 col-lg-2"> </input>
+					<div class="float-lg-end">
+					<button class="btn btn-success btn-lg my-sm-1 col-sm-12 col-lg-auto" x-on:click.prevent="setModalData(true,true,true)">Add new deployment</button>
+					</div>
 				</div>
+				
 			</div>
 
 			<input name="page" class="d-none" type="number" x-model.number="pageNum">  
@@ -236,7 +243,7 @@
 						/>  
 					</li>
 					<li class="page-item page-description">
-						<span class="text-center align-middle page-count" x-text="`of ${totalPages}`"></span>
+						<div class="text-center align-middle page-count" x-text="`of ${totalPages}`"></span>
 					</li>
 					<li class="page-item">
 						<a class="btn btn-outline-primary button-right" aria-label="Next" 
@@ -261,7 +268,7 @@
 
 						<a class="btn btn-outline-light paginator-button modal-title"  aria-label="Previous" 
 						x-on:click="openCardDetail($event,cardIndex,-1)" 
-						:class="{'disabled': (!isReady)||checkLeftDisabled()}"
+						:class="{'disabled': (!isReady|createNew)||checkLeftDisabled()}"
 						x-cloak
 						>
 							<h5 class="paginator-arrow" aria-hidden="true">&laquo;</h5>
@@ -276,7 +283,7 @@
 							x-on:mouseover.self="if(!tooltipWait){tooltip = true; tooltipText = 'Copy address to clipboard'}" 
 							x-on:mouseleave.self="tooltip = false; tooltipWait = false" 
 							x-data="{tooltip:false,tooltipText:'', tooltipWait:false}"
-							:class="{'disabled': (!isReady)}"
+							:class="{'disabled': (!isReady | createNew)}"
 							>
 							
 								
@@ -301,7 +308,7 @@
 						<button type="button" class="btn-close btn-close-white close-button" data-dismiss="modal" aria-label="Close" @click.prevent="showModal=false; formId=''; editDetail=false"></button>
 						<a class="btn btn-outline-light paginator-button modal-title ms-1" aria-label="Next" 
 						x-on:click="openCardDetail($event,cardIndex,+1)"
-						:class="{'disabled': (!isReady)||checkRightDisabled()}"
+						:class="{'disabled': (!isReady|createNew)||checkRightDisabled()}"
 						x-cloak
 						>
 							<h5 class="paginator-arrow" aria-hidden="true">&raquo;</h5>
@@ -643,6 +650,7 @@
 		urlQuery: new URLSearchParams(location.search),
 		showModal: false,
 		editDetail: false,
+		createNew: false,
 		pageNum:1,
 		pageSize:1,
 		returnedData: [],
@@ -690,6 +698,7 @@
 				hidePlaceholder:false,
 				createOnBlur: true,
 				create: true,
+				persist: false,
 				sortField: {
 					field: "text",
 					direction: "asc"
@@ -717,6 +726,22 @@
 					}
 				});
 				deviceselect.on('change',()=>{this.getDetailDevices()})
+				document.querySelectorAll("#detailForm").forEach((formElement) => {
+    			formElement.addEventListener("reset", (event) => {
+					event.target
+					.querySelectorAll(".tomselected")
+					.forEach((tomselectedElement) => {
+						if(tomselectedElement.classList.contains('dropdownTimeZone')){
+							console.log(tomselectedElement)
+							tomselectedElement.tomselect.setValue(browserTimezone)
+							tomselectedElement.tomselect.sync()
+							
+						}else{
+							tomselectedElement.tomselect.clear();
+						}
+					});
+				});
+  			});
 			});			
 		},
 		async getDetailDevices(){
@@ -767,62 +792,85 @@
 				this.setModalData()
 			}
 		},
-		setModalData(open=true, edit=false){
-			//should check for results
-			newModalData = this.returnedData['results'][this.cardIndex]
-			let url = new URL(window.location.href);
-			url.searchParams.set('detail', true);
-			url.searchParams.set('detailIndex', 0);
-			url.searchParams.set('id', newModalData['id']);
-			newModalData['detail_url'] = url.toString()
+		setModalData(open=true, edit=false, create=false){
+			if(!create){
+				//should check for results
+				newModalData = this.returnedData['results'][this.cardIndex]
+				let url = new URL(window.location.href);
+				url.searchParams.set('detail', true);
+				url.searchParams.set('detailIndex', 0);
+				url.searchParams.set('id', newModalData['id']);
+				newModalData['detail_url'] = url.toString()
 
-			//convert timezone to local timezone
-			for(key of timeKeys){
-				if(key in newModalData){
-					let currentTime = newModalData[key]
-					if (currentTime){
-						console.log(newModalData[key])
-						let dateTime = new Date(currentTime)
-						console.log(dateTime)
-						newModalData[key] = dateTime
+				//convert timezone to local timezone
+				for(key of timeKeys){
+					if(key in newModalData){
+						let currentTime = newModalData[key]
+						if (currentTime){
+							console.log(newModalData[key])
+							let dateTime = new Date(currentTime)
+							console.log(dateTime)
+							newModalData[key] = dateTime
+						}
 					}
 				}
-			}
 
-			this.modalData = newModalData;
-			let { elements } = document.querySelector('#detailForm')
+				this.modalData = newModalData;
+				let { elements } = document.querySelector('#detailForm')
 			
-			for ( [ key, value ] of Object.entries(newModalData) ) {
-				const field = elements.namedItem(key)
-				if(field && field.classList.contains('tomselected')){
-					
-					field.tomselect.clear()
-					let value_ids = newModalData[key];
-					value_ids = value_ids ? [].concat(value_ids) : [];
-					for (value_id of value_ids){
-						field.tomselect.addItem(value_id)
+				for ( [ key, value ] of Object.entries(newModalData) ) {
+					const field = elements.namedItem(key)
+					if(field && field.classList.contains('tomselected')){
 						
+						field.tomselect.clear()
+						let value_ids = newModalData[key];
+						value_ids = value_ids ? [].concat(value_ids) : [];
+						for (value_id of value_ids){
+							field.tomselect.addItem(value_id)
+							
+						}
+						field.tomselect.refreshItems()
+					}else if(field && value && timeKeys.includes(key)){
+						let newvalue = nativeTZ(value);
+						elements.namedItem(`${key}_TZ`).tomselect.addItem(getTimeZoneCode(value))
+						field.value = newvalue
+						
+					}else{
+						field && (field.value = value)
+						field && (console.log(field))
+						field && (console.log(value))
+						field && (console.log(field.value))
 					}
-					field.tomselect.refreshItems()
-				}else if(field && value && timeKeys.includes(key)){
-					let newvalue = nativeTZ(value);
-					elements.namedItem(`${key}_TZ`).tomselect.addItem(getTimeZoneCode(value))
-					field.value = newvalue
 					
-				}else{
-					field && (field.value = value)
-					field && (console.log(field))
-					field && (console.log(value))
-					field && (console.log(field.value))
 				}
+			}else{
 				
+				document.querySelector('#detailForm').reset()
+
+				document.querySelector("#detailForm")
+					.querySelectorAll(".tomselected")
+					.forEach((tomselectedElement) => {
+						if(tomselectedElement.classList.contains('dropdownTimeZone')){
+							console.log(tomselectedElement)
+							tomselectedElement.tomselect.setValue(browserTimezone)
+							tomselectedElement.tomselect.sync()
+						}
+					});
+				
+  			
+
+				this.modalData = {}
+				this.createNew = true;
 			}
 			if (edit){
-				this.edit = true
+				console.log('edit')
+				this.editDetail = true
 			}
 			if (open){
 				this.showModal = true;
-				this.setSearchURL();
+				if(!create){
+					this.setSearchURL();
+				}
 			}
 		},
 		async refreshData(e){
@@ -857,21 +905,30 @@
 
 		},
 		async detailformSubmit(e){
-			formData = new FormData(e.target);
 			
+			let formData = new FormData(e.target);
+
+			console.log(formData)
 			for ([key,value] of formData.entries()) {
+				
 				if(timeKeys.includes(key) && !(value==="")){
 					//get timezone offset
+					
 					let tzcode = formData.get(`${key}_TZ`)
+					console.log(key, `${key}_TZ`, tzcode)
 					let offset = getOffset(tzcode, true)
 					newTimeString = value+offset
 					formData.set(key , newTimeString)
 				}
+				if(value===""){
+					formData.delete(key)
+				}
 			}
-
+			console.log(formData.entries());
 			let method = "POST"
 			let apiURL = `api/${modelType}/`
-			if (formData.get('id')!=''){
+			
+			if (formData.get('id')!=undefined){
 				apiURL+=`${formData.get('id')}/`
 				method = "PATCH"
 			}
@@ -895,7 +952,7 @@
 		},
 		clampPages(){
 			this.getPages();
-			if (this.pageNum>this.totalPages){
+			if (this.pageNum>this.totalPages & this.totalPages>0){
 				console.log('change page number from clamp')
 				this.pageNum = this.totalPages;
 				return false;
