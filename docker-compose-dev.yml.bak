@@ -3,8 +3,8 @@ services:
   sensor_portal_django:
     build:
       context: .
-      dockerfile: ./dockerfiles/sensor_portal.dockerfile
-    image: web_service_image
+      dockerfile: ./dockerfiles/sensor_portal_django.dockerfile
+    image: sensor_portal_django_image
     command: bash -c "python manage.py wait_for_db && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - ./file_storage:/media/file_storage
@@ -16,137 +16,81 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
-      - CELERY_BROKER=redis://redis:6379/0
-      - CELERY_BACKEND=redis://redis:6379/0
+      - CELERY_BROKER=redis://sensor_portal_redis:6379/0
+      - CELERY_BACKEND=redis://sensor_portal_redis:6379/0
       - DEV=True
     depends_on:
-      - db
-      - redis
-    secrets:
-      - ftpsecret
-      - sheetsecret
-      - mailsecret
-      - surfsecret
-      - djangosecret
-      - captchasecret
-      - diopsissecret
+      - sensor_portal_db
+      - sensor_portal_redis
     restart: always
-  webserviceworker:
+  sensor_portal_worker:
     image: web_service_image
-    command: bash -c "celery -A Web_service worker --autoscale 10,1 --loglevel=INFO -Q webservice"
-    secrets:
-      - ftpsecret
-      - sheetsecret
-      - mailsecret
-      - surfsecret
-      - djangosecret
-      - captchasecret
-      - diopsissecret
+    command: bash -c "celery -A sensor_portal worker --autoscale 10,1 --loglevel=INFO -Q main_worker"
     volumes:
-      - ./exportdir:/media/exportdir
-      - ./logs:/media/logs
-      - ./Web_service:/usr/src/Web_service
+      - ./file_storage:/media/file_storage
+      - ./sensor_portal:/usr/src/sensor_portal
     environment:
       - POSTGRES_NAME=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
-      - CELERY_BROKER=redis://redis:6379/0
-      - CELERY_BACKEND=redis://redis:6379/0
+      - CELERY_BROKER=redis://sensor_portal_redis:6379/0
+      - CELERY_BACKEND=redis://sensor_portal_redis:6379/0
       - DEV=True
     depends_on:
-      - db
-      - redis
-      - webservice
+      - sensor_portal_db
+      - sensor_portal_redis
+      - sensor_portal_django
     restart: always
-  dbworker:
+  sensor_portal_single_worker:
     image: web_service_image
-    command: bash -c "celery -A Web_service worker -c 1 --loglevel=INFO -Q database"
-    secrets:
-      - ftpsecret
-      - sheetsecret
-      - mailsecret
-      - surfsecret
-      - djangosecret
-      - captchasecret
-      - diopsissecret
+    command: bash -c "celery -A sensor_portal worker -c 1 --loglevel=INFO -Q single_worker"
     volumes:
-      - ./exportdir:/media/exportdir
-      - ./logs:/media/logs
-      - ./Web_service:/usr/src/Web_service
+      - ./file_storage:/media/file_storage
+      - ./sensor_portal:/usr/src/sensor_portal
     environment:
       - POSTGRES_NAME=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
-      - CELERY_BROKER=redis://redis:6379/0
-      - CELERY_BACKEND=redis://redis:6379/0
+      - CELERY_BROKER=redis://sensor_portal_redis:6379/0
+      - CELERY_BACKEND=redis://sensor_portal_redis:6379/0
       - DEV=True
     depends_on:
-      - db
-      - redis
-      - webservice
+      - sensor_portal_db
+      - sensor_portal_redis
+      - sensor_portal_django
     restart: always
-  webservicebeat:
+  sensor_portal_beat:
     image: web_service_image
-    command: bash -c "celery -A Web_service beat --loglevel=INFO"
-    secrets:
-      - djangosecret
-      - captchasecret
+    command: bash -c "celery -A sensor_portal beat --loglevel=INFO"
     environment:
       - POSTGRES_NAME=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - DJANGO_ALLOWED_HOSTS=localhost 127.0.0.1 [::1]
-      - CELERY_BROKER=redis://redis:6379/0
-      - CELERY_BACKEND=redis://redis:6379/0
+      - CELERY_BROKER=redis://sensor_portal_redis:6379/0
+      - CELERY_BACKEND=redis://sensor_portal_redis:6379/0
       - DEV=True
     depends_on:
-      - db
-      - redis
-      - webserviceworker
-      - webservice
+      - sensor_portal_db
+      - sensor_portal_redis
+      - sensor_portal_django
+    volumes:
+      - ./sensor_portal:/usr/src/sensor_portal
     restart: always
-  db:
+  sensor_portal_db:
     image: postgis/postgis:14-3.3
     volumes:
-      - ./data/db:/var/lib/postgresql/data
+      - ./sensor_portal_database:/var/lib/postgresql/data
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     restart: always
-  redis:
+  sensor_portal_redis:
       image: "redis:alpine"
       restart: always
-  birdnet:
-    build:
-      context: C:/Users/jevans/Documents/GitHub/BirdNET-Analyzer-celery
-    image: birdnet
-    command: bash -c "celery -A worker.worker worker --autoscale 10,1 --loglevel=INFO -Q birdnet"
-    restart: always 
-    volumes:
-      - ./exportdir:/media/exportdir
-    environment: 
-      - CELERY_BROKER=redis://redis:6379/0
-      - CELERY_BACKEND=redis://redis:6379/0
-    restart: always
 volumes:
-  exportdir:
-  logs:
-  db:
-secrets:
-  ftpsecret:
-    file: ./secrets/ftpsecret
-  sheetsecret:
-    file: ./secrets/sheetsecret
-  mailsecret:
-    file: ./secrets/mailsecret
-  surfsecret:
-    file: ./secrets/surfsecret
-  djangosecret:
-    file: ./secrets/djangosecret
-  captchasecret:
-    file: ./secrets/captchasecret
-  diopsissecret:
-    file: ./secrets/diopsissecret
+  file_storage:
+  sensor_portal_database:

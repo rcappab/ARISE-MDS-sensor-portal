@@ -4,7 +4,7 @@ services:
     build:
       context: .
       dockerfile: ./dockerfiles/sensor_portal_django.dockerfile
-    image: web_service_image
+    image: sensor_portal_django_image
     command: bash -c "python manage.py wait_for_db && python manage.py runserver 0.0.0.0:8000"
     volumes:
       - ./file_storage:/media/file_storage
@@ -24,7 +24,7 @@ services:
       - sensor_portal_redis
     restart: always
   sensor_portal_worker:
-    image: web_service_image
+    image: sensor_portal_django_image
     command: bash -c "celery -A sensor_portal worker --autoscale 10,1 --loglevel=INFO -Q main_worker"
     volumes:
       - ./file_storage:/media/file_storage
@@ -43,7 +43,7 @@ services:
       - sensor_portal_django
     restart: always
   sensor_portal_single_worker:
-    image: web_service_image
+    image: sensor_portal_django_image
     command: bash -c "celery -A sensor_portal worker -c 1 --loglevel=INFO -Q single_worker"
     volumes:
       - ./file_storage:/media/file_storage
@@ -62,7 +62,7 @@ services:
       - sensor_portal_django
     restart: always
   sensor_portal_beat:
-    image: web_service_image
+    image: sensor_portal_django_image
     command: bash -c "celery -A sensor_portal beat --loglevel=INFO"
     environment:
       - POSTGRES_NAME=postgres
