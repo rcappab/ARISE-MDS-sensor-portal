@@ -3,12 +3,17 @@ from django.utils import timezone as djtimezone
 from PIL import ExifTags, Image
 from rest_framework import serializers
 from rest_framework_gis import serializers as geoserializers
-
 from user_management.models import User
 from utils.serializers import SlugRelatedGetOrCreateField
 
 from . import validators
 from .models import *
+
+
+class CheckFormMixIn():
+    def __init__(self, *args, **kwargs):
+        super(CheckFormMixIn, self).__init__(*args, **kwargs)
+        self.form_submission = self.context.get("form")
 
 
 class InstanceGetMixIn():
@@ -21,8 +26,10 @@ class InstanceGetMixIn():
 
 
 class CreatedModifiedMixIn(serializers.ModelSerializer):
-    created_on = serializers.DateTimeField(default_timezone=djtimezone.utc, read_only= True)
-    modified_on = serializers.DateTimeField(default_timezone=djtimezone.utc, read_only = True)
+    created_on = serializers.DateTimeField(
+        default_timezone=djtimezone.utc, read_only=True)
+    modified_on = serializers.DateTimeField(
+        default_timezone=djtimezone.utc, read_only=True)
 
 
 class OwnerMangerMixIn(serializers.ModelSerializer):
@@ -46,7 +53,7 @@ class OwnerMangerMixIn(serializers.ModelSerializer):
         return initial_rep
 
 
-class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedMixIn, serializers.ModelSerializer):
+class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedMixIn, CheckFormMixIn, serializers.ModelSerializer):
     device_type = serializers.SlugRelatedField(
         slug_field='name', queryset=DataType.objects.all(), required=False)
     device_type_id = serializers.PrimaryKeyRelatedField(queryset=DataType.objects.all().values_list('pk', flat=True),
@@ -110,7 +117,8 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedM
                 'device',
                 'device_id',
                 data,
-                Device
+                Device,
+                self.form_submission
             )
             if not result:
                 raise serializers.ValidationError(message)
@@ -120,7 +128,8 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedM
                 'site',
                 'site_id',
                 data,
-                Site
+                Site,
+                self.form_submission
             )
             if not result:
                 raise serializers.ValidationError(message)
@@ -144,6 +153,7 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedM
                                                               self.instance_get('id', data))
         if not result:
             raise serializers.ValidationError(message)
+
         return data
 
 

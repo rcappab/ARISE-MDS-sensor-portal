@@ -4,7 +4,6 @@ from rest_framework import status, viewsets
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework_gis import filters as filters_gis
-
 from utils.general import get_new_name, handle_uploaded_file
 from utils.viewsets import OptionalPaginationViewSet
 
@@ -18,7 +17,16 @@ class AddOwnerViewSet(viewsets.ModelViewSet):
         serializer.save(owner=self.request.user)
 
 
-class DeploymentViewSet(AddOwnerViewSet, OptionalPaginationViewSet):
+class CheckFormViewSet(viewsets.ModelViewSet):
+    def get_serializer_context(self):
+        context = super(CheckFormViewSet, self).get_serializer_context()
+
+        context.update(
+            {'form': 'multipart/form-data' in self.request.content_type})
+        return context
+
+
+class DeploymentViewSet(AddOwnerViewSet, CheckFormViewSet, OptionalPaginationViewSet):
     search_fields = ['deployment_deviceID', 'device__name', 'device__deviceID']
     queryset = Deployment.objects.all()
     filterset_class = DeploymentFilter

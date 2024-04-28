@@ -128,7 +128,14 @@
 	}
 
 
+	.was-validated :invalid ~ .form-text .invalid-feedback{
+		display:inline;
+		font-weight:bold;
+	}
 
+	.form-floating > .form-control-plaintext ~ label::after, .form-floating > .form-control:focus ~ label::after, .form-floating > .form-control:not(:placeholder-shown) ~ label::after, .form-floating > .form-select ~ label::after{
+		background-color: transparent;
+	}
 
 
 	[x-cloak] { display: none !important; }
@@ -317,27 +324,42 @@
 					</div>
 					<div class="modal-body">
 						<div x-show="editDetail===true && isReady === true">
-							<form @submit.prevent="detailformSubmit" id="detailForm">
+							<form @submit.prevent="detailformSubmit" id="detailForm" novalidate="True" class="row gy-2 gx-3 mb-3 align-items-center">
 							<input name="id" class="d-none" id="post-id"  placeholder="">
 
 
 								<div class="form-floating">
-									<input name="deploymentID" class="form-control" id="post-deployment"  placeholder="">
+									<input name="deploymentID" class="form-control" id="post-deployment"  placeholder="" required>
 									<label for="post-deployment">deployment ID</label>
+									<div class="form-text">
+										ID for your deployment.
+										<div class="invalid-feedback">
+											This field is required.
+										</div>
+									</div>
+
 								</div>
 
 								<div class="form-floating">
-									<select class="form-control-lg  form-select" name="device_type" id="post-datatype" placeholder="">
+
+									<select class="form-control-lg  form-select" name="device_type" id="post-datatype" placeholder="" required>
 										<option value=""></option>
 										<template x-for="(datatype, index) in typeData">
 											<option x-bind:value="datatype['name']" x-text="datatype['name']"></option>
 										</template>
 								</select>
 								<label for="post-datatype">Device type</label>
+								<div class="form-text">
+									Device type of your deployment
+									<div class="invalid-feedback">
+										This field is required.
+									</div>
+								</div>
+
 								</div>
 
 								<div class="form-floating">
-									<input name="device_n" class="form-control" id="post-device_n"  placeholder="1">
+									<input name="device_n" class="form-control" id="post-device_n"  placeholder="1" value="1">
 									<label for="post-device_n">number</label>
 								</div>
 
@@ -349,26 +371,49 @@
 										</template>
 								</select>
 								<label for="post-project">Project</label>
+								<div class="form-text">
+									Deployment project.
+								</div>
 								</div>
 
 								<div class="form-floating">
-									<select class="form-control-lg  form-select" name="site" id="post-site" placeholder="">
+									<select class="form-control-lg  form-select" name="site" id="post-site" placeholder="" required>
+											<option value=""></option>
 											<template x-for="(site, index) in siteData">
 												<option x-bind:value="site['short_name']" x-text="site['name']"></option>
 											</template>
 									</select>
 									<label for="post-site">Site</label>
+									<div class="form-text">
+										Deployment site. New sites can be added.
+										<div class="invalid-feedback">
+											This field is required.
+										</div>
+									</div>
 								</div>
 
 								<div class="form-floating">
-									<select class="form-control-lg  form-select" name="device" id="post-device" placeholder="">
+									<select class="form-control-lg  form-select" name="device" id="post-device" placeholder="" required>
 									</select>
 									<label for="post-device">Device</label>
+									<div class="form-text">
+										Deployment device. 
+										<div class="invalid-feedback">
+											This field is required.
+										</div>
+									</div>
 								</div>
 
 								<div class="form-floating">
-									<input class="form-control" step="0.001" type="datetime-local"  id="post-start_date" name="deploymentStart">
+									<input class="form-control" step="0.001" x-bind:value="nativeTZ(new Date())" type="datetime-local"  id="post-start_date" name="deploymentStart" required>
 									<label for="post-start_date">Deployment started</label>
+									<div class="form-text">
+										Date and time deployment starts.
+										<div class="invalid-feedback">
+											This field is required.
+										</div>
+									</div>
+
 								</div>
 
 								<div class="form-floating">
@@ -392,7 +437,7 @@
 
 								<div class="d-grid gap-2 d-md-block mx-auto">
 									<button class="btn btn-primary btn-lg">Save</button>
-									<button class="btn btn-danger btn-lg" x-on:click="editDetail=false"> Cancel </button>
+									<button class="btn btn-danger btn-lg" x-on:click.prevent="if(createNew){showModal=false}; editDetail=false;"> Cancel </button>
 								</div>
 							</form>
 						</div>
@@ -487,8 +532,8 @@
 
 <script>
 
-	//calculate number of pages from page_size
-
+	
+	// Submit data to API
 	async function SubmitData(url, data, method = "POST"){
 		response =  await fetch(url,
 		{
@@ -502,6 +547,7 @@
 		)
 		
 		response_json = await response.json()
+		response_json['ok']=response.ok
 		return response_json;
 	}
 
@@ -517,7 +563,7 @@
 		)
 		
 		response_json = await response.json()
-		
+		response_json['ok']=response.ok
 		return response_json;
 	}
 
@@ -683,6 +729,9 @@
 			this.$watch('cardIndex', value => this.setSearchURL())
 		},
 		async prepareDetailForm(){
+
+			
+
 			let deviceselect = new TomSelect("#post-datatype",{
 					allowEmptyOption:false,
 					hidePlaceholder:false,
@@ -845,24 +894,11 @@
 				}
 			}else{
 				
-				document.querySelector('#detailForm').reset()
-
-				document.querySelector("#detailForm")
-					.querySelectorAll(".tomselected")
-					.forEach((tomselectedElement) => {
-						if(tomselectedElement.classList.contains('dropdownTimeZone')){
-							console.log(tomselectedElement)
-							tomselectedElement.tomselect.setValue(browserTimezone)
-							tomselectedElement.tomselect.sync()
-						}
-					});
-				
-  			
-
-				this.modalData = {}
+				this.resetPostForm()
 				this.createNew = true;
 			}
 			if (edit){
+				document.querySelector('#detailForm').classList.remove('was-validated')
 				console.log('edit')
 				this.editDetail = true
 			}
@@ -872,6 +908,22 @@
 					this.setSearchURL();
 				}
 			}
+		},
+		resetPostForm(){
+			document.querySelector('#detailForm').classList.remove('was-validated')
+				document.querySelector('#detailForm').reset()
+				document.getElementById('post-start_date').value = nativeTZ(new Date())
+				document.querySelector("#detailForm")
+					.querySelectorAll(".tomselected")
+					.forEach((tomselectedElement) => {
+						if(tomselectedElement.classList.contains('dropdownTimeZone')){
+							console.log(tomselectedElement)
+							tomselectedElement.tomselect.setValue(browserTimezone)
+							tomselectedElement.tomselect.sync()
+						}
+					});
+
+				this.modalData = {}
 		},
 		async refreshData(e){
 			if(e){
@@ -905,10 +957,19 @@
 
 		},
 		async detailformSubmit(e){
-			
-			let formData = new FormData(e.target);
 
+			let formData = new FormData(e.target);
 			console.log(formData)
+
+			e.target.classList.add("was-validated")
+			if(!e.target.checkValidity()){
+				console.log("NO");
+				e.preventDefault()
+          		e.stopPropagation()
+				return
+			}
+
+			
 			for ([key,value] of formData.entries()) {
 				
 				if(timeKeys.includes(key) && !(value==="")){

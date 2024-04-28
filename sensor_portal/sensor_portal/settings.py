@@ -27,12 +27,18 @@ FILE_STORAGE_URL = 'storage/'
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-c-=p42@cm%8sy6-49_32*1g31eh*_w^nj)is51-%$m49zwkvm7'
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+if os.environ.get('DEV') is not None or platform.system() == "Windows":
+    print("Running in dev mode")
+    DEBUG = True
+    STATIC_URL = 'static/'
+    STATICFILES_DIRS = [
+        os.path.join(BASE_DIR, 'static_files'),
+    ]
+    STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 ALLOWED_HOSTS = []
 
-print("ARGH!")
+print("Reading settings!")
 
 # Application definition
 
@@ -154,7 +160,6 @@ SHORT_DATETIME_FORMAT = 'Y-n-j G:i:s'
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
 
-STATIC_URL = 'static/'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
