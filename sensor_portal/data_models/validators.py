@@ -1,15 +1,13 @@
-from .models import *
-
-
 def data_file_in_deployment(recording_dt, deployment):
-    """_summary_
+    """
+    Check if a date falls within a deployment's date range.
 
     Args:
-        recording_dt (_type_): _description_
-        deployment (_type_): _description_
+        recording_dt (datetime): Recording date time to check
+        deployment (Deployment): Deployment object to check
 
     Returns:
-        _type_: _description_
+        success (boolean), error message (dict where the key is the associated field name)
     """
     if deployment.deploymentEnd is None:
         deployment_end = ""
@@ -24,14 +22,15 @@ def data_file_in_deployment(recording_dt, deployment):
 
 
 def deployment_start_time_after_end_time(start_dt, end_dt):
-    """_summary_
+    """
+    Check if end time is after start time
 
     Args:
-        start_dt (_type_): _description_
-        end_dt (_type_): _description_
+        start_dt (datetime): Start time to check
+        end_dt (datetime): _description_
 
     Returns:
-        _type_: _description_
+            tuple: success (boolean), error message (dict where the key is the associated field name)
     """
     if (end_dt is None) or (end_dt > start_dt):
         return True, ""
@@ -41,35 +40,40 @@ def deployment_start_time_after_end_time(start_dt, end_dt):
 
 
 def deployment_check_overlap(start_dt, end_dt, device, deployment_pk):
-    """_summary_
+    """
+    Check if a new deployment of a device would overlap with existing deployments.
 
     Args:
-        start_dt (_type_): _description_
-        end_dt (_type_): _description_
-        device (_type_): _description_
-        deployment_pk (_type_): _description_
+        start_dt (datetime): start datetime of new deployment
+        end_dt (datetime): end datetime of new deployment
+        device (Device): Device of new deployment
+        deployment_pk (int): pk of a deployment to be ignored when considering overlaps.
+        Include if editing an existing deployment to avoid checking for overlap with itself.
 
     Returns:
-        _type_: _description_
+            success (boolean), error message (dict where the key is the associated field name)
     """
     overlapping_deployments = device.check_overlap(
         start_dt, end_dt, deployment_pk)
     if len(overlapping_deployments) == 0:
         return True, ""
-    error_message = {"deploymentStart": f"this deployment of {device.deviceID} would overlap with {','.join(overlapping_deployments)}",
-                     "deploymentEnd": f"this deployment of {device.deviceID} would overlap with {','.join(overlapping_deployments)}"}
+    error_message = {
+        "deploymentStart": f"this deployment of {device.deviceID} "
+        f"would overlap with {','.join(overlapping_deployments)}"
+    }
     return False, error_message
 
 
 def deployment_check_type(device_type, device):
-    """_summary_
+    """
+    Check if a deployment matches it's device type.
 
     Args:
-        device_type (_type_): _description_
-        device (_type_): _description_
+        device_type (DataType): New deployment device type.
+        device (Device): Device of new deployment.
 
     Returns:
-        _type_: _description_
+            success (boolean), error message (dict where the key is the associated field name)
     """
     if device_type is None or device.type == device_type:
         return True, ""
@@ -79,16 +83,22 @@ def deployment_check_type(device_type, device):
 
 
 def check_two_keys(primary_key, secondary_key, data, target_model, form_submission=False):
-    """_summary_
+    """
+    Function to check if at least one of two keys is included in serialized data.
+    If only secondary key is present, get the value of the primary key from the target_model.
 
     Args:
-        primary_key (_type_): _description_
-        secondary_key (_type_): _description_
-        data (_type_): _description_
-        target_model (_type_): _description_
+        primary_key (str): First key to check.
+        secondary_key (str): Second key to check.
+        data (SerializedData): Serialized data to check for the presence of the keys
+        target_model (django.db.models.Model): Model class to pull value of primary key
+        form_submission (bool): True if this check is being carried out by a submitted form,
+        modifies the error message returned.
 
     Returns:
-        _type_: _description_
+            success (boolean)
+            error message (dict where the key is the associated field name)
+            modified serialized data (SerializedData)
     """
 
     if data.get(primary_key) is None and data.get(secondary_key) is None:
@@ -102,4 +112,4 @@ def check_two_keys(primary_key, secondary_key, data, target_model, form_submissi
         data[primary_key] = target_model.objects.get(
             pk=data.get(secondary_key))
 
-    return True, "", data
+    return True, {}, data
