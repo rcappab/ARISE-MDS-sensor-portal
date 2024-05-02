@@ -124,7 +124,8 @@
     cursor: text !important;
   }
 
-  .was-validated :invalid ~ .form-text .invalid-feedback {
+  .was-validated :invalid ~ .form-text .invalid-feedback,
+  .is-invalid ~ .form-text .invalid-feedback {
     display: inline;
     font-weight: bold;
   }
@@ -802,7 +803,8 @@
     if (!responseData) {
       form.classList.add("was-validated");
     } else {
-      keys = responseData.keys();
+      console.log(responseData)
+      keys = Object.keys(responseData);
       form.classList.remove("was-validated");
     }
 
@@ -813,17 +815,28 @@
       if (input) {
         let invalidFeedback =
           input.parentNode.querySelector(".invalid-feedback");
-        console.log(invalidFeedback);
-        if (invalidFeedback) {
+        
           if (!responseData) {
+            input.classList.remove('is-invalid')
+            input.classList.remove('is-valid')
+            if (invalidFeedback) {
             if (input.required) {
               invalidFeedback.innerHTML = "This field is required";
             } else {
               invalidFeedback.innerHTML = "";
             }
-          } else {
           }
-        }
+          } else {
+            if(keys.includes(key)){
+              if (invalidFeedback) {
+                invalidFeedback.innerHTML = responseData[key]
+              }
+              input.classList.add('is-invalid')
+            }else{
+              input.classList.add('is-valid')
+            }
+          }
+        
       }
     }
   }
@@ -1263,7 +1276,7 @@
         console.log(api_response_data);
 
         if (!api_response_data["ok"]) {
-          //loop through the keys of the returned data and set inner HTML accordingly
+          setInvalidFeedback(api_response_data);
         }
       },
       setSearchURL(searchParams) {
