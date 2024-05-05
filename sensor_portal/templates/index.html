@@ -513,13 +513,13 @@
                   />
                   <label for="post-device_n">number</label>
                 </div>
-
                 <div class="form-floating">
                   <select
                     class="form-control-lg form-select"
                     name="project"
                     id="post-project"
                     placeholder=""
+                    value=""
                     multiple
                   >
                     <option value=""></option>
@@ -795,48 +795,69 @@
     };
   }
 
-  function setInvalidFeedback(responseData = null) {
-    let form = document.getElementById("detailForm");
-    let formData = new FormData(form);
-    let allFormKeys = formData.keys();
+  function resetInvalidFeedback(form) {
+    let { elements } = form;
+    form.classList.remove("was-validated");
+    console.log("reset");
+    for (element of elements) {
+      console.log(element);
+      element.classList.remove("is-invalid");
+      element.classList.remove("is-valid");
+      let tom_select = element.parentNode.querySelector(".ts-wrapper");
+      if (tom_select) {
+        tom_select.classList.remove("is-valid");
+        tom_select.classList.remove("is-invalid");
+      }
+    }
+  }
+
+  function setInvalidFeedback(form, allFormKeys = null, responseData = null) {
     let keys;
     if (!responseData) {
       form.classList.add("was-validated");
     } else {
-      console.log(responseData)
+      console.log(responseData);
       keys = Object.keys(responseData);
       form.classList.remove("was-validated");
     }
 
     for (const key of allFormKeys) {
-      console.log(key);
       let input = form.querySelector(`[name=${key}]`);
-      console.log(input);
       if (input) {
         let invalidFeedback =
           input.parentNode.querySelector(".invalid-feedback");
-        
-          if (!responseData) {
-            input.classList.remove('is-invalid')
-            input.classList.remove('is-valid')
-            if (invalidFeedback) {
+
+        if (!responseData) {
+          input.classList.remove("is-invalid");
+          input.classList.remove("is-valid");
+          if (invalidFeedback) {
             if (input.required) {
               invalidFeedback.innerHTML = "This field is required";
             } else {
               invalidFeedback.innerHTML = "";
             }
           }
+        } else {
+          let tom_select = input.parentNode.querySelector(".ts-wrapper");
+          if (keys.includes(key)) {
+            if (invalidFeedback) {
+              invalidFeedback.innerHTML = responseData[key];
+            }
+            input.classList.remove("is-valid");
+            input.classList.add("is-invalid");
+            if (tom_select) {
+              tom_select.classList.remove("is-valid");
+              tom_select.classList.add("is-invalid");
+            }
           } else {
-            if(keys.includes(key)){
-              if (invalidFeedback) {
-                invalidFeedback.innerHTML = responseData[key]
-              }
-              input.classList.add('is-invalid')
-            }else{
-              input.classList.add('is-valid')
+            input.classList.remove("is-invalid");
+            input.classList.add("is-valid");
+            if (tom_select) {
+              tom_select.classList.remove("is-invalid");
+              tom_select.classList.add("is-valid");
             }
           }
-        
+        }
       }
     }
   }
@@ -867,7 +888,10 @@
     "deploymentStart",
     "deploymentEnd",
   ];
+
   loadTimeZoneList();
+
+  const emptyKeys = ["project"];
 
   // Inititalise main DOM
   document.addEventListener("alpine:init", () => {
@@ -1021,7 +1045,6 @@
           new TomSelect("#post-project", {
             allowEmptyOption: true,
             hidePlaceholder: false,
-            maxItems: null,
             sortField: {
               field: "text",
               direction: "asc",
@@ -1122,6 +1145,8 @@
         }
       },
       setModalData(open = true, edit = false, create = false) {
+        let detailForm = document.querySelector("#detailForm");
+        resetInvalidFeedback(detailForm);
         if (!create) {
           //should check for results
           newModalData = this.returnedData["results"][this.cardIndex];
@@ -1145,10 +1170,12 @@
           }
 
           this.modalData = newModalData;
-          let { elements } = document.querySelector("#detailForm");
+
+          let { elements } = detailForm;
 
           for ([key, value] of Object.entries(newModalData)) {
-            const field = elements.namedItem(key);
+            let field = detailForm.querySelector(`[name=${key}]`);
+            console.log(field);
             if (field && field.classList.contains("tomselected")) {
               field.tomselect.clear();
               let value_ids = newModalData[key];
@@ -1175,22 +1202,20 @@
           this.createNew = true;
         }
         if (edit) {
-          document
-            .querySelector("#detailForm")
-            .classList.remove("was-validated");
-          console.log("edit");
           this.editDetail = true;
         }
         if (open) {
           this.showModal = true;
+
           if (!create) {
             this.setSearchURL();
           }
         }
       },
       resetPostForm() {
-        document.querySelector("#detailForm").classList.remove("was-validated");
-        document.querySelector("#detailForm").reset();
+        let form = document.querySelector("#detailForm");
+        resetInvalidFeedback(form);
+        form.reset();
         document.getElementById("post-start_date").value = nativeTZ(new Date());
         document
           .querySelector("#detailForm")
@@ -1234,13 +1259,16 @@
         this.setSearchURL(searchParams);
       },
       async detailformSubmit(e) {
-        setInvalidFeedback();
+        let form = e.target;
+        let formData = new FormData(form);
+        let allFormKeys = Array.from(formData.keys());
+        allFormKeys = allFormKeys.concat(emptyKeys);
+        setInvalidFeedback(form, allFormKeys);
 
-        let formData = new FormData(e.target);
         console.log(formData);
 
         //client side validation
-        if (!e.target.checkValidity()) {
+        if (!form.checkValidity()) {
           e.preventDefault();
           e.stopPropagation();
           return;
@@ -1255,7 +1283,7 @@
             newTimeString = value + offset;
             formData.set(key, newTimeString);
           }
-          //Delete empty fields
+          //Delete empty fields, unless this is meaningful
           if (value === "") {
             formData.delete(key);
           }
@@ -1276,7 +1304,7 @@
         console.log(api_response_data);
 
         if (!api_response_data["ok"]) {
-          setInvalidFeedback(api_response_data);
+          setInvalidFeedback(form, allFormKeys, api_response_data);
         }
       },
       setSearchURL(searchParams) {

@@ -90,6 +90,7 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedM
         exclude = ['last_image', 'last_file']
 
     def __init__(self, *args, **kwargs):
+        self.clear_project = False
         self.management_perm = 'data_models.change_deployment'
         super(DeploymentFieldsMixIn, self).__init__(*args, **kwargs)
 
@@ -98,7 +99,15 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedM
         instance.save()
         return instance
 
+    def update(self, *args, **kwargs):
+        instance = super(DeploymentFieldsMixIn, self).update(*args, **kwargs)
+        instance.save()
+        return instance
+
     def validate(self, data):
+        if self.form_submission & (data.get('project') is None):
+            data['project'] = []
+
         data = super().validate(data)
 
         # #check if a device type has been set via either method

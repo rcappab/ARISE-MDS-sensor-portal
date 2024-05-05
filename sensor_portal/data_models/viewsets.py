@@ -34,7 +34,6 @@ class DeploymentViewSet(AddOwnerViewSet, CheckFormViewSet, OptionalPaginationVie
         [filters_gis.InBBoxFilter]
 
     def get_serializer_class(self):
-        print(self.request.GET)
         if 'geoJSON' in self.request.GET.keys():
 
             return DeploymentSerializer_GeoJSON
