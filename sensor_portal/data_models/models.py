@@ -179,7 +179,7 @@ class Device(Basemodel):
         print(all_deploys.values('deploymentEnd','deploymentEnd_indefinite'))
         all_deploys = all_deploys.annotate(in_deployment=
         ExpressionWrapper(
-            Q(Q(deploymentEnd_indefinite__gte=new_start) & Q(deploymentStart__lte=new_start)),
+            Q(Q(deploymentEnd_indefinite__gte=new_start) & Q(deploymentStart__lte=new_end)),
             output_field=BooleanField()
         )
         )

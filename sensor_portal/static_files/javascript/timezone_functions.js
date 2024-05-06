@@ -51,7 +51,6 @@ function loadTimeZoneList() {
   let allSelect = document.querySelectorAll(".dropdownTimeZone");
 
   allSelect.forEach((select) => {
-    console.log(select);
     let newSelect = new TomSelect(select, {
       allowEmptyOption: false,
       hidePlaceholder: true,
@@ -85,7 +84,7 @@ function getTimeZoneCode(datetime) {
 }
 
 function getOffset(timeZoneCode, removeUTC = false) {
-  console.log(timeZoneCode);
+  //console.log(timeZoneCode);
   let timeZone = timezonesWithoffsets.find(
     (element) => element["abbreviation"] === timeZoneCode
   );

@@ -458,7 +458,7 @@
           <div class="modal-body">
             <div x-show="editDetail===true && isReady === true">
               <form
-                @submit.prevent="detailformSubmit"
+                @submit.prevent="detailformSubmit($event.target)"
                 id="detailForm"
                 novalidate="True"
                 class="row gy-2 gx-3 mb-3 align-items-center"
@@ -629,6 +629,8 @@
 
                 <div class="d-grid gap-2 d-md-block mx-auto">
                   <button class="btn btn-primary btn-lg">Save</button>
+                  <button class="btn btn-primary btn-lg" x-text="createNew ? 'Save and add another' : 'Save and keep editing'" 
+                  x-on:click.prevent="detailformSubmitButton($event, true)"></button>
                   <button
                     class="btn btn-danger btn-lg"
                     x-on:click.prevent="if(createNew){showModal=false}; editDetail=false;"
@@ -798,9 +800,7 @@
   function resetInvalidFeedback(form) {
     let { elements } = form;
     form.classList.remove("was-validated");
-    console.log("reset");
     for (element of elements) {
-      console.log(element);
       element.classList.remove("is-invalid");
       element.classList.remove("is-valid");
       let tom_select = element.parentNode.querySelector(".ts-wrapper");
@@ -1069,7 +1069,6 @@
                   if (
                     tomselectedElement.classList.contains("dropdownTimeZone")
                   ) {
-                    console.log(tomselectedElement);
                     tomselectedElement.tomselect.setValue(browserTimezone);
                     tomselectedElement.tomselect.sync();
                   } else {
@@ -1150,6 +1149,10 @@
         if (!create) {
           //should check for results
           newModalData = this.returnedData["results"][this.cardIndex];
+          if(!newModalData){
+            this.showModal = false;
+            return;
+          }
           let url = new URL(window.location.href);
           url.searchParams.set("detail", true);
           url.searchParams.set("detailIndex", 0);
@@ -1258,8 +1261,10 @@
         this.getPages();
         this.setSearchURL(searchParams);
       },
-      async detailformSubmit(e) {
-        let form = e.target;
+      detailformSubmitButton(e, keepEdit=false){
+        this.detailformSubmit(e.target.closest('form'),keepEdit)
+      },
+      async detailformSubmit(form, keepEdit=false) {
         let formData = new FormData(form);
         let allFormKeys = Array.from(formData.keys());
         allFormKeys = allFormKeys.concat(emptyKeys);
@@ -1305,6 +1310,21 @@
 
         if (!api_response_data["ok"]) {
           setInvalidFeedback(form, allFormKeys, api_response_data);
+        }else{
+          delete api_response_data["ok"];
+          if(!this.createNew){
+            this.returnedData["results"][this.cardIndex] = api_response_data
+          }else{
+            
+            let newIndex = this.returnedData["results"].push(api_response_data);
+            this.cardIndex = newIndex-1;
+            console.log(this.returnedData["results"][this.cardIndex])
+          }
+          if(!keepEdit){
+            this.editDetail = false;
+            this.createNew = false;
+          }
+          this.setModalData(true, keepEdit, this.createNew);
         }
       },
       setSearchURL(searchParams) {
