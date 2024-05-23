@@ -142,6 +142,32 @@
   }
 </style>
 
+<div
+  x-data="noticesHandler()"
+  class="position-fixed top-0 end-0 mt-3 me-3 p-3 d-flex flex-column-reverse"
+  @notice.window="add($event.detail)"
+  style="pointer-events: none; z-index: 1060"
+>
+  <template x-for="notice of notices" :key="notice.id">
+    <div
+      x-transition:enter.duration.500ms
+      x-transition:leave.duration.500ms
+      x-show="visible.includes(notice)"
+      @click="remove(notice.id)"
+      class="toast show"
+      :class="{
+				'bg-success text-light': notice.type === 'success',
+				'bg-light': notice.type === 'info',
+				'bg-warning text-light': notice.type === 'warning',
+				'bg-danger text-light': notice.type === 'error',
+			 }"
+      style="pointer-events: all; cursor: pointer"
+    >
+      <div class="toast-body"><strong x-text="notice.text"></strong></div>
+    </div>
+  </template>
+</div>
+
 <div class="container-lg">
   <div x-data="allData">
     <div id="search-form-div">
@@ -629,8 +655,11 @@
 
                 <div class="d-grid gap-2 d-md-block mx-auto">
                   <button class="btn btn-primary btn-lg">Save</button>
-                  <button class="btn btn-primary btn-lg" x-text="createNew ? 'Save and add another' : 'Save and keep editing'" 
-                  x-on:click.prevent="detailformSubmitButton($event, true)"></button>
+                  <button
+                    class="btn btn-primary btn-lg"
+                    x-text="createNew ? 'Save and add another' : 'Save and keep editing'"
+                    x-on:click.prevent="detailformSubmitButton($event, true)"
+                  ></button>
                   <button
                     class="btn btn-danger btn-lg"
                     x-on:click.prevent="if(createNew){showModal=false}; editDetail=false;"
@@ -766,6 +795,38 @@
 </div>
 
 <script>
+  function addNotice(_text, _type = "info") {
+    document.dispatchEvent(
+      new CustomEvent("notice", {
+        detail: { type: _type, text: _text },
+        bubbles: true,
+      })
+    );
+  }
+  function noticesHandler() {
+    return {
+      notices: [],
+      visible: [],
+      add(notice) {
+        notice.id = Date.now();
+        this.notices.push(notice);
+        this.fire(notice.id);
+      },
+      fire(id) {
+        this.visible.push(this.notices.find((notice) => notice.id == id));
+        const timeShown = 4000 * this.visible.length;
+        setTimeout(() => {
+          this.remove(id);
+        }, timeShown);
+      },
+      remove(id) {
+        const notice = this.visible.find((notice) => notice.id == id);
+        const index = this.visible.indexOf(notice);
+        this.visible.splice(index, 1);
+      },
+    };
+  }
+
   function cardData(index) {
     return {
       card_index: index,
@@ -1149,7 +1210,7 @@
         if (!create) {
           //should check for results
           newModalData = this.returnedData["results"][this.cardIndex];
-          if(!newModalData){
+          if (!newModalData) {
             this.showModal = false;
             return;
           }
@@ -1261,10 +1322,10 @@
         this.getPages();
         this.setSearchURL(searchParams);
       },
-      detailformSubmitButton(e, keepEdit=false){
-        this.detailformSubmit(e.target.closest('form'),keepEdit)
+      detailformSubmitButton(e, keepEdit = false) {
+        this.detailformSubmit(e.target.closest("form"), keepEdit);
       },
-      async detailformSubmit(form, keepEdit=false) {
+      async detailformSubmit(form, keepEdit = false) {
         let formData = new FormData(form);
         let allFormKeys = Array.from(formData.keys());
         allFormKeys = allFormKeys.concat(emptyKeys);
@@ -1276,6 +1337,7 @@
         if (!form.checkValidity()) {
           e.preventDefault();
           e.stopPropagation();
+          addNotice("Error in submission", "error");
           return;
         }
 
@@ -1310,17 +1372,18 @@
 
         if (!api_response_data["ok"]) {
           setInvalidFeedback(form, allFormKeys, api_response_data);
-        }else{
+          addNotice("Error in submission", "error");
+        } else {
           delete api_response_data["ok"];
-          if(!this.createNew){
-            this.returnedData["results"][this.cardIndex] = api_response_data
-          }else{
-            
+          addNotice("Deployment saved", "success");
+          if (!this.createNew) {
+            this.returnedData["results"][this.cardIndex] = api_response_data;
+          } else {
             let newIndex = this.returnedData["results"].push(api_response_data);
-            this.cardIndex = newIndex-1;
-            console.log(this.returnedData["results"][this.cardIndex])
+            this.cardIndex = newIndex - 1;
+            //console.log(this.returnedData["results"][this.cardIndex]);
           }
-          if(!keepEdit){
+          if (!keepEdit) {
             this.editDetail = false;
             this.createNew = false;
           }
