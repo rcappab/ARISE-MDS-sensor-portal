@@ -1315,9 +1315,9 @@
           if(!this.createNew){
             this.returnedData["results"][this.cardIndex] = api_response_data
           }else{
-            
-            let newIndex = this.returnedData["results"].push(api_response_data);
-            this.cardIndex = newIndex-1;
+            this.returnedData["results"].pop()
+            this.returnedData["results"].unshift(api_response_data);
+            this.cardIndex = 0;
             console.log(this.returnedData["results"][this.cardIndex])
           }
           if(!keepEdit){
