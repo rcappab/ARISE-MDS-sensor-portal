@@ -61,7 +61,8 @@ class Project(Basemodel):
     # User ownership
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, related_name="owned_projects",
                               on_delete=models.SET_NULL, null=True)
-    managers = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name="managed_projects")
+    managers = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="managed_projects")
 
     # Archiving
     archive_files = models.BooleanField(default=True)
@@ -72,9 +73,6 @@ class Project(Basemodel):
 
     def get_absolute_url(self):
         return reverse('project-detail', kwargs={'pk': self.pk})
-
-
-
 
 
 @receiver(post_save, sender=Project)
@@ -101,12 +99,14 @@ class Device(Basemodel):
     # User ownership
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, related_name="owned_devices",
                               on_delete=models.SET_NULL, null=True)
-    managers = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name="managed_devices")
+    managers = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="managed_devices")
 
     autoupdate = models.BooleanField(default=False)
     update_time = models.IntegerField(default=48)
 
-    username = models.CharField(max_length=100, unique=True, null=True, blank=True, default=None)
+    username = models.CharField(
+        max_length=100, unique=True, null=True, blank=True, default=None)
     authentication = models.CharField(max_length=100, blank=True, null=True)
     extra_info = models.JSONField(default=dict, blank=True)
 
@@ -121,12 +121,12 @@ class Device(Basemodel):
 
         all_deploys = self.deployments.all()
         if user is not None:
-            all_deploys = perms['data_models.change_deployment'].filter(user, all_deploys)
+            all_deploys = perms['data_models.change_deployment'].filter(
+                user, all_deploys)
 
         # For deployments that have not ended - end date is shifted 100 years
 
-        all_deploys = all_deploys.annotate(deploymentEnd_indefinite=
-        Case(
+        all_deploys = all_deploys.annotate(deploymentEnd_indefinite=Case(
             When(deploymentEnd__isnull=True,
                  then=ExpressionWrapper(
                      F('deploymentStart') + timedelta(days=365 * 100),
@@ -139,8 +139,7 @@ class Device(Basemodel):
 
         # Annotate by whether the datetime lies in the deployment range
 
-        all_deploys = all_deploys.annotate(in_deployment=
-        ExpressionWrapper(
+        all_deploys = all_deploys.annotate(in_deployment=ExpressionWrapper(
             Q(Q(deploymentStart__lte=dt) & Q(deploymentEnd_indefinite__gte=dt)),
             output_field=BooleanField()
         )
@@ -156,17 +155,16 @@ class Device(Basemodel):
             return None
 
     def check_overlap(self, new_start, new_end, deployment_pk):
-        
+
         new_start = check_dt(new_start)
         if new_end is None:
             new_end = new_start + timedelta(days=365 * 100)
         else:
             new_end = check_dt(new_end)
-        
+
         print(deployment_pk)
         all_deploys = self.deployments.all().exclude(pk=deployment_pk)
-        all_deploys = all_deploys.annotate(deploymentEnd_indefinite=
-        Case(
+        all_deploys = all_deploys.annotate(deploymentEnd_indefinite=Case(
             When(deploymentEnd__isnull=True,
                  then=ExpressionWrapper(
                      F('deploymentStart') + timedelta(days=365 * 100),
@@ -176,10 +174,10 @@ class Device(Basemodel):
             default=F('deploymentEnd')
         )
         )
-        print(all_deploys.values('deploymentEnd','deploymentEnd_indefinite'))
-        all_deploys = all_deploys.annotate(in_deployment=
-        ExpressionWrapper(
-            Q(Q(deploymentEnd_indefinite__gte=new_start) & Q(deploymentStart__lte=new_end)),
+        print(all_deploys.values('deploymentEnd', 'deploymentEnd_indefinite'))
+        all_deploys = all_deploys.annotate(in_deployment=ExpressionWrapper(
+            Q(Q(deploymentEnd_indefinite__gte=new_start)
+              & Q(deploymentStart__lte=new_end)),
             output_field=BooleanField()
         )
         )
@@ -203,20 +201,26 @@ def post_save_device(sender, instance, created, **kwargs):
 
 
 class Deployment(Basemodel):
-    deployment_deviceID = models.CharField(max_length=100, blank=True, editable=False, unique=True)
+    deployment_deviceID = models.CharField(
+        max_length=100, blank=True, editable=False, unique=True)
     deploymentID = models.CharField(max_length=50)
-    device_type = models.ForeignKey(DataType, models.PROTECT, related_name="deployments", null=True)
+    device_type = models.ForeignKey(
+        DataType, models.PROTECT, related_name="deployments", null=True)
     device_n = models.IntegerField(default=1)
 
     deploymentStart = models.DateTimeField(default=djtimezone.now)
     deploymentEnd = models.DateTimeField(blank=True, null=True)
 
-    device = models.ForeignKey(Device, on_delete=models.PROTECT, related_name="deployments")
+    device = models.ForeignKey(
+        Device, on_delete=models.PROTECT, related_name="deployments")
     site = models.ForeignKey(Site, models.PROTECT, related_name="deployments")
-    project = models.ManyToManyField(Project, related_name="deployments", blank=True)
+    project = models.ManyToManyField(
+        Project, related_name="deployments", blank=True)
 
-    Latitude = models.DecimalField(max_digits=8, decimal_places=6, blank=True, null=True)
-    Longitude = models.DecimalField(max_digits=8, decimal_places=6, blank=True, null=True)
+    Latitude = models.DecimalField(
+        max_digits=8, decimal_places=6, blank=True, null=True)
+    Longitude = models.DecimalField(
+        max_digits=8, decimal_places=6, blank=True, null=True)
     point = gis_models.PointField(
         blank=True,
         null=True,
@@ -229,14 +233,17 @@ class Deployment(Basemodel):
     # User ownership
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, related_name="owned_deployments",
                               on_delete=models.SET_NULL, null=True)
-    managers = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name="managed_deployments")
+    managers = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="managed_deployments")
 
-    combo_project = models.CharField(max_length=100, blank=True, null=True, editable=False)
+    combo_project = models.CharField(
+        max_length=100, blank=True, null=True, editable=False)
     last_image = models.ForeignKey("DataFile", blank=True, on_delete=models.SET_NULL, null=True, editable=False,
                                    related_name="deployment_last_image")
     last_file = models.ForeignKey("DataFile", blank=True, on_delete=models.SET_NULL, null=True, editable=False,
                                   related_name="deployment_last_file")
-    last_imageURL = models.CharField(max_length=500, null=True, blank=True, editable=False)
+    last_imageURL = models.CharField(
+        max_length=500, null=True, blank=True, editable=False)
 
     def get_absolute_url(self):
         return reverse('deployment-detail', kwargs={'pk': self.pk})
@@ -245,13 +252,16 @@ class Deployment(Basemodel):
         return self.deployment_deviceID
 
     def clean(self):
-        result, message = validators.deployment_check_type(self.device_type, self.device)
+        result, message = validators.deployment_check_type(
+            self.device_type, self.device)
         if not result:
             raise ValidationError(message)
-        result, message = validators.deployment_start_time_after_end_time(self.deploymentStart, self.deploymentEnd)
+        result, message = validators.deployment_start_time_after_end_time(
+            self.deploymentStart, self.deploymentEnd)
         if not result:
             raise ValidationError(message)
-        result, message = validators.deployment_check_overlap(self.deploymentStart, self.deploymentEnd, self.device, self.pk)
+        result, message = validators.deployment_check_overlap(
+            self.deploymentStart, self.deploymentEnd, self.device, self.pk)
         if not result:
             raise ValidationError(message)
         super(Deployment, self).clean()
@@ -278,7 +288,8 @@ class Deployment(Basemodel):
 
     def get_combo_project(self):
         if self.project.all().exists:
-            all_proj_id = list(self.project.all().values_list("projectID", flat=True))
+            all_proj_id = list(
+                self.project.all().values_list("projectID", flat=True))
             all_proj_id.sort()
             return " ".join(all_proj_id)
         else:
@@ -298,7 +309,8 @@ class Deployment(Basemodel):
         for dt in dt_list:
             dt = check_dt(dt)
 
-            result_list.append(dt >= self.deploymentStart & (dt <= self.deploymentEnd | self.deploymentEnd is None))
+            result_list.append(dt >= self.deploymentStart & (
+                dt <= self.deploymentEnd | self.deploymentEnd is None))
 
         return result_list
 
@@ -358,7 +370,8 @@ def update_project(sender, instance, action, reverse, *args, **kwargs):
     if (action == 'post_add' or action == 'post_remove') and not reverse:
         print(f"project {action}")
         combo_project = instance.get_combo_project()
-        Deployment.objects.filter(pk=instance.pk).update(combo_project=combo_project)
+        Deployment.objects.filter(pk=instance.pk).update(
+            combo_project=combo_project)
 
 
 @receiver(post_delete, sender=Device)
@@ -368,7 +381,8 @@ def clear_user_groups(sender, instance, **kwargs):
     all_groups = Group.objects.all()
     all_groups = all_groups.annotate(
         all_is_null=ExpressionWrapper(
-            (Q(Q(profile__project=None) & Q(profile__device=None) & Q(profile__deployment=None))),
+            (Q(Q(profile__project=None) & Q(profile__device=None)
+             & Q(profile__deployment=None))),
             output_field=BooleanField()
         )
     )
@@ -376,9 +390,11 @@ def clear_user_groups(sender, instance, **kwargs):
 
 
 class DataFile(Basemodel):
-    deployment = models.ForeignKey(Deployment, on_delete=models.CASCADE, related_name="files")
+    deployment = models.ForeignKey(
+        Deployment, on_delete=models.CASCADE, related_name="files")
 
-    file_type = models.ForeignKey(DataType, models.PROTECT, related_name="files")
+    file_type = models.ForeignKey(
+        DataType, models.PROTECT, related_name="files")
     file_name = models.CharField(max_length=100)
     file_size = FileSizeField()
     file_format = models.CharField(max_length=100)
@@ -395,7 +411,8 @@ class DataFile(Basemodel):
     localstorage = models.BooleanField(default=True)
     archived = models.BooleanField(default=False)
     # tarfile = models.ForeignKey(TarFile, on_delete=models.SET_NULL, blank=True, null=True, related_name="Files")
-    favourite_of = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name="favourites")
+    favourite_of = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="favourites")
 
     do_not_remove = models.BooleanField(default=False)
     original_name = models.CharField(max_length=100, blank=True, null=True)
@@ -474,7 +491,8 @@ class DataFile(Basemodel):
         super().save(*args, **kwargs)
 
     def clean(self):
-        result, message = validators.data_file_in_deployment(self.recording_dt, self.deployment)
+        result, message = validators.data_file_in_deployment(
+            self.recording_dt, self.deployment)
         if not result:
             raise ValidationError(message)
         super(DataFile, self).clean()

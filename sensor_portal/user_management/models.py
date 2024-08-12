@@ -23,17 +23,21 @@ class User(AbstractUser):
 
 
 class DeviceUser(User):
-    device = models.OneToOneField(Device, related_name="device_user", on_delete=models.CASCADE, null=True)
+    device = models.OneToOneField(
+        Device, related_name="device_user", on_delete=models.CASCADE, null=True)
 
     class Meta:
         verbose_name = "DeviceUser"
         verbose_name_plural = "DeviceUsers"
 
     pass
+
+
 @receiver(post_save, sender=DeviceUser)
 def check_device_user_is_manager(sender, instance, created, **kwargs):
     if not instance.device.managers.all().filter(pk=instance.pk).exists():
         instance.device.managers.add(instance)
+
 
 @receiver(post_save, sender=Device)
 def post_save_device(sender, instance, created, **kwargs):
@@ -56,7 +60,7 @@ def post_save_device(sender, instance, created, **kwargs):
             device_user.email = instance.owner.email
         device_user.save()
 
-    #always make sure device user as a manager
+    # always make sure device user as a manager
     instance.managers.add(device_user)
 
 
@@ -67,6 +71,7 @@ def pre_user_save(sender, instance, **kwargs):
         instance.is_active = True
     elif instance.is_superuser:
         instance.is_active = True
+
 
 @receiver(post_save, sender=DeviceUser)
 @receiver(post_save, sender=User)
@@ -80,12 +85,13 @@ def create_user_token(sender, instance, created, **kwargs):
 
     if isinstance(instance, DeviceUser):
         if ((instance.password is None) | (instance.password == "")):
-            User.objects.filter(pk=instance.pk).update(password=make_password(instance.auth_token.key))
-
+            User.objects.filter(pk=instance.pk).update(
+                password=make_password(instance.auth_token.key))
 
 
 class GroupProfile(models.Model):
-    usergroup = models.OneToOneField(Group, on_delete=models.CASCADE, related_name='profile')
+    usergroup = models.OneToOneField(
+        Group, on_delete=models.CASCADE, related_name='profile')
     project = models.ManyToManyField(Project, related_name="usergroup")
     deployment = models.ManyToManyField(Deployment, related_name="usergroup")
     device = models.ManyToManyField(Device, related_name="usergroup")
@@ -105,6 +111,3 @@ def create_user_group_profile(sender, instance, created, **kwargs):
 def save_user_group_profile(sender, instance, **kwargs):
     if not getattr(instance, 'from_admin_site', False):
         instance.profile.save()
-
-
-

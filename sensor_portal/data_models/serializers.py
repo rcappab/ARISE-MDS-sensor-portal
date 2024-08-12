@@ -5,9 +5,11 @@ from rest_framework import serializers
 from rest_framework_gis import serializers as geoserializers
 from user_management.models import User
 from utils.serializers import SlugRelatedGetOrCreateField
+from datetime import datetime as dt
 
 from . import validators
-from .models import *
+from .models import Project, Deployment, Device, DataFile, Site, DataType
+from user_management.serializers import UserGroupProfileSerializer
 
 
 class CheckFormMixIn():
@@ -39,12 +41,16 @@ class OwnerMangerMixIn(serializers.ModelSerializer):
                                             queryset=User.objects.all(),
                                             allow_null=True,
                                             required=False)
+    usergroup = UserGroupProfileSerializer(many=True, read_only=True)
+    viewers = serializers.ListField(child=serializers.CharField(
+    ), write_only=True, required=False, allow_empty=True)
 
     def to_representation(self, instance):
         initial_rep = super(OwnerMangerMixIn, self).to_representation(instance)
         fields_to_pop = [
-            "owner",
-            "managers",
+            'owner',
+            'managers',
+            'usergroup'
         ]
         user_is_manager = self.context['request'].user.has_perm(
             self.management_perm, obj=instance)
@@ -52,8 +58,28 @@ class OwnerMangerMixIn(serializers.ModelSerializer):
             [initial_rep.pop(field, '') for field in fields_to_pop]
         return initial_rep
 
+    def update(self, instance, validated_data):
+        instance = super(OwnerMangerMixIn, self).update(
+            instance, validated_data)
+        user_is_manager = self.context['request'].user.has_perm(
+            self.management_perm, obj=instance)
+        if user_is_manager:
+            group = instance.usergroup.all().order_by('pk')[0].usergroup
 
-class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedMixIn, CheckFormMixIn, serializers.ModelSerializer):
+            usernames = validated_data.get('viewers')
+            if usernames:
+                group.user_set.clear()
+                users_to_add = User.objects.all().filter(
+                    username__in=usernames)
+                for user in users_to_add:
+                    group.user_set.add(user)
+                group.save()
+        instance.save()
+        return instance
+
+
+class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedMixIn, CheckFormMixIn,
+                            serializers.ModelSerializer):
     device_type = serializers.SlugRelatedField(
         slug_field='name', queryset=DataType.objects.all(), required=False)
     device_type_id = serializers.PrimaryKeyRelatedField(queryset=DataType.objects.all().values_list('pk', flat=True),
@@ -65,7 +91,8 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedM
     project = serializers.SlugRelatedField(many=True,
                                            slug_field='projectID',
                                            queryset=Project.objects.all(),
-                                           allow_null=True)
+                                           allow_null=True,
+                                           required=False)
     project_id = serializers.PrimaryKeyRelatedField(source="project",
                                                     many=True,
                                                     queryset=Project.objects.all().values_list('pk', flat=True),
@@ -73,9 +100,9 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedM
                                                     allow_null=True)
     site = SlugRelatedGetOrCreateField(slug_field='short_name',
                                        queryset=Site.objects.all(),
-                                       required=False)
+                                       required=False, allow_null=True)
     site_id = serializers.PrimaryKeyRelatedField(queryset=Site.objects.all().values_list('pk', flat=True),
-                                                 required=False)
+                                                 required=False, allow_null=True)
 
     # always return in UTC regardless of server setting
     deploymentStart = serializers.DateTimeField(
@@ -313,4 +340,4 @@ def get_image_recording_dt(uploaded_file):
         raise serializers.ValidationError(f"Unable to get recording_dt from image {uploaded_file.name}, "
                                           f"consider supplying recording_dt manually")
 
-    return datetime.strptime(recording_dt, '%Y:%m:%d %H:%M:%S')
+    return dt.strptime(recording_dt, '%Y:%m:%d %H:%M:%S')

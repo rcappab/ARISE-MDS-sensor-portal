@@ -1,10 +1,12 @@
 import django_filters.rest_framework
-from .models import *
+from .models import Deployment, Project, Device, DataFile
 
 
 class GenericFilter(django_filters.FilterSet):
-    created_after = django_filters.DateFilter(field_name='created_on', lookup_expr='gt')
-    created_before = django_filters.DateFilter(field_name='created_on', lookup_expr='lte')
+    created_after = django_filters.DateFilter(
+        field_name='created_on', lookup_expr='gt')
+    created_before = django_filters.DateFilter(
+        field_name='created_on', lookup_expr='lte')
 
     class Meta:
         fields = {
@@ -76,6 +78,7 @@ class DataFileFilter(GenericFilter, ExtraInfoFilterMixIn):
                                                 exclude=True,
                                                 lookup_expr='isnull',
                                                 label='is favourite')
+
     class Meta:
         model = DataFile
         fields = GenericFilter.Meta.fields.copy()
