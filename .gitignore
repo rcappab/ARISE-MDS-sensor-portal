@@ -8,3 +8,4 @@ sensor_portal_database/
 .idea/workspace.xml
 .idea/workspace.xml
 *.code-workspace
+.vscode/
