@@ -1,0 +1,12 @@
+.loading-div {
+	padding-block: 1rem;
+}
+
+.loading-div > .spinner-border {
+	width: 4rem;
+	height: 4rem;
+}
+
+.loading-div > .spinner-text {
+	display: block;
+}

@@ -2,7 +2,6 @@ pytz==2022.1
 Django==4
 djangorestframework-gis==1.0
 djangorestframework==3.13.1
-#django-filter==22.1
 django-filter==22.1
 django-sizefield==2.1.0
 django-debug-toolbar==3.7.0
@@ -21,9 +20,12 @@ python-magic==0.4.27
 #gspread==5.4.0
 pandas==1.4.2
 plotly==5.9.0
-django-crispy-forms==1.14.0
-django-autocomplete-light==3.9.4
-crispy-bootstrap5==0.7
+#django-crispy-forms==1.14.0
+#django-autocomplete-light==3.9.4
+#crispy-bootstrap5==0.7
+django-cors-headers==4.4.0
+djangorestframework-simplejwt==5.3.1
+pyjwt==2.9.0
 #django-recaptcha==3.0.0
 #bagit==1.8.1
 #scikit-image==0.19.3

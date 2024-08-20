@@ -2,6 +2,8 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth.models import Group
 from .models import GroupProfile, User
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -88,3 +90,11 @@ class UserGroupProfileSerializer(serializers.ModelSerializer):
          for field in all_fields if initial_rep.get(field) == []]
         initial_rep.update(initial_rep.pop('usergroup'))
         return initial_rep
+
+
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token['username'] = user.username
+        return token

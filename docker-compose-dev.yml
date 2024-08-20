@@ -9,6 +9,7 @@ services:
       - '3000:3000'
     volumes:
       - ./frontend/src:/app/frontend/src
+      - ./frontend/public:/app/frontend/public
     command: npm start
     depends_on:
       - sensor_portal_django
@@ -16,6 +17,7 @@ services:
     environment:
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
+      - REACT_APP_API_BASE_URL=http://127.0.0.1:8000/api
   sensor_portal_django:
     build:
       context: .

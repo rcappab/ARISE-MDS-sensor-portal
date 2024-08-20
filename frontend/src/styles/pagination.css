@@ -1,0 +1,29 @@
+.pagination .page-input {
+    height: 100%;
+    width: 4rem;
+    border-left-style: none;
+    border-width: thin;
+    border-color: gray;
+    padding-inline: 0.3rem;
+  }
+
+  .pagination .page-description {
+    border: gray;
+    border-block-style: solid;
+    border-block-width: thin;
+  }
+
+  .pagination .page-count {
+    padding-top: 0.5rem;
+    padding-inline: 1rem;
+  }
+
+  .pagination .button-left {
+    border-top-right-radius: 0%;
+    border-bottom-right-radius: 0%;
+  }
+
+  .pagination .button-right {
+    border-top-left-radius: 0%;
+    border-bottom-left-radius: 0%;
+  }
