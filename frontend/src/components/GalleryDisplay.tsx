@@ -3,9 +3,10 @@ import GalleryTile from "./GalleryTile.tsx";
 
 interface Props {
 	data: [];
+	onTileClick: () => void;
 }
 
-const GalleryDisplay = ({ data }: Props) => {
+const GalleryDisplay = ({ data = [], onTileClick = () => {} }: Props) => {
 	return (
 		<div
 			id="gallery-rows"
@@ -18,6 +19,7 @@ const GalleryDisplay = ({ data }: Props) => {
 						index={index}
 						key={`tile_${index}`}
 						extraClasses={x["is_active"] ? "" : "text-white bg-secondary"}
+						onClick={onTileClick}
 					/>
 				);
 			})}

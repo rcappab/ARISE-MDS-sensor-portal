@@ -4,13 +4,10 @@ import { useState } from "react";
 import Loading from "./Loading.jsx";
 
 const GalleryPageControls = (props) => {
-	const [pageNum, setPageNum] = useState(props.pageNum);
-
 	const changePage = function (change) {
 		console.log("new page");
 		let newPage = Number(props.pageNum) + change;
 		newPage = setPage(newPage);
-		setPageNum(newPage);
 	};
 
 	const setPage = function (newPage) {
@@ -28,18 +25,17 @@ const GalleryPageControls = (props) => {
 
 	const handlePageNum = function (e) {
 		let newPage = setPage(e.target.value);
-		setPageNum(newPage);
 	};
 
 	const getEnabled = function (left = true) {
 		if (left) {
-			if (pageNum <= 1) {
+			if (props.pageNum <= 1) {
 				return "btn-outline-dark disabled";
 			} else {
 				return "";
 			}
 		} else {
-			if (pageNum >= props.maxPage) {
+			if (props.pageNum >= props.maxPage) {
 				return "btn-outline-dark disabled";
 			} else {
 				return "";

@@ -65,7 +65,26 @@ class GroupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Group
-        fields = ('name', 'user_set')
+        fields = ['name', 'user_set',]
+
+
+class UserGroupMemberSerializer(serializers.ModelSerializer):
+    usergroup = GroupSerializer()
+
+    class Meta:
+        model = GroupProfile
+        fields = ['usergroup',]
+
+    def to_representation(self, instance):
+        initial_rep = super(UserGroupMemberSerializer,
+                            self).to_representation(instance)
+
+        print(initial_rep)
+
+        # all_members = [x[['user_set']] for x in initial_rep['usergroup']]
+
+        # return [x for y in all_members for x in y]
+        return initial_rep.get('usergroup').get('user_set')
 
 
 class UserGroupProfileSerializer(serializers.ModelSerializer):
@@ -79,7 +98,7 @@ class UserGroupProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GroupProfile
-        fields = ('usergroup', 'project', 'deployment', 'device')
+        fields = ['usergroup', 'project', 'deployment', 'device']
 
     def to_representation(self, instance):
         initial_rep = super(UserGroupProfileSerializer,

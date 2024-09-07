@@ -1,3 +1,7 @@
-.container{
-    padding-top: 3rem;
+.container {
+	padding-top: 3rem;
+}
+
+.last-item {
+	margin-left: auto;
 }

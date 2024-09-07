@@ -33,10 +33,18 @@ class Basemodel(models.Model):
 
 class Site(Basemodel):
     name = models.CharField(max_length=50)
-    short_name = models.CharField(max_length=10)
+    short_name = models.CharField(max_length=10, blank=True)
 
     def __str__(self):
         return self.name
+
+
+@receiver(post_save, sender=Site)
+def post_save_project(sender, instance, created, **kwargs):
+    if created:
+        if instance.short_name == "":
+            instance.short_name = instance.name[:10]
+            instance.save()
 
 
 class DataType(Basemodel):

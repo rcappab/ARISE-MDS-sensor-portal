@@ -9,7 +9,7 @@ from datetime import datetime as dt
 
 from . import validators
 from .models import Project, Deployment, Device, DataFile, Site, DataType
-from user_management.serializers import UserGroupProfileSerializer
+from user_management.serializers import UserGroupProfileSerializer, UserGroupMemberSerializer
 
 
 class CheckFormMixIn():
@@ -41,21 +41,25 @@ class OwnerMangerMixIn(serializers.ModelSerializer):
                                             queryset=User.objects.all(),
                                             allow_null=True,
                                             required=False)
-    usergroup = UserGroupProfileSerializer(many=True, read_only=True)
-    viewers = serializers.ListField(child=serializers.CharField(
-    ), write_only=True, required=False, allow_empty=True)
+    viewers = UserGroupMemberSerializer(
+        many=True, read_only=True, source='usergroup')
+    # viewers = serializers.ListField(child=serializers.CharField(
+    # ), write_only=True, required=False, allow_empty=True)
 
     def to_representation(self, instance):
         initial_rep = super(OwnerMangerMixIn, self).to_representation(instance)
         fields_to_pop = [
             'owner',
             'managers',
-            'usergroup'
+            'viewers',
         ]
         user_is_manager = self.context['request'].user.has_perm(
             self.management_perm, obj=instance)
         if not user_is_manager:
             [initial_rep.pop(field, '') for field in fields_to_pop]
+        else:
+            initial_rep['viewers'] = [
+                x for xs in initial_rep['viewers'] for x in xs]
         return initial_rep
 
     def update(self, instance, validated_data):

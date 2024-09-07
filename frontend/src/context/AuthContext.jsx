@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
 
 	const navigate = useNavigate();
 
-	let loginUserFunction = async (username, password) => {
+	const loginUserFunction = async (username, password) => {
 		console.log("bar");
 		const response = await fetch(
 			`${process.env.REACT_APP_API_BASE_URL}/token/`,

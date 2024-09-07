@@ -18,9 +18,16 @@ function GalleryForm(props) {
 	useEffect(() => {
 		if (searchParams.size == 0) {
 			let formData = new FormData(formRef.current);
+			console.log(formData);
 			setSearchParams(new URLSearchParams(formData));
 		}
 	}, [searchParams]);
+
+	useEffect(() => {
+		let formData = new FormData(formRef.current);
+		props.setFormKeys(Array.from(formData.keys()));
+		console.log(Array.from(formData.keys()));
+	}, [formRef]);
 
 	// useEffect(() => {
 	//   let searchKeys = searchParams.keys()

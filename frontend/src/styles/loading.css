@@ -2,7 +2,7 @@
 	padding-block: 1rem;
 }
 
-.loading-div > .spinner-border {
+.loading-div > .spinner-border-lg {
 	width: 4rem;
 	height: 4rem;
 }
