@@ -1,5 +1,5 @@
 import React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Select from "react-select";
 import CreatableSelect from "react-select/creatable";
 
@@ -7,8 +7,9 @@ interface Props {
 	name: string;
 	id: string;
 	className?: string;
-	defaultvalue?: [string];
-	defaultlabel?: [string];
+	value?: string | [string] | null;
+	defaultvalue?: string | [string] | null;
+	defaultlabel?: string | [string] | null;
 	label: string;
 	choices: any[];
 	isSearchable?: boolean;
@@ -16,7 +17,7 @@ interface Props {
 	multiple?: boolean;
 	creatable?: boolean;
 	isClearable?: boolean;
-	handleChange?: () => void;
+	handleChange?: (string) => void;
 	handleCreate?: (string) => void;
 }
 
@@ -24,38 +25,75 @@ const FormSelect = ({
 	name,
 	id,
 	className,
-	defaultvalue = undefined,
+	value = undefined,
+	defaultvalue = null,
 	defaultlabel = null,
 	label,
-	choices,
+	choices = [],
 	isSearchable = true,
 	isLoading = false,
 	multiple = false,
 	creatable = false,
 	isClearable = true,
-	handleChange = () => {},
-	handleCreate = () => {},
+	handleChange = (x) => {},
+	handleCreate = (x) => {},
 }: Props) => {
-	const chosenDefault = function (_choices) {
-		console.log(name, _choices, defaultvalue);
+	useEffect(
+		function verifyValueExistsInNewOptions() {
+			if (selectedValue && choices.length == 0) {
+				setSelectedValue(null);
+			}
+		},
+		[choices]
+	);
+
+	// useEffect(
+	// 	function tryToReset() {
+	// 		console.log("defaukt changed");
+	// 		setSelectedValue(undefined);
+	// 	},
+	// 	[defaultvalue]
+	// );
+
+	const objFromValue = function (_choices, value = null, label = null) {
+		console.log(name, _choices, value);
 		if (_choices) {
-			if (defaultvalue) {
-				let chosenDefault = _choices.find(function (item) {
-					return defaultvalue == item.value;
-				});
-				console.log(name, _choices, defaultvalue, chosenDefault);
+			if (value) {
+				let chosenDefault;
+				if (multiple) {
+					chosenDefault = _choices.filter(function (item) {
+						return value.includes(item.value);
+					});
+				} else {
+					console.log("Not multiple " + defaultvalue);
+					chosenDefault = _choices.find(function (item) {
+						return value == item.value;
+					});
+				}
+				console.log(name, _choices, value, chosenDefault);
 				return chosenDefault;
-			} else if (defaultlabel) {
-				let chosenDefault = _choices.find(function (item) {
-					return defaultlabel === item.label;
-				});
+			} else if (label) {
+				let chosenDefault;
+				if (multiple) {
+					chosenDefault = _choices.filter(function (item) {
+						return defaultlabel.includes(item.label);
+					});
+				} else {
+					chosenDefault = _choices.find(function (item) {
+						return defaultlabel == item.label;
+					});
+				}
 				return chosenDefault;
 			} else {
+				console.log("NULL");
 				return null;
 			}
 		}
 	};
-	const [selectedValue, setSelectedValue] = useState();
+
+	const [selectedValue, setSelectedValue] = useState(
+		objFromValue(choices, value)
+	);
 
 	const style = {
 		container: (baseStyles, state) => ({
@@ -86,19 +124,48 @@ const FormSelect = ({
 	};
 
 	const handleSelectionChange = function (newValue) {
-		console.log(newValue);
+		if (choices.length == 0) {
+			newValue = null;
+		}
+		if (newValue == undefined) {
+			newValue = null;
+		}
+		console.log("SELECTION CHANGE " + newValue);
 		setSelectedValue(newValue);
-		if (newValue) {
+
+		console.log(Array.isArray(newValue));
+		if (newValue === null) {
+			handleChange(newValue);
+		} else if (multiple) {
+			handleChange(
+				newValue.map((x) => {
+					return x["value"];
+				})
+			);
+		} else {
 			handleChange(newValue["value"]);
 		}
 	};
 
-	if (defaultvalue && selectedValue == undefined && choices.length > 0) {
-		handleSelectionChange(chosenDefault(choices));
-	}
+	// console.log(defaultvalue, selectedValue);
+	// if (selectedValue === undefined && choices && choices.length > 0) {
+	// 	if (multiple && !Array.isArray(defaultvalue)) {
+	// 		defaultvalue = [defaultvalue];
+	// 	}
+	// 	console.log(
+	// 		"set default " +
+	// 			name +
+	// 			" value " +
+	// 			" " +
+	// 			defaultvalue +
+	// 			" " +
+	// 			selectedValue
+	// 	);
+	// 	handleSelectionChange(objFromValue(choices));
+	// }
 
 	const getSelect = function () {
-		console.log(name, selectedValue);
+		console.log(name + " " + selectedValue);
 		if (creatable) {
 			return (
 				<div className={`form-floating ${className}`}>
@@ -123,6 +190,7 @@ const FormSelect = ({
 			return (
 				<div className={`form-floating ${className}`}>
 					<Select
+						key={id}
 						name={name}
 						className="form-control no-border "
 						id={id}
@@ -134,7 +202,7 @@ const FormSelect = ({
 						placeholder={label}
 						isMulti={multiple}
 						onChange={handleSelectionChange}
-						value={selectedValue}
+						value={objFromValue(choices, value)}
 					/>
 				</div>
 			);

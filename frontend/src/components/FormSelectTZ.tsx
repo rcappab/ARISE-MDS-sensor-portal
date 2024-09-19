@@ -10,6 +10,7 @@ interface Props {
 	id: string;
 	label: string;
 	className?: string;
+	defaultvalue?: string;
 	handleChange?: () => void;
 }
 
@@ -18,14 +19,12 @@ const FormSelectTZ = ({
 	id,
 	label,
 	className,
+	defaultvalue,
 	handleChange = () => {},
 }: Props) => {
 	return (
 		<FormSelect
-			defaultlabel={[
-				itemFromTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone)
-					.label,
-			]}
+			defaultvalue={defaultvalue}
 			name={name}
 			id={id}
 			label={label}

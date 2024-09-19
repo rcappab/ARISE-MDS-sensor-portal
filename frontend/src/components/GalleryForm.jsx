@@ -8,11 +8,32 @@ import { useSearchParams } from "react-router-dom";
 
 function GalleryForm(props) {
 	let [searchParams, setSearchParams] = useSearchParams();
+	let [isActive, setIsActive] = useState(searchParams.get("is_active"));
 	//let submit = useSubmit();
 	const formRef = useRef(null);
-
+	const defaultPageSize = 1;
 	const onSubmit = function (e) {
 		props.onSubmit();
+	};
+
+	const resetForm = function (e) {
+		e.preventDefault();
+		formRef.current.reset();
+		let formData = new FormData(formRef.current);
+		console.log(formData);
+		let searchParams = new URLSearchParams(formData);
+		for (let key of searchParams.keys()) {
+			if (key == "page") {
+				searchParams.set(key, 1);
+			} else if (key == "page_size") {
+				searchParams.set(key, defaultPageSize);
+			} else {
+				searchParams.set(key, "");
+			}
+		}
+		console.log(searchParams);
+		setSearchParams(searchParams);
+		setIsActive(null);
 	};
 
 	useEffect(() => {
@@ -42,6 +63,11 @@ function GalleryForm(props) {
 	//   }
 	//   onSubmit()
 	// },[])
+
+	const handleSetIsActive = function (newvalue) {
+		console.log(newvalue);
+		setIsActive(newvalue);
+	};
 
 	return (
 		<div id="search-form-div">
@@ -73,7 +99,9 @@ function GalleryForm(props) {
 							{ value: "False", label: "False" },
 						]}
 						isSearchable={false}
-						defaultvalue={searchParams.get("is_active") || null}
+						//defaultvalue={searchParams.get("is_active") || null}
+						value={isActive}
+						handleChange={handleSetIsActive}
 					/>
 				</div>
 
@@ -92,11 +120,12 @@ function GalleryForm(props) {
 
 				<div className="col-lg-2">
 					<FormSelectAPI
+						key="select-datatype"
 						id="select-datatype"
-						name="data_type"
+						name="device_type"
 						label="Device type"
 						choices={[]}
-						defaultvalue={searchParams.get("data_type") || null}
+						defaultvalue={searchParams.get("device_type") || null}
 						apiURL="datatype/"
 						valueKey="id"
 						labelKey="name"
@@ -130,7 +159,7 @@ function GalleryForm(props) {
 							min="1"
 							max="100"
 							step="5"
-							defaultValue={searchParams.get("page_size") || 1}
+							defaultValue={searchParams.get("page_size") || defaultPageSize}
 						/>
 						<label htmlFor="page_size">Results per page</label>
 					</div>
@@ -142,6 +171,12 @@ function GalleryForm(props) {
 				>
 					Search
 				</button>
+
+				<input
+					type="button"
+					className="btn btn-danger btn-lg my-sm-1 col-sm-12 col-lg-2"
+					onClick={resetForm}
+				/>
 
 				<input
 					name="page"

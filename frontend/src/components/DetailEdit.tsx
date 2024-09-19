@@ -15,8 +15,13 @@ interface Props {
 
 const DetailEdit = ({ selectedData = null }: Props) => {
 	const [deviceType, setDeviceType] = useState(
-		selectedData ? [selectedData["device_type_id"]] : [""]
+		selectedData ? selectedData["device_type_id"] : ""
 	);
+
+	const handleSetDeviceType = function (newval) {
+		console.log("SET DEVICE TYPE " + newval);
+		setDeviceType(newval);
+	};
 
 	return (
 		<div>
@@ -29,7 +34,7 @@ const DetailEdit = ({ selectedData = null }: Props) => {
 					name="id"
 					className="d-none"
 					id="post-id"
-					value={selectedData ? [selectedData["id"]] : ""}
+					value={selectedData ? selectedData["id"] : ""}
 					readOnly={true}
 				/>
 				<div className="form-floating">
@@ -37,7 +42,7 @@ const DetailEdit = ({ selectedData = null }: Props) => {
 						name="deploymentID"
 						className="form-control"
 						id="post-deployment"
-						value={selectedData ? [selectedData["deploymentID"]] : ""}
+						value={selectedData ? selectedData["deploymentID"] : ""}
 						required
 					/>
 					<label htmlFor="post-deployment">deployment ID</label>
@@ -52,13 +57,11 @@ const DetailEdit = ({ selectedData = null }: Props) => {
 						name="device_type"
 						label="Device type"
 						choices={[]}
-						defaultvalue={
-							selectedData ? [selectedData["device_type_id"]] : [""]
-						}
+						defaultvalue={deviceType}
 						apiURL="datatype/"
 						valueKey="id"
 						labelKey="name"
-						handleChange={setDeviceType}
+						handleChange={handleSetDeviceType}
 						isClearable={false}
 					/>
 
@@ -72,7 +75,7 @@ const DetailEdit = ({ selectedData = null }: Props) => {
 						name="device_n"
 						className="form-control"
 						id="post-device_n"
-						placeholder="1"
+						defaultValue={selectedData ? selectedData["device_n"] : 1}
 						type="number"
 					/>
 					<label htmlFor="post-device_n">Device number</label>
@@ -83,7 +86,7 @@ const DetailEdit = ({ selectedData = null }: Props) => {
 						name="project"
 						label="Projects"
 						choices={[]}
-						defaultvalue={selectedData ? selectedData["project_id"] : [""]}
+						defaultvalue={selectedData ? selectedData["project_id"] : ""}
 						apiURL="project/"
 						valueKey="id"
 						labelKey="projectID"
@@ -100,7 +103,7 @@ const DetailEdit = ({ selectedData = null }: Props) => {
 						name="site"
 						label="Site"
 						choices={[]}
-						defaultvalue={selectedData ? [selectedData["site_id"]] : [""]}
+						defaultvalue={selectedData ? selectedData["site_id"] : ""}
 						apiURL="site/"
 						valueKey="id"
 						labelKey="name"
@@ -117,12 +120,12 @@ const DetailEdit = ({ selectedData = null }: Props) => {
 						name="device"
 						label="Device"
 						choices={[]}
-						defaultvalue={selectedData ? [selectedData["device_id"]] : [""]}
+						defaultvalue={selectedData ? selectedData["device_id"] : null}
 						apiURL={`device/?type=${deviceType}`}
 						valueKey="id"
 						labelKey="deviceID"
 						creatable={false}
-						isClearable={false}
+						isClearable={true}
 					/>
 					<div className="form-text">
 						Deployment device.
@@ -135,6 +138,7 @@ const DetailEdit = ({ selectedData = null }: Props) => {
 						name="deploymentStart"
 						label="Deployment started"
 						text="Date and time deployment starts."
+						defaultvalue={selectedData ? selectedData["deploymentStart"] : null}
 					/>
 				</div>
 				<div className="form-floating">
@@ -143,6 +147,7 @@ const DetailEdit = ({ selectedData = null }: Props) => {
 						name="deploymentEnd"
 						label="Deployment ended"
 						text="Date and time deployment ends."
+						defaultvalue={selectedData ? selectedData["deploymentEnd"] : null}
 					/>
 				</div>
 				MAP GOES here EXTRA INFO GOES HERE

@@ -1,20 +1,23 @@
 import React, { useState } from "react";
 import FormSelectTZ from "./FormSelectTZ.tsx";
 import FormDateSelector from "./FormDateSelector.tsx";
-import { fullDateTimeString } from "../utils/timezoneFunctions.js";
-import { fromZonedTime } from "date-fns-tz";
+import { itemFromTimeZone } from "../utils/timezoneFunctions.js";
+import { fromZonedTime, formatInTimeZone } from "date-fns-tz";
 
 interface Props {
 	id: string;
 	name: string;
 	label: string;
 	text: string;
+	defaultvalue?: string;
 }
 
-const FormDateTZSelect = ({ id, name, label, text }: Props) => {
+const FormDateTZSelect = ({ id, name, label, text, defaultvalue }: Props) => {
 	const [timeZone, setTimeZone] = useState(String);
 	const [dateTime, setDateTime] = useState(String);
-	const [dateTimeString, setDateTimeString] = useState(String);
+	const [dateTimeString, setDateTimeString] = useState(
+		defaultvalue ? defaultvalue : null
+	);
 
 	const setTimeZoneFromField = function (newValue) {
 		console.log(newValue);
@@ -33,6 +36,14 @@ const FormDateTZSelect = ({ id, name, label, text }: Props) => {
 		setDateTimeString(fromZonedTime(newValue, timeZone).toJSON());
 	};
 
+	const defaulttimezone = itemFromTimeZone(
+		Intl.DateTimeFormat().resolvedOptions().timeZone
+	).value;
+
+	const localiseddefaultvalue = defaultvalue
+		? formatInTimeZone(defaultvalue, defaulttimezone, "yyyy-MM-dd'T'HH:mm:ss")
+		: null;
+
 	return (
 		<div className="form-floating">
 			<input
@@ -49,6 +60,7 @@ const FormDateTZSelect = ({ id, name, label, text }: Props) => {
 					label={label}
 					handleChange={setDateTimeFromField}
 					className="col"
+					defaultvalue={localiseddefaultvalue}
 				/>
 
 				<FormSelectTZ
@@ -57,6 +69,7 @@ const FormDateTZSelect = ({ id, name, label, text }: Props) => {
 					label="Timezone"
 					handleChange={setTimeZoneFromField}
 					className="col"
+					defaultvalue={defaulttimezone}
 				/>
 			</div>
 

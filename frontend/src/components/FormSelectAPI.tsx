@@ -76,11 +76,12 @@ const FormSelectAPI = ({
 
 	return (
 		<FormSelect
+			key={id}
 			name={name}
 			id={id}
 			defaultvalue={isLoading ? null : defaultvalue}
 			label={label}
-			choices={isLoading ? null : data}
+			choices={data}
 			isLoading={isLoading}
 			isSearchable={isSearchable}
 			multiple={multiple}
