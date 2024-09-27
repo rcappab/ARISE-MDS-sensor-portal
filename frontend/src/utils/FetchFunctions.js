@@ -21,8 +21,33 @@ export async function postData(url, token, data) {
 		},
 		body: JSON.stringify(data),
 	});
-	if (!response.ok) {
-		throw new Error(response.statusText);
-	}
-	return response.json();
+	let response_json = await response.json();
+	response_json["ok"] = response.ok;
+	response_json["statusText"] = response.statusText;
+	// if (!response.ok) {
+	// 	throw new Error(response.statusText);
+	// }
+	return response_json;
+}
+
+export async function patchData(url, token, data) {
+	let response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/${url}`, {
+		method: "PATCH",
+		headers: {
+			Authorization: "Bearer " + String(token),
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify(data),
+	});
+
+	let response_json = await response.json();
+	response_json["ok"] = response.ok;
+	response_json["statusText"] = response.statusText;
+
+	console.log(response_json);
+
+	//if (!response.ok) {
+	//throw new Error(response.statusText);
+	//}
+	return response_json;
 }

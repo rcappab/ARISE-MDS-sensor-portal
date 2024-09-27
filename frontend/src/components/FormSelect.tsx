@@ -6,10 +6,7 @@ import CreatableSelect from "react-select/creatable";
 interface Props {
 	name: string;
 	id: string;
-	className?: string;
 	value?: string | [string] | null;
-	defaultvalue?: string | [string] | null;
-	defaultlabel?: string | [string] | null;
 	label: string;
 	choices: any[];
 	isSearchable?: boolean;
@@ -19,15 +16,14 @@ interface Props {
 	isClearable?: boolean;
 	handleChange?: (string) => void;
 	handleCreate?: (string) => void;
+	valid?: boolean;
+	required?: boolean;
 }
 
 const FormSelect = ({
 	name,
 	id,
-	className,
 	value = undefined,
-	defaultvalue = null,
-	defaultlabel = null,
 	label,
 	choices = [],
 	isSearchable = true,
@@ -37,11 +33,13 @@ const FormSelect = ({
 	isClearable = true,
 	handleChange = (x) => {},
 	handleCreate = (x) => {},
+	valid = true,
+	required = false,
 }: Props) => {
 	useEffect(
 		function verifyValueExistsInNewOptions() {
-			if (selectedValue && choices.length == 0) {
-				setSelectedValue(null);
+			if (value && choices.length == 0) {
+				value = null;
 			}
 		},
 		[choices]
@@ -55,39 +53,28 @@ const FormSelect = ({
 	// 	[defaultvalue]
 	// );
 
-	const objFromValue = function (_choices, value = null, label = null) {
-		console.log(name, _choices, value);
-		if (_choices) {
+	const objFromValue = function (_choices, value = null) {
+		//console.log(name, _choices, value);
+		if (_choices && _choices.length > 0) {
 			if (value) {
-				let chosenDefault;
+				let chosenDefault = null;
 				if (multiple) {
 					chosenDefault = _choices.filter(function (item) {
 						return value.includes(item.value);
 					});
 				} else {
-					console.log("Not multiple " + defaultvalue);
 					chosenDefault = _choices.find(function (item) {
 						return value == item.value;
 					});
 				}
-				console.log(name, _choices, value, chosenDefault);
-				return chosenDefault;
-			} else if (label) {
-				let chosenDefault;
-				if (multiple) {
-					chosenDefault = _choices.filter(function (item) {
-						return defaultlabel.includes(item.label);
-					});
-				} else {
-					chosenDefault = _choices.find(function (item) {
-						return defaultlabel == item.label;
-					});
-				}
+				//console.log(name, _choices, value, chosenDefault);
 				return chosenDefault;
 			} else {
-				console.log("NULL");
+				//console.log("NULL");
 				return null;
 			}
+		} else {
+			return null;
 		}
 	};
 
@@ -130,7 +117,7 @@ const FormSelect = ({
 		if (newValue == undefined) {
 			newValue = null;
 		}
-		console.log("SELECTION CHANGE " + newValue);
+		console.log("SELECTION CHANGE " + name + " " + newValue);
 		setSelectedValue(newValue);
 
 		console.log(Array.isArray(newValue));
@@ -164,47 +151,51 @@ const FormSelect = ({
 	// 	handleSelectionChange(objFromValue(choices));
 	// }
 
+	//${
+	//valid ? "is-valid" : "is-invalid"
+	//}
+
 	const getSelect = function () {
-		console.log(name + " " + selectedValue);
+		//console.log(name + " " + selectedValue);
 		if (creatable) {
 			return (
-				<div className={`form-floating ${className}`}>
-					<CreatableSelect
-						name={name}
-						className="form-control no-border "
-						id={id}
-						options={choices}
-						isClearable={isClearable}
-						isSearchable={isSearchable}
-						styles={style}
-						isLoading={isLoading}
-						value={selectedValue}
-						placeholder={label}
-						isMulti={multiple}
-						onChange={handleSelectionChange}
-						onCreateOption={handleOptionCreate}
-					/>
-				</div>
+				<CreatableSelect
+					name={name}
+					className={`form-control no-border ${
+						valid ? "is-valid" : "is-invalid"
+					}`}
+					id={id}
+					options={choices}
+					isClearable={isClearable}
+					isSearchable={isSearchable}
+					styles={style}
+					isLoading={isLoading}
+					value={objFromValue(choices, value)}
+					placeholder={label}
+					isMulti={multiple}
+					onChange={handleSelectionChange}
+					onCreateOption={handleOptionCreate}
+				/>
 			);
 		} else {
 			return (
-				<div className={`form-floating ${className}`}>
-					<Select
-						key={id}
-						name={name}
-						className="form-control no-border "
-						id={id}
-						options={choices}
-						isClearable={isClearable}
-						isSearchable={isSearchable}
-						styles={style}
-						isLoading={isLoading}
-						placeholder={label}
-						isMulti={multiple}
-						onChange={handleSelectionChange}
-						value={objFromValue(choices, value)}
-					/>
-				</div>
+				<Select
+					key={id}
+					name={name}
+					className={`form-control no-border ${
+						valid ? "is-valid" : "is-invalid"
+					}`}
+					id={id}
+					options={choices}
+					isClearable={isClearable}
+					isSearchable={isSearchable}
+					styles={style}
+					isLoading={isLoading}
+					placeholder={label}
+					isMulti={multiple}
+					onChange={handleSelectionChange}
+					value={objFromValue(choices, value)}
+				/>
 			);
 		}
 	};

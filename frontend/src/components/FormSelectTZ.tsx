@@ -10,8 +10,9 @@ interface Props {
 	id: string;
 	label: string;
 	className?: string;
-	defaultvalue?: string;
+	value?: string;
 	handleChange?: () => void;
+	valid?: boolean;
 }
 
 const FormSelectTZ = ({
@@ -19,12 +20,13 @@ const FormSelectTZ = ({
 	id,
 	label,
 	className,
-	defaultvalue,
+	value,
 	handleChange = () => {},
+	valid = true,
 }: Props) => {
 	return (
 		<FormSelect
-			defaultvalue={defaultvalue}
+			value={value}
 			name={name}
 			id={id}
 			label={label}
@@ -33,6 +35,7 @@ const FormSelectTZ = ({
 			multiple={false}
 			handleChange={handleChange}
 			className={className}
+			valid={valid}
 		/>
 	);
 };

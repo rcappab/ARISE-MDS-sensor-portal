@@ -10,25 +10,43 @@ interface Props {
 	label: string;
 	text: string;
 	defaultvalue?: string;
+	handleChange?: (any) => {};
+	validated?: boolean;
+	valid?: boolean;
+	required?: boolean;
 }
 
-const FormDateTZSelect = ({ id, name, label, text, defaultvalue }: Props) => {
-	const [timeZone, setTimeZone] = useState(String);
-	const [dateTime, setDateTime] = useState(String);
+const FormDateTZSelect = ({
+	id,
+	name,
+	label,
+	text,
+	defaultvalue,
+	handleChange,
+	validated = false,
+	valid = true,
+	required = false,
+}: Props) => {
+	const [timeZone, setTimeZone] = useState(
+		itemFromTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone).value
+	);
+	const [dateTime, setDateTime] = useState(
+		defaultvalue
+			? formatInTimeZone(defaultvalue, timeZone, "yyyy-MM-dd'T'HH:mm:ss")
+			: null
+	);
+
 	const [dateTimeString, setDateTimeString] = useState(
 		defaultvalue ? defaultvalue : null
 	);
 
 	const setTimeZoneFromField = function (newValue) {
-		console.log(newValue);
 		setTimeZone(newValue);
 
 		setDateTimeString(fromZonedTime(dateTime, newValue).toJSON());
 	};
 
 	const setDateTimeFromField = function (e) {
-		console.log(e.target.value);
-
 		let newValue = e.target.value;
 
 		setDateTime(newValue);
@@ -36,47 +54,48 @@ const FormDateTZSelect = ({ id, name, label, text, defaultvalue }: Props) => {
 		setDateTimeString(fromZonedTime(newValue, timeZone).toJSON());
 	};
 
-	const defaulttimezone = itemFromTimeZone(
-		Intl.DateTimeFormat().resolvedOptions().timeZone
-	).value;
-
-	const localiseddefaultvalue = defaultvalue
-		? formatInTimeZone(defaultvalue, defaulttimezone, "yyyy-MM-dd'T'HH:mm:ss")
-		: null;
-
 	return (
-		<div className="form-floating">
-			<input
-				id={id}
-				name={name}
-				defaultValue={dateTimeString}
-				value={dateTimeString}
-				className="d-none"
+		<div
+			id={id}
+			className="form-floating"
+		>
+			<FormDateSelector
+				id={`${id}_dt`}
+				name={`${name}_dt`}
+				label={label}
+				handleChange={setDateTimeFromField}
+				defaultvalue={dateTime}
+				valid={valid}
+				validated={validated}
 			/>
-			<div className="row">
-				<FormDateSelector
-					id={`${id}_dt`}
-					name={`${name}_dt`}
-					label={label}
-					handleChange={setDateTimeFromField}
-					className="col"
-					defaultvalue={localiseddefaultvalue}
-				/>
 
-				<FormSelectTZ
-					id={`${id}_TZ`}
-					name={`${name}_TZ`}
-					label="Timezone"
-					handleChange={setTimeZoneFromField}
-					className="col"
-					defaultvalue={defaulttimezone}
-				/>
-			</div>
+			<FormSelectTZ
+				id={`${id}_TZ`}
+				name={`${name}_TZ`}
+				label="Timezone"
+				handleChange={setTimeZoneFromField}
+				value={timeZone}
+				valid={valid}
+			/>
 
-			<div className="form-text">
-				{text}
-				<div className="invalid-feedback"></div>
-			</div>
+			{required ? (
+				<input
+					id={`${id}_UTC`}
+					name={name}
+					value={dateTimeString}
+					className="d-none"
+					onChange={handleChange}
+					required
+				/>
+			) : (
+				<input
+					id={`${id}_UTC`}
+					name={name}
+					value={dateTimeString}
+					className="d-none"
+					onChange={handleChange}
+				/>
+			)}
 		</div>
 	);
 };

@@ -17,7 +17,7 @@ const Gallery = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const [formKeys, setFormKeys] = useState();
 	const [pageNum, setPageNum] = useState(searchParams.get("page") || 1);
-	const { authTokens } = useContext(AuthContext);
+	const { authTokens, user } = useContext(AuthContext);
 	const navigate = useNavigate();
 
 	const checkSearchParameters = function () {
@@ -58,13 +58,20 @@ const Gallery = () => {
 		return response_json;
 	};
 
-	const { isLoading, isError, isPending, data, error, isPlaceholderData } =
-		useQuery({
-			queryKey: ["data", "username", checkSearchParameters().toString()],
-			queryFn: () => getDataFunc(searchParams),
-			enabled: searchParams.size > 0,
-			placeholderData: keepPreviousData,
-		});
+	const {
+		isLoading,
+		isError,
+		isPending,
+		data,
+		error,
+		isPlaceholderData,
+		refetch,
+	} = useQuery({
+		queryKey: ["data", user, checkSearchParameters().toString()],
+		queryFn: () => getDataFunc(searchParams),
+		enabled: searchParams.size > 0,
+		placeholderData: keepPreviousData,
+	});
 
 	const onSubmit = function () {
 		setPageNum(1);
@@ -90,6 +97,11 @@ const Gallery = () => {
 		} else {
 			removeSearchParameters("edit");
 		}
+	};
+
+	const addNew = function () {
+		setEdit(true);
+		openDetail(-1);
 	};
 
 	const showGallery = function () {
@@ -123,16 +135,36 @@ const Gallery = () => {
 		);
 	};
 
+	const onDetailSubmit = function (e, addNewBool, response) {
+		if (!addNewBool) {
+			//let detailNum = searchParams.get("detail");
+			//data.results[detailNum] = response;
+			refetch();
+			setEdit(false);
+		} else if (addNewBool) {
+			updateSearchParameters("ordering", "-created_on");
+			setEdit(false);
+			closeDetail();
+			refetch();
+		}
+	};
+
 	const showDetailModal = function () {
 		//console.log(searchParams.get("detail") && data !== undefined);
+		console.log("Detail modal");
 		let modalShow = searchParams.get("detail") && data;
 		if (!modalShow) {
 			return null;
 		}
 		let detailNum = searchParams.get("detail");
-		let selectedData = data.results[detailNum];
-		let maxPage = Math.ceil(data.count / searchParams.get("page_size"));
-		let maxData = data.results.length;
+		let selectedData = null;
+		let maxPage = null;
+		let maxData = null;
+		if (detailNum >= 0) {
+			selectedData = data.results[detailNum];
+			maxPage = Math.ceil(data.count / searchParams.get("page_size"));
+			maxData = data.results.length;
+		}
 		let editMode = searchParams.get("edit");
 
 		console.log(selectedData);
@@ -152,12 +184,27 @@ const Gallery = () => {
 						editMode={editMode}
 						handleEdit={setEdit}
 					>
-						{selectedData["deployment_deviceID"]}
+						{selectedData
+							? selectedData["deployment_deviceID"]
+							: "Add new deployment"}
 					</DetailModalHeader>
 				}
 			>
 				{editMode ? (
-					<DetailEdit selectedData={selectedData} />
+					<DetailEdit
+						selectedData={selectedData}
+						onSubmit={onDetailSubmit}
+						onCancel={
+							detailNum > -1
+								? (e) => {
+										setEdit(false);
+								  }
+								: (e) => {
+										setEdit(false);
+										closeDetail();
+								  }
+						}
+					/>
 				) : (
 					<DetailDisplay selectedData={selectedData} />
 				)}
@@ -172,6 +219,7 @@ const Gallery = () => {
 				<GalleryForm
 					onSubmit={onSubmit}
 					setFormKeys={setFormKeys}
+					addNew={addNew}
 				/>
 				{showGallery()}
 			</div>

@@ -28,9 +28,10 @@ class ExtraInfoFilterMixIn(django_filters.FilterSet):
 
 
 class DeploymentFilter(GenericFilter, ExtraInfoFilterMixIn):
+
     class Meta:
         model = Deployment
-        fields = GenericFilter.Meta.fields.copy()
+        fields = GenericFilter.get_fields().copy()
         fields.update({
             'deployment_deviceID': ['exact', 'icontains', 'in'],
             'is_active': ['exact'],

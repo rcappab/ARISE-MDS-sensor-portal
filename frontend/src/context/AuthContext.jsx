@@ -9,12 +9,12 @@ const AuthContext = createContext();
 export default AuthContext;
 
 export const AuthProvider = ({ children }) => {
-	let [user, setUser] = useState(() =>
+	const [user, setUser] = useState(() =>
 		localStorage.getItem("authTokens")
 			? jwtDecode(localStorage.getItem("authTokens"))
 			: null
 	);
-	let [authTokens, setAuthTokens] = useState(() =>
+	const [authTokens, setAuthTokens] = useState(() =>
 		localStorage.getItem("authTokens")
 			? JSON.parse(localStorage.getItem("authTokens"))
 			: null

@@ -8,20 +8,33 @@ interface Props {
 	defaultvalue?: string;
 	className?: string;
 	handleChange?: () => void;
+	valid?: boolean;
+	validated?: boolean;
 }
 
-const FormDateSelector = (props: Props) => {
+const FormDateSelector = ({
+	id,
+	name,
+	label,
+	defaultvalue,
+	className = "",
+	handleChange = () => {},
+	valid = true,
+	validated = false,
+}: Props) => {
 	return (
-		<div className={`form-floating ${props.className}`}>
+		<div className={`form-floating ${className}`}>
 			<input
-				className="form-control"
+				className={`form-control ${
+					validated ? (valid ? "is-valid" : "is-invalid") : ""
+				}`}
 				type="datetime-local"
-				id={props.id}
-				name={props.name}
-				defaultValue={props.defaultvalue}
-				onChange={props.handleChange}
+				id={id}
+				name={name}
+				defaultValue={defaultvalue}
+				onChange={handleChange}
 			/>
-			<label htmlFor={props.id}>{props.label}</label>
+			<label htmlFor={id}>{label}</label>
 		</div>
 	);
 };

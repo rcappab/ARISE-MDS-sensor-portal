@@ -41,3 +41,9 @@
 .form-floating > .form-control:not(:placeholder-shown) ~ label::after {
 	background-color: transparent !important;
 }
+
+.was-validated :invalid ~ .form-text .invalid-feedback,
+.is-invalid ~ .form-text .invalid-feedback {
+	display: inline;
+	font-weight: bold;
+}

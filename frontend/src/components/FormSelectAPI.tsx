@@ -7,7 +7,7 @@ import { getData, postData } from "../utils/FetchFunctions";
 interface Props {
 	name: string;
 	id: string;
-	defaultvalue: [string];
+	value: string | [string] | null;
 	label: string;
 	choices: [];
 	isSearchable?: boolean;
@@ -18,12 +18,13 @@ interface Props {
 	multiple?: boolean;
 	creatable?: boolean;
 	handleChange?: () => void;
+	valid?: boolean;
 }
 
 const FormSelectAPI = ({
 	name,
 	id,
-	defaultvalue,
+	value = undefined,
 	label,
 	choices = [],
 	isSearchable = true,
@@ -34,6 +35,7 @@ const FormSelectAPI = ({
 	multiple = false,
 	creatable = false,
 	handleChange = () => {},
+	valid = true,
 }: Props) => {
 	const { authTokens } = useContext(AuthContext);
 
@@ -69,17 +71,19 @@ const FormSelectAPI = ({
 		let newData = {};
 		newData[labelKey] = inputValue;
 		let response_json = await postData(apiURL, authTokens.access, newData);
-		console.log(response_json);
+		//console.log(response_json);
 		refetch();
 		return response_json;
 	};
+
+	//console.log(value);
 
 	return (
 		<FormSelect
 			key={id}
 			name={name}
 			id={id}
-			defaultvalue={isLoading ? null : defaultvalue}
+			value={isLoading ? null : value}
 			label={label}
 			choices={data}
 			isLoading={isLoading}
@@ -89,6 +93,7 @@ const FormSelectAPI = ({
 			handleCreate={handleCreate}
 			handleChange={handleChange}
 			isClearable={isClearable}
+			valid={valid}
 		/>
 	);
 };
