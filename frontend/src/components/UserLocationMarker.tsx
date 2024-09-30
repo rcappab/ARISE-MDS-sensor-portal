@@ -18,6 +18,7 @@ const UserLocationMarker = () => {
 		<Circle
 			center={position}
 			radius={radius}
+			interactive={false}
 		/>
 	);
 };

@@ -4,71 +4,40 @@ import { Icon } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import FormMapMarker from "./FormMapMarker.tsx";
 import UserLocationMarker from "./UserLocationMarker.tsx";
+import ResetLocation from "./ResetLocation.tsx";
+import "../styles/map.css"
 
-const FormMap = () => {
-	const [latitude, setLatitude] = useState();
-	const [longitude, setLongitude] = useState();
+interface Props{
+	latitude: number|null;
+	longitude: number|null;
+	handleChangeLatLong: (e) => void;
+}
 
-	const setLatLong = function (latlong) {
-		console.log(latlong);
-		setLatitude(Number(latlong.lat.toPrecision(8)));
-		setLongitude(Number(latlong.lng.toPrecision(8)));
-	};
+const FormMap = ({latitude=null, longitude=null,handleChangeLatLong=(e)=>{}}:Props) => {
+
+
+
 
 	return (
-		<div>
-			<div className="row">
-				<div className="form-floating col">
-					<input
-						name="Latitude"
-						id="post-latitude"
-						type="number"
-						className="form-control"
-						value={latitude}
-						onChange={(e) => {
-							setLatLong({
-								lat: Number(e.target.value).toPrecision(8),
-								lng: longitude,
-							});
-						}}
-					/>
-					<label htmlFor="post-latitude">Latitude</label>
-				</div>
-				<div className="form-floating col">
-					<input
-						name="Longitude"
-						id="post-longitude"
-						type="number"
-						className="form-control"
-						value={longitude}
-						onChange={(e) => {
-							setLatLong({
-								lat: latitude,
-								lng: Number(e.target.value).toPrecision(8),
-							});
-						}}
-					/>
-					<label htmlFor="post-longitiude">Longitude</label>
-				</div>
-			</div>
-
-			<MapContainer
-				center={[0, 0]}
-				zoom={1}
-				scrollWheelZoom={false}
-				style={{ height: "100vh", width: "100%" }}
-			>
-				<TileLayer
-					attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-					url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-				/>
-				<UserLocationMarker />
-				<FormMapMarker
-					formLatLong={latitude ? { lat: latitude, lng: longitude } : null}
-					handleChangeLatLong={setLatLong}
-				/>
-			</MapContainer>
-		</div>
+	<div>
+	<MapContainer
+		center={[0, 0]}
+		zoom={1}
+		scrollWheelZoom={false}
+		style={{ height: "100vh", width: "100%" }}
+	>
+		<TileLayer
+			attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+			url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+		/>
+		<UserLocationMarker />
+		<FormMapMarker
+			formLatLong={latitude ? { lat: latitude, lng: longitude } : null}
+			handleChangeLatLong={handleChangeLatLong}
+		/>
+		<ResetLocation handleChangeLatLong={(e)=>{handleChangeLatLong(null)}}/>
+	</MapContainer>
+	</div>
 	);
 };
 

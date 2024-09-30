@@ -38,20 +38,29 @@ const FormMapMarker = ({
 
 	useEffect(() => {
 		if (mapLocation == null) {
-			map.locate().on("locationfound", function (e) {
-				//setMapLocation(e.latlng);
-				mapLocation = e.latlng;
-				handleChangeLatLong(e.latlng);
-				map.setView(e.latlng, 10);
-			});
+			// map.locate().on("locationfound", function (e) {
+			// 	//setMapLocation(e.latlng);
+			// 	mapLocation = e.latlng;
+			// 	handleChangeLatLong(e.latlng);
+			// 	map.setView(e.latlng, 10);
+			// });
 		} else {
 			map.setView(mapLocation, 10);
 		}
 	}, [map]);
 
+
+	const mapLocate = useMapEvent("locationfound", (e) => {
+		if (mapLocation == null) {
+			mapLocation = e.latlng;
+			handleChangeLatLong(e.latlng);
+			map.setView(e.latlng, 10);
+		}
+	});
+
 	const mapClick = useMapEvent("click", (e) => {
 		if (!readOnly) {
-			map.setView(e.latlng, 10);
+			map.setView(e.latlng, map.getZoom());
 			handleChangeLatLong(e.latlng);
 			//setMapLocation(e.latlng);
 			mapLocation = e.latlng;
@@ -66,6 +75,7 @@ const FormMapMarker = ({
 		<Marker
 			position={mapLocation}
 			icon={defaultIcon}
+			interactive={false}
 		></Marker>
 	);
 };

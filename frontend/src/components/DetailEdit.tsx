@@ -8,6 +8,7 @@ import AuthContext from "../context/AuthContext";
 import { patchData, postData } from "../utils/FetchFunctions";
 import { isValid } from "date-fns";
 import FormMap from "./FormMap.tsx";
+import JSONInput from "./JSONInput.tsx";
 
 interface Props {
 	selectedData?: object | null;
@@ -55,6 +56,19 @@ const DetailEdit = ({
 		selectedData ? selectedData["deploymentEnd"] : null
 	);
 
+	const [latitude, setLatitude] = useState(selectedData ? selectedData["Latitude"]:null);
+	const [longitude, setLongitude] = useState(selectedData ? selectedData["Longitude"]:null);
+
+	const setLatLong = function (latlong) {
+		if(latlong){
+			setLatitude(Number(String(latlong.lat).substring(0,7)));
+			setLongitude(Number(String(latlong.lng).substring(0,7)));
+		}else{
+			setLatitude(null);
+			setLongitude(null);
+		}
+	};
+
 	const resetData = function () {
 		setWasValidated(false);
 		setErrorDict({});
@@ -66,6 +80,7 @@ const DetailEdit = ({
 		setdevice_id(null);
 		setDeploymentStart(new Date().toJSON());
 		setDeploymentEnd(null);
+		setLatLong(null);
 	};
 
 	useEffect(() => {
@@ -171,6 +186,8 @@ const DetailEdit = ({
 			onSubmit(e, addNew, response);
 		} else if (addNew) {
 			resetData();
+		} else if (!addNew){
+			selectedData = response;
 		}
 	};
 
@@ -269,7 +286,7 @@ const DetailEdit = ({
 						name="device_n"
 						className={`form-control ${
 							wasValidated
-								? errorDict["deploymentID"]
+								? errorDict["device_n"]
 									? "is-invalid"
 									: "is-valid"
 								: ""
@@ -406,8 +423,63 @@ const DetailEdit = ({
 						<div className="invalid-feedback">{`${errorDict["deploymentEnd"]} ${errorDict["deploymentEnd_TZ"]} ${errorDict["deploymentEnd_dt"]}`}</div>
 					</div>
 				</div>
-				MAP GOES here EXTRA INFO GOES HERE
-				<FormMap />
+				<div className="row">
+				<div className="form-floating col">
+					<input
+						name="Latitude"
+						id="post-latitude"
+						type="number"
+						className={`form-control ${
+							wasValidated
+								? errorDict["Latitude"]
+									? "is-invalid"
+									: "is-valid"
+								: ""
+						}`}
+						value={latitude}
+						onChange={(e) => {
+							setLatLong({
+								lat: e.target.value,
+								lng: longitude,
+							});
+						}}
+					/>
+					<label htmlFor="post-latitude">Latitude</label>
+					<div className="form-text">
+						<div className="invalid-feedback">{errorDict["Latitude"]}</div>
+					</div>
+				</div>
+				<div className="form-floating col">
+					<input
+						name="Longitude"
+						id="post-longitude"
+						type="number"
+						className={`form-control ${
+							wasValidated
+								? errorDict["Longitude"]
+									? "is-invalid"
+									: "is-valid"
+								: ""
+						}`}
+						value={longitude}
+						onChange={(e) => {
+							setLatLong({
+								lat: latitude,
+								lng: e.target.value,
+							});
+						}}
+					/>
+					<label htmlFor="post-longitiude">Longitude</label>
+					<div className="form-text">
+						<div className="invalid-feedback">{errorDict["Longitude"]}</div>
+					</div>
+				</div>
+				</div>
+				
+				<FormMap latitude={latitude} longitude={longitude} handleChangeLatLong={setLatLong}/>
+				
+				<JSONInput />
+
 				<div className="d-grid gap-2 d-md-block mx-auto">
 					<button
 						className="btn btn-primary btn-lg"
