@@ -39,8 +39,8 @@ const DetailDisplay = ({ selectedData }: Props) => {
 
 		if (key == "extra_info") {
 			value_result = (
-				<div className="extra-info-table">
-					<table className="table table-sm table-striped mb-0 align-middle text-center">
+				<td className="extra-info-table p-0 border">
+					<table className="table table-sm mb-0 align-middle text-center">
 						<tbody>
 							{Object.keys(value).map((e_iKey, i) => {
 								return (
@@ -52,7 +52,7 @@ const DetailDisplay = ({ selectedData }: Props) => {
 							})}
 						</tbody>
 					</table>
-				</div>
+				</td>
 			);
 		} else {
 			value_result = <td>{value === null ? value : String(value)}</td>;

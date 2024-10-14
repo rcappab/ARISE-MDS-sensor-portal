@@ -1,4 +1,4 @@
-import React from "react";
+import React, { ChangeEvent } from "react";
 import FormSelect from "./FormSelect.tsx";
 import {
 	timezonesWithoffsets,
@@ -11,7 +11,7 @@ interface Props {
 	label: string;
 	className?: string;
 	value?: string;
-	handleChange?: () => void;
+	handleChange?: (e: ChangeEvent<HTMLInputElement>) => void;
 	valid?: boolean;
 }
 
@@ -34,7 +34,6 @@ const FormSelectTZ = ({
 			isClearable={false}
 			multiple={false}
 			handleChange={handleChange}
-			className={className}
 			valid={valid}
 		/>
 	);

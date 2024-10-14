@@ -7,7 +7,7 @@ import { getData, postData } from "../utils/FetchFunctions";
 interface Props {
 	name: string;
 	id: string;
-	value: string | [string] | null;
+	value?: string | [string] | null;
 	label: string;
 	choices: [];
 	isSearchable?: boolean;
@@ -17,14 +17,14 @@ interface Props {
 	labelKey: string;
 	multiple?: boolean;
 	creatable?: boolean;
-	handleChange?: () => void;
+	handleChange?: (e) => void;
 	valid?: boolean;
 }
 
 const FormSelectAPI = ({
 	name,
 	id,
-	value = undefined,
+	value = null,
 	label,
 	choices = [],
 	isSearchable = true,
@@ -64,7 +64,7 @@ const FormSelectAPI = ({
 	};
 
 	const doCreate = useMutation({
-		mutationFn: (inputValue) => newPOST(inputValue),
+		mutationFn: (inputValue: any) => newPOST(inputValue),
 	});
 
 	const newPOST = async (inputValue) => {

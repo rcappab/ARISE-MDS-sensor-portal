@@ -18,11 +18,11 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path, re_path
 from rest_framework_simplejwt import views as jwt_views
+
 from . import api
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include("frontend_viewer.urls")),
     path("api/", include(api)),
     path('api/', include('user_management.urls'))
     # re_path(r"^api-auth/", include("rest_framework.urls",

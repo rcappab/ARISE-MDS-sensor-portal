@@ -7,6 +7,8 @@ const DetailModalHeader = (props) => {
 		let newDetail = Number(props.detailNum) + change;
 		newDetail = setDetail(newDetail);
 	};
+	const showEdit = props.editMode && props.canEdit;
+	console.log(props.canEdit, props.editMode, showEdit);
 
 	const setDetail = function (newDetail) {
 		if (newDetail >= 0 && newDetail < Number(props.maxDetail)) {
@@ -55,6 +57,11 @@ const DetailModalHeader = (props) => {
 		props.handleEdit(true);
 	};
 
+	const handleDelete = function (e) {
+		console.log("edit button clicked");
+		props.handleDelete(e);
+	};
+
 	const getEnabled = function (left = true) {
 		if (left) {
 			if (Number(props.pageNum) <= 1 && props.detailNum <= 0) {
@@ -98,7 +105,7 @@ const DetailModalHeader = (props) => {
 				{props.children}
 				<a className="text-reset text-decoration-none"></a>
 			</h5>
-			{props.editMode ? null : (
+			{showEdit ? (
 				<a
 					className="btn btn-outline-light paginator-button modal-title"
 					aria-label="Edit"
@@ -106,7 +113,17 @@ const DetailModalHeader = (props) => {
 				>
 					Edit
 				</a>
-			)}
+			) : null}
+			{props.canDelete ? (
+				<a
+					className="btn btn-outline-light paginator-button modal-title"
+					aria-label="Delete"
+					onClick={handleDelete}
+				>
+					Delete
+				</a>
+			) : null}
+
 			<Loading
 				enabled={props.isLoading}
 				large={false}

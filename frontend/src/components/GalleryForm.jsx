@@ -43,6 +43,7 @@ function GalleryForm(props) {
 		setIsActive(null);
 		setSite(null);
 		setDeviceType(null);
+		setOrderBy("deploymentdeviceID");
 	};
 
 	const addNew = function (e) {

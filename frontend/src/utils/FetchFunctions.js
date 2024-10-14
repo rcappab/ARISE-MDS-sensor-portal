@@ -51,3 +51,20 @@ export async function patchData(url, token, data) {
 	//}
 	return response_json;
 }
+
+export async function deleteData(url, token) {
+	let response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/${url}`, {
+		method: "DELETE",
+		headers: {
+			Authorization: "Bearer " + String(token),
+			"Content-Type": "application/json",
+		},
+	});
+	console.log(response);
+	let response_json = {};
+	response_json["ok"] = response.ok;
+	response_json["statusText"] = response.statusText;
+
+	console.log(response_json);
+	return response_json;
+}

@@ -36,7 +36,7 @@ const Modal = ({ modalShow, children, headerChildren, onClose }: Props) => {
 					<div className="modal-dialog modal-lg detail-modal">
 						<div className="modal-content shadow">
 							{getHeader()}
-							<div className="modal-body">{children}</div>
+							<div className="modal-body py-1">{children}</div>
 						</div>
 					</div>
 				</div>

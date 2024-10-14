@@ -24,7 +24,7 @@ const FormMap = ({latitude=null, longitude=null,handleChangeLatLong=(e)=>{}}:Pro
 		center={[0, 0]}
 		zoom={1}
 		scrollWheelZoom={false}
-		style={{ height: "100vh", width: "100%" }}
+		style={{ height: "75vh", width: "100%" }}
 	>
 		<TileLayer
 			attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

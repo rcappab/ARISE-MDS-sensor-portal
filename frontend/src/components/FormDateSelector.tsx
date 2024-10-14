@@ -1,4 +1,4 @@
-import React from "react";
+import React, { ChangeEvent } from "react";
 import "../styles/base.css";
 
 interface Props {
@@ -7,9 +7,10 @@ interface Props {
 	label: string;
 	defaultvalue?: string;
 	className?: string;
-	handleChange?: () => void;
+	handleChange?: (e: ChangeEvent<HTMLInputElement>) => void;
 	valid?: boolean;
 	validated?: boolean;
+	float?: boolean;
 }
 
 const FormDateSelector = ({
@@ -18,14 +19,15 @@ const FormDateSelector = ({
 	label,
 	defaultvalue,
 	className = "",
-	handleChange = () => {},
+	handleChange = (e) => {},
 	valid = true,
 	validated = false,
+	float = true,
 }: Props) => {
 	return (
-		<div className={`form-floating ${className}`}>
+		<div className={`${float ? "form-floating" : ""} ${className}`}>
 			<input
-				className={`form-control ${
+				className={`form-control px-1 ${
 					validated ? (valid ? "is-valid" : "is-invalid") : ""
 				}`}
 				type="datetime-local"
@@ -34,7 +36,7 @@ const FormDateSelector = ({
 				defaultValue={defaultvalue}
 				onChange={handleChange}
 			/>
-			<label htmlFor={id}>{label}</label>
+			{float ? <label htmlFor={id}>{label}</label> : ""}
 		</div>
 	);
 };

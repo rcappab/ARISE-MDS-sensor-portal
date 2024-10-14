@@ -1,6 +1,6 @@
 import React from "react";
 import { useState, useEffect, useContext } from "react";
-import { getData } from "../utils/FetchFunctions";
+import { deleteData, getData } from "../utils/FetchFunctions";
 import AuthContext from "../context/AuthContext";
 import GalleryForm from "./GalleryForm";
 import GalleryDisplay from "./GalleryDisplay.tsx";
@@ -10,8 +10,9 @@ import DetailModalHeader from "./DetailModalHeader.jsx";
 import DetailDisplay from "./DetailDisplay.tsx";
 import DetailEdit from "./DetailEdit.tsx";
 import Loading from "./Loading.tsx";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery, keepPreviousData, useMutation } from "@tanstack/react-query";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 const Gallery = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -145,7 +146,31 @@ const Gallery = () => {
 			updateSearchParameters("ordering", "-created_on");
 			setEdit(false);
 			closeDetail();
+			setPageNum(1);
 			refetch();
+		}
+	};
+
+	const newDELETE = async function (objID) {
+		let response_json = await deleteData(
+			`deployment/${objID}`,
+			authTokens.access
+		);
+		return response_json;
+	};
+
+	const doDelete = useMutation({
+		mutationFn: (objID) => newDELETE(objID),
+	});
+
+	const deleteItem = async function (objID) {
+		let response = await doDelete.mutateAsync(objID);
+		console.log(response);
+		if (response["ok"]) {
+			toast(`Deleted ${objID}`);
+			setPageNum(1);
+			refetch();
+			closeDetail();
 		}
 	};
 
@@ -182,7 +207,19 @@ const Gallery = () => {
 						handlePageChange={changePage}
 						isLoading={isLoading | isPlaceholderData}
 						editMode={editMode}
+						canEdit={selectedData ? true : false}
+						canDelete={selectedData ? true : false}
 						handleEdit={setEdit}
+						handleDelete={
+							selectedData
+								? () => {
+										deleteItem(
+											selectedData["id"],
+											selectedData["deployment_deviceID"]
+										);
+								  }
+								: () => {}
+						}
 					>
 						{selectedData
 							? selectedData["deployment_deviceID"]

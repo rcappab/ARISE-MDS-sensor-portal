@@ -8,7 +8,7 @@ interface Props {
 	id: string;
 	value?: string | [string] | null;
 	label: string;
-	choices: any[];
+	choices: any[] | undefined;
 	isSearchable?: boolean;
 	isLoading?: boolean;
 	multiple?: boolean;
@@ -53,7 +53,8 @@ const FormSelect = ({
 	// 	[defaultvalue]
 	// );
 
-	const objFromValue = function (_choices, value = null) {
+	const objFromValue = function (_choices, value: any | [any] = null) {
+		if (!value) return null;
 		//console.log(name, _choices, value);
 		if (_choices && _choices.length > 0) {
 			if (value) {
@@ -79,7 +80,7 @@ const FormSelect = ({
 	};
 
 	const [selectedValue, setSelectedValue] = useState(
-		objFromValue(choices, value)
+		objFromValue(choices, value) as any
 	);
 
 	const style = {
