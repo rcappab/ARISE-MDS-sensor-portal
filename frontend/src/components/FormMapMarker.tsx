@@ -1,12 +1,5 @@
-import React, { useState, useEffect } from "react";
-import {
-	MapContainer,
-	TileLayer,
-	Marker,
-	Popup,
-	useMap,
-	useMapEvent,
-} from "react-leaflet";
+import React, { useEffect } from "react";
+import { Marker, useMap, useMapEvent } from "react-leaflet";
 import { Icon, LeafletMouseEvent, LatLngExpression } from "leaflet";
 
 interface Props {
@@ -37,17 +30,10 @@ const FormMapMarker = ({
 	const map = useMap();
 
 	useEffect(() => {
-		if (mapLocation == null) {
-			// map.locate().on("locationfound", function (e) {
-			// 	//setMapLocation(e.latlng);
-			// 	mapLocation = e.latlng;
-			// 	handleChangeLatLong(e.latlng);
-			// 	map.setView(e.latlng, 10);
-			// });
-		} else {
+		if (mapLocation !== null) {
 			map.setView(mapLocation as LatLngExpression, 10);
 		}
-	}, [map]);
+	}, [map, mapLocation]);
 
 	const mapLocate = useMapEvent("locationfound", (e) => {
 		if (mapLocation == null) {
@@ -61,7 +47,6 @@ const FormMapMarker = ({
 		if (!readOnly) {
 			map.setView(e.latlng, map.getZoom());
 			handleChangeLatLong(e.latlng);
-			//setMapLocation(e.latlng);
 			mapLocation = e.latlng;
 		}
 	});

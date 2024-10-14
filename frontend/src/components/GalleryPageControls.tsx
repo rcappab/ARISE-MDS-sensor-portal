@@ -1,13 +1,11 @@
 import React from "react";
 import "../styles/pagination.css";
-import { useState } from "react";
-import Loading from "./Loading.jsx";
 
 const GalleryPageControls = (props) => {
 	const changePage = function (change) {
 		console.log("new page");
 		let newPage = Number(props.pageNum) + change;
-		newPage = setPage(newPage);
+		setPage(newPage);
 	};
 
 	const setPage = function (newPage) {
@@ -24,7 +22,7 @@ const GalleryPageControls = (props) => {
 	};
 
 	const handlePageNum = function (e) {
-		let newPage = setPage(e.target.value);
+		setPage(e.target.value);
 	};
 
 	const getEnabled = function (left = true) {

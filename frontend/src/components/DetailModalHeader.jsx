@@ -5,7 +5,7 @@ import Loading from "./Loading.tsx";
 const DetailModalHeader = (props) => {
 	const changeDetail = function (change) {
 		let newDetail = Number(props.detailNum) + change;
-		newDetail = setDetail(newDetail);
+		setDetail(newDetail);
 	};
 	const showEdit = props.editMode && props.canEdit;
 	console.log(props.canEdit, props.editMode, showEdit);
@@ -82,6 +82,7 @@ const DetailModalHeader = (props) => {
 	};
 
 	return (
+		//The href attribute is required for an anchor to be keyboard accessible. Provide a valid, navigable address as the href value. If you cannot provide an href, but still need the element to resemble a link, use a button and change it with appropriate styles. Learn more: https://github.com/jsx-eslint/eslint-plugin-jsx-a11y/blob/HEAD/docs/rules/anchor-is-valid.md  jsx-a11y/anchor-is-valid
 		<div className="modal-header">
 			<a
 				className={`btn btn-outline-light paginator-button modal-title ${getEnabled(

@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import FormMapMarker from "./FormMapMarker.tsx";
 import UserLocationMarker from "./UserLocationMarker.tsx";

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { Form } from "react-router-dom";
 import FormSelectAPI from "./FormSelectAPI.tsx";
 import { useState, useRef, useEffect, useContext } from "react";
@@ -6,7 +6,6 @@ import FormDateTZSelect from "./FormDateTZSelect.tsx";
 import { useMutation } from "@tanstack/react-query";
 import AuthContext from "../context/AuthContext";
 import { patchData, postData } from "../utils/FetchFunctions";
-import { isValid } from "date-fns";
 import FormMap from "./FormMap.tsx";
 import JSONInput from "./JSONInput.tsx";
 import toast from "react-hot-toast";
@@ -93,6 +92,52 @@ const DetailEdit = ({
 		setExtraInfo({});
 	};
 
+	const [wasValidated, setWasValidated] = useState(false);
+	const [errorDict, setErrorDict] = useState({});
+
+	const doValidation = useCallback(
+		function (responseData = null) {
+			let form = formRef.current;
+			if (form === null) {
+				return;
+			}
+
+			let newErrorDict = {};
+			let valid = true;
+			for (const input of form.getElementsByTagName("input")) {
+				if (!responseData) {
+					newErrorDict[input.name] = input.validationMessage;
+				} else {
+					let responseError = responseData[input.name];
+					if (responseError) {
+						newErrorDict[input.name] = responseData[input.name];
+					} else {
+						newErrorDict[input.name] = "";
+					}
+				}
+				if (newErrorDict[input.name] !== "") {
+					valid = false;
+				}
+			}
+
+			setErrorDict(newErrorDict);
+			console.log(newErrorDict);
+			console.log(errorDict);
+			return valid;
+		},
+		[errorDict]
+	);
+
+	const handleFormChange = useCallback(
+		function () {
+			console.log("Form change " + wasValidated);
+			if (wasValidated) {
+				doValidation();
+			}
+		},
+		[wasValidated, doValidation]
+	);
+
 	useEffect(() => {
 		handleFormChange();
 	}, [
@@ -102,47 +147,11 @@ const DetailEdit = ({
 		device_id,
 		deploymentStart,
 		deploymentEnd,
+		latitude,
+		longitude,
+		extraInfo,
+		handleFormChange,
 	]);
-
-	const [wasValidated, setWasValidated] = useState(false);
-	const [errorDict, setErrorDict] = useState({});
-
-	const doValidation = function (responseData = null) {
-		let form = formRef.current;
-		if (form === null) {
-			return;
-		}
-
-		let newErrorDict = {};
-		let valid = true;
-		for (const input of form.getElementsByTagName("input")) {
-			if (!responseData) {
-				newErrorDict[input.name] = input.validationMessage;
-			} else {
-				let responseError = responseData[input.name];
-				if (responseError) {
-					newErrorDict[input.name] = responseData[input.name];
-				} else {
-					newErrorDict[input.name] = "";
-				}
-			}
-			if (newErrorDict[input.name] != "") {
-				valid = false;
-			}
-		}
-
-		setErrorDict(newErrorDict);
-		console.log(newErrorDict);
-		console.log(errorDict);
-		return valid;
-	};
-
-	const handleFormChange = function () {
-		console.log("Form change " + wasValidated);
-		if (wasValidated) {
-			doValidation();
-		}
-	};
 
 	const startLoadingToast = () => {
 		const toastId = toast.loading("Loading...");
@@ -158,7 +167,7 @@ const DetailEdit = ({
 		console.log(formData);
 		console.log(project_id);
 
-		let addNew = formData.get("id") == "";
+		let addNew = formData.get("id") === "";
 		//let allFormKeys = Array.from(formData.keys());
 		//console.log(allFormKeys);
 		setWasValidated(true);
@@ -172,7 +181,7 @@ const DetailEdit = ({
 
 		// project ID should be replaced with an array of nullable
 		for (let [key, value] of formData.entries()) {
-			if (value === "" && key != "project_id") {
+			if (value === "" && key !== "project_id") {
 				formData.delete(key);
 			}
 		}
@@ -307,7 +316,7 @@ const DetailEdit = ({
 							labelKey="name"
 							handleChange={setdevice_type_id}
 							isClearable={false}
-							valid={errorDict["device_type_id"] == ""}
+							valid={errorDict["device_type_id"] === ""}
 						/>
 						<input
 							hidden
@@ -363,7 +372,7 @@ const DetailEdit = ({
 							creatable={false}
 							isClearable={true}
 							handleChange={setdevice_id}
-							valid={errorDict["device_id"] == ""}
+							valid={errorDict["device_id"] === ""}
 						/>
 						<input
 							hidden
@@ -389,7 +398,7 @@ const DetailEdit = ({
 							labelKey="projectID"
 							multiple={true}
 							handleChange={setproject_id}
-							valid={errorDict["project_id"] == ""}
+							valid={errorDict["project_id"] === ""}
 						/>
 						<input
 							hidden
@@ -414,7 +423,7 @@ const DetailEdit = ({
 							labelKey="name"
 							creatable={true}
 							handleChange={setsite_id}
-							valid={errorDict["site_id"] == ""}
+							valid={errorDict["site_id"] === ""}
 						/>
 						<input
 							hidden
@@ -440,9 +449,9 @@ const DetailEdit = ({
 							handleChange={setDeploymentStart}
 							required={true}
 							valid={
-								errorDict["deploymentStart"] == "" &&
-								errorDict["deploymentStart_TZ"] == "" &&
-								errorDict["deploymentStart_dt"] == ""
+								errorDict["deploymentStart"] === "" &&
+								errorDict["deploymentStart_TZ"] === "" &&
+								errorDict["deploymentStart_dt"] === ""
 							}
 							validated={wasValidated}
 						/>
@@ -463,9 +472,9 @@ const DetailEdit = ({
 							defaultvalue={deploymentEnd}
 							handleChange={setDeploymentEnd}
 							valid={
-								errorDict["deploymentEnd"] == "" &&
-								errorDict["deploymentEnd_TZ"] == "" &&
-								errorDict["deploymentEnd_dt"] == ""
+								errorDict["deploymentEnd"] === "" &&
+								errorDict["deploymentEnd_TZ"] === "" &&
+								errorDict["deploymentEnd_dt"] === ""
 							}
 							validated={wasValidated}
 						/>
@@ -497,7 +506,7 @@ const DetailEdit = ({
 								});
 							}}
 						/>
-						<div className="form-text">
+						<div className="form-text mb-1">
 							<div className="invalid-feedback">{errorDict["Latitude"]}</div>
 						</div>
 					</div>
@@ -521,7 +530,7 @@ const DetailEdit = ({
 								});
 							}}
 						/>
-						<div className="form-text">
+						<div className="form-text mb-1">
 							<div className="invalid-feedback">{errorDict["Longitude"]}</div>
 						</div>
 					</div>

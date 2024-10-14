@@ -38,7 +38,7 @@ const FormSelect = ({
 }: Props) => {
 	useEffect(
 		function verifyValueExistsInNewOptions() {
-			if (value && choices.length == 0) {
+			if (value && choices.length === 0) {
 				value = null;
 			}
 		},
@@ -65,7 +65,7 @@ const FormSelect = ({
 					});
 				} else {
 					chosenDefault = _choices.find(function (item) {
-						return value == item.value;
+						return value === item.value;
 					});
 				}
 				//console.log(name, _choices, value, chosenDefault);
@@ -112,10 +112,10 @@ const FormSelect = ({
 	};
 
 	const handleSelectionChange = function (newValue) {
-		if (choices.length == 0) {
+		if (choices.length === 0) {
 			newValue = null;
 		}
-		if (newValue == undefined) {
+		if (newValue === undefined) {
 			newValue = null;
 		}
 		console.log("SELECTION CHANGE " + name + " " + newValue);

@@ -12,7 +12,7 @@ const Modal = ({ modalShow, children, headerChildren, onClose }: Props) => {
 	//$el.scrollTo({top: 0, behavior: 'instant'}
 
 	const onBackGroundClick = function (e) {
-		if (e.currentTarget != e.target) return;
+		if (e.currentTarget !== e.target) return;
 		onClose();
 	};
 

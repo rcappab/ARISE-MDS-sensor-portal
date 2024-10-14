@@ -1,6 +1,6 @@
 import React from "react";
 import { useEffect, useRef, useState } from "react";
-import { Form, useSubmit } from "react-router-dom";
+import { Form } from "react-router-dom";
 import FormSelect from "./FormSelect.tsx";
 import FormSelectAPI from "./FormSelectAPI.tsx";
 import FormDateSelector from "./FormDateSelector.tsx";
@@ -30,9 +30,9 @@ function GalleryForm(props) {
 		console.log(formData);
 		let searchParams = new URLSearchParams(formData);
 		for (let key of searchParams.keys()) {
-			if (key == "page") {
+			if (key === "page") {
 				searchParams.set(key, 1);
-			} else if (key == "page_size") {
+			} else if (key === "page_size") {
 				searchParams.set(key, defaultPageSize);
 			} else {
 				searchParams.set(key, "");
@@ -52,32 +52,18 @@ function GalleryForm(props) {
 	};
 
 	useEffect(() => {
-		if (searchParams.size == 0) {
+		if (searchParams.size === 0) {
 			let formData = new FormData(formRef.current);
 			console.log(formData);
 			setSearchParams(new URLSearchParams(formData));
 		}
-	}, [searchParams]);
+	}, [searchParams, setSearchParams]);
 
 	useEffect(() => {
 		let formData = new FormData(formRef.current);
 		props.setFormKeys(Array.from(formData.keys()));
 		console.log(Array.from(formData.keys()));
-	}, [formRef]);
-
-	// useEffect(() => {
-	//   let searchKeys = searchParams.keys()
-	//   for (const x of searchKeys){
-	//     let formField = document.getElementsByName(x)
-	//     if(formField.length>0){
-	//       let fieldValue = searchParams.get(x)
-	//       if (fieldValue != ''){
-	//         formField[0].setAttribute('value',fieldValue)
-	//       }
-	//     }
-	//   }
-	//   onSubmit()
-	// },[])
+	}, [formRef, props]);
 
 	return (
 		<div id="search-form-div">

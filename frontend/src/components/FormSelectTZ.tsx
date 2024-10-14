@@ -1,9 +1,6 @@
 import React, { ChangeEvent } from "react";
 import FormSelect from "./FormSelect.tsx";
-import {
-	timezonesWithoffsets,
-	itemFromTimeZone,
-} from "../utils/timezoneFunctions.js";
+import { timezonesWithoffsets } from "../utils/timezoneFunctions.js";
 
 interface Props {
 	name: string;

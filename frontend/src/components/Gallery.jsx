@@ -1,5 +1,5 @@
 import React from "react";
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useCallback } from "react";
 import { deleteData, getData } from "../utils/FetchFunctions";
 import AuthContext from "../context/AuthContext";
 import GalleryForm from "./GalleryForm";
@@ -11,7 +11,7 @@ import DetailDisplay from "./DetailDisplay.tsx";
 import DetailEdit from "./DetailEdit.tsx";
 import Loading from "./Loading.tsx";
 import { useQuery, keepPreviousData, useMutation } from "@tanstack/react-query";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 
 const Gallery = () => {
@@ -19,7 +19,6 @@ const Gallery = () => {
 	const [formKeys, setFormKeys] = useState();
 	const [pageNum, setPageNum] = useState(searchParams.get("page") || 1);
 	const { authTokens, user } = useContext(AuthContext);
-	const navigate = useNavigate();
 
 	const checkSearchParameters = function () {
 		let searchParamsObject = Object.fromEntries(searchParams);
@@ -33,13 +32,16 @@ const Gallery = () => {
 		return new URLSearchParams(searchParamsObject);
 	};
 
-	const updateSearchParameters = function (key, val) {
-		let oldSearchParams = searchParams;
-		if (oldSearchParams.size > 0) {
-			oldSearchParams.set(key, val);
-			setSearchParams(oldSearchParams);
-		}
-	};
+	const updateSearchParameters = useCallback(
+		function (key, val) {
+			let oldSearchParams = searchParams;
+			if (oldSearchParams.size > 0) {
+				oldSearchParams.set(key, val);
+				setSearchParams(oldSearchParams);
+			}
+		},
+		[searchParams, setSearchParams]
+	);
 
 	const removeSearchParameters = function (key) {
 		let oldSearchParams = searchParams;
@@ -50,7 +52,7 @@ const Gallery = () => {
 	useEffect(() => {
 		console.log(pageNum);
 		updateSearchParameters("page", pageNum);
-	}, [pageNum]);
+	}, [pageNum, updateSearchParameters]);
 
 	const getDataFunc = async (currentSearchParams) => {
 		let apiURL = `deployment/?${currentSearchParams.toString()}`;

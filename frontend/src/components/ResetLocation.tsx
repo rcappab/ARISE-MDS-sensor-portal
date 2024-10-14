@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from "react";
-import { Marker, useMap, useMapEvent } from "react-leaflet";
-import { Icon, DomEvent } from "leaflet";
+import { useMap } from "react-leaflet";
+import { DomEvent } from "leaflet";
 
 interface Props {
 	handleChangeLatLong: (e) => void;

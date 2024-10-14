@@ -24,6 +24,7 @@ const GalleryTile = ({
 				<img
 					className="card-img"
 					src={cardImageURL}
+					alt=""
 				/>
 			);
 		} else {

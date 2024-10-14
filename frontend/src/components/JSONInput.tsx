@@ -26,17 +26,6 @@ const JSONInput = ({
 		})
 	);
 
-	const handleJSONChange = () => {
-		let newObj = inputFields.reduce(
-			(obj, item) => ({ ...obj, [item.key]: item.value }),
-			{}
-		);
-		let newJSONstring = JSON.stringify(newObj);
-		setJSONtext(newJSONstring);
-		console.log(newObj);
-		onJSONchange(newObj);
-	};
-
 	const handleFormChange = (index, event) => {
 		let data = [...inputFields];
 		data[index][event.target.name] = event.target.value;
@@ -56,8 +45,15 @@ const JSONInput = ({
 	};
 
 	useEffect(() => {
-		handleJSONChange();
-	}, [inputFields]);
+		let newObj = inputFields.reduce(
+			(obj, item) => ({ ...obj, [item.key]: item.value }),
+			{}
+		);
+		let newJSONstring = JSON.stringify(newObj);
+		setJSONtext(newJSONstring);
+		console.log(newObj);
+		onJSONchange(newObj);
+	}, [inputFields, onJSONchange]);
 
 	return (
 		<div className={"my-1"}>

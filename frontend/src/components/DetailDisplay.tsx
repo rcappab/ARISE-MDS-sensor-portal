@@ -37,7 +37,7 @@ const DetailDisplay = ({ selectedData }: Props) => {
 
 		let value_result;
 
-		if (key == "extra_info") {
+		if (key === "extra_info") {
 			value_result = (
 				<td className="extra-info-table p-0 border">
 					<table className="table table-sm mb-0 align-middle text-center">
