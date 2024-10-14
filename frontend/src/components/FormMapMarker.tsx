@@ -7,12 +7,12 @@ import {
 	useMap,
 	useMapEvent,
 } from "react-leaflet";
-import { Icon } from "leaflet";
+import { Icon, LeafletMouseEvent, LatLngExpression } from "leaflet";
 
 interface Props {
-	readOnly: boolean;
-	formLatLong: { lat: number; lng: number } | null;
-	handleChangeLatLong: () => {};
+	readOnly?: boolean;
+	formLatLong: { lat: number | null; lng: number | null } | null;
+	handleChangeLatLong: (latlng: LeafletMouseEvent["latlng"]) => void;
 }
 
 const FormMapMarker = ({
@@ -45,10 +45,9 @@ const FormMapMarker = ({
 			// 	map.setView(e.latlng, 10);
 			// });
 		} else {
-			map.setView(mapLocation, 10);
+			map.setView(mapLocation as LatLngExpression, 10);
 		}
 	}, [map]);
-
 
 	const mapLocate = useMapEvent("locationfound", (e) => {
 		if (mapLocation == null) {
@@ -73,7 +72,7 @@ const FormMapMarker = ({
 
 	return mapLocation === null ? null : (
 		<Marker
-			position={mapLocation}
+			position={mapLocation as LatLngExpression}
 			icon={defaultIcon}
 			interactive={false}
 		></Marker>

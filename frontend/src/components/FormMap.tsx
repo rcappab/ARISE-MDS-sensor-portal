@@ -1,43 +1,46 @@
-import React, { useState, UseEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
-import { Icon } from "leaflet";
 import "leaflet/dist/leaflet.css";
 import FormMapMarker from "./FormMapMarker.tsx";
 import UserLocationMarker from "./UserLocationMarker.tsx";
 import ResetLocation from "./ResetLocation.tsx";
-import "../styles/map.css"
+import "../styles/map.css";
+import React from "react";
 
-interface Props{
-	latitude: number|null;
-	longitude: number|null;
+interface Props {
+	latitude: number | null;
+	longitude: number | null;
 	handleChangeLatLong: (e) => void;
 }
 
-const FormMap = ({latitude=null, longitude=null,handleChangeLatLong=(e)=>{}}:Props) => {
-
-
-
-
+const FormMap = ({
+	latitude = null,
+	longitude = null,
+	handleChangeLatLong = (e) => {},
+}: Props) => {
 	return (
-	<div>
-	<MapContainer
-		center={[0, 0]}
-		zoom={1}
-		scrollWheelZoom={false}
-		style={{ height: "75vh", width: "100%" }}
-	>
-		<TileLayer
-			attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-			url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-		/>
-		<UserLocationMarker />
-		<FormMapMarker
-			formLatLong={latitude ? { lat: latitude, lng: longitude } : null}
-			handleChangeLatLong={handleChangeLatLong}
-		/>
-		<ResetLocation handleChangeLatLong={(e)=>{handleChangeLatLong(null)}}/>
-	</MapContainer>
-	</div>
+		<div>
+			<MapContainer
+				center={[0, 0]}
+				zoom={1}
+				scrollWheelZoom={false}
+				style={{ height: "75vh", width: "100%" }}
+			>
+				<TileLayer
+					attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+					url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+				/>
+				<UserLocationMarker />
+				<FormMapMarker
+					formLatLong={latitude ? { lat: latitude, lng: longitude } : null}
+					handleChangeLatLong={handleChangeLatLong}
+				/>
+				<ResetLocation
+					handleChangeLatLong={(e) => {
+						handleChangeLatLong(null);
+					}}
+				/>
+			</MapContainer>
+		</div>
 	);
 };
 
