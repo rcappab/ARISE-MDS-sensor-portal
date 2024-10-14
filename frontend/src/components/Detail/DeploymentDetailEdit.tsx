@@ -1,22 +1,22 @@
 import React, { useCallback } from "react";
 import { Form } from "react-router-dom";
-import FormSelectAPI from "./FormSelectAPI.tsx";
+import FormSelectAPI from "../FormSelectAPI.tsx";
 import { useState, useRef, useEffect, useContext } from "react";
-import FormDateTZSelect from "./FormDateTZSelect.tsx";
+import FormDateTZSelect from "../FormDateTZSelect.tsx";
 import { useMutation } from "@tanstack/react-query";
-import AuthContext from "../context/AuthContext";
-import { patchData, postData } from "../utils/FetchFunctions";
-import FormMap from "./FormMap.tsx";
-import JSONInput from "./JSONInput.tsx";
+import AuthContext from "../../context/AuthContext.jsx";
+import { patchData, postData } from "../../utils/FetchFunctions.js";
+import FormMap from "../FormMap.tsx";
+import JSONInput from "../JSONInput.tsx";
 import toast from "react-hot-toast";
 
 interface Props {
 	selectedData?: object | null;
 	onSubmit?: (e: Event, addNew: boolean, response: object) => void;
-	onCancel?: () => void;
+	onCancel?: (e: any) => void;
 }
 
-const DetailEdit = ({
+const DeploymentDetailEdit = ({
 	selectedData = null,
 	onSubmit = (e, addNew, response) => {},
 	onCancel = () => {},
@@ -507,6 +507,7 @@ const DetailEdit = ({
 							}}
 						/>
 						<div className="form-text mb-1">
+							Latitude.
 							<div className="invalid-feedback">{errorDict["Latitude"]}</div>
 						</div>
 					</div>
@@ -531,6 +532,7 @@ const DetailEdit = ({
 							}}
 						/>
 						<div className="form-text mb-1">
+							Longitude.
 							<div className="invalid-feedback">{errorDict["Longitude"]}</div>
 						</div>
 					</div>
@@ -592,4 +594,4 @@ const DetailEdit = ({
 	);
 };
 
-export default DetailEdit;
+export default DeploymentDetailEdit;

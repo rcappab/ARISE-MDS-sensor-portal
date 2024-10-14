@@ -1,13 +1,13 @@
 import React from "react";
-import "../styles/base.css";
-import Loading from "./Loading.tsx";
+import "../../styles/base.css";
+import Loading from "../Loading.tsx";
 
 const DetailModalHeader = (props) => {
 	const changeDetail = function (change) {
 		let newDetail = Number(props.detailNum) + change;
 		setDetail(newDetail);
 	};
-	const showEdit = props.editMode && props.canEdit;
+	const showEdit = !props.editMode && props.canEdit;
 	console.log(props.canEdit, props.editMode, showEdit);
 
 	const setDetail = function (newDetail) {

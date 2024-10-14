@@ -2,9 +2,9 @@ import React from "react";
 import "../styles/loading.css";
 
 interface Props {
-	enabled: boolean;
-	showText: boolean;
-	large: boolean;
+	enabled?: boolean;
+	showText?: boolean;
+	large?: boolean;
 }
 
 const Loading = ({ enabled = true, showText = true, large = true }: Props) => {

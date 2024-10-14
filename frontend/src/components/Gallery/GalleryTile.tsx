@@ -1,5 +1,5 @@
 import React from "react";
-import "../styles/gallerytile.css";
+import "../../styles/gallerytile.css";
 
 interface Props {
 	cardTitle: string;

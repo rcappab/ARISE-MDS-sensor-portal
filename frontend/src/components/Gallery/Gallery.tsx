@@ -1,22 +1,30 @@
 import React from "react";
 import { useState, useEffect, useContext, useCallback } from "react";
-import { deleteData, getData } from "../utils/FetchFunctions";
-import AuthContext from "../context/AuthContext";
-import GalleryForm from "./GalleryForm";
+import { deleteData, getData } from "../../utils/FetchFunctions.js";
+import AuthContext from "../../context/AuthContext.jsx";
+import GalleryForm from "./GalleryForm.tsx";
 import GalleryDisplay from "./GalleryDisplay.tsx";
 import GalleryPageControls from "./GalleryPageControls.tsx";
-import Modal from "./Modal.tsx";
-import DetailModalHeader from "./DetailModalHeader.jsx";
-import DetailDisplay from "./DetailDisplay.tsx";
-import DetailEdit from "./DetailEdit.tsx";
-import Loading from "./Loading.tsx";
+import Modal from "../Modal.tsx";
+import DetailModalHeader from "../Detail/DetailModalHeader.jsx";
+import DetailDisplay from "../Detail/DetailDisplay.tsx";
+import DeploymentDetailEdit from "../Detail/DeploymentDetailEdit.tsx";
+import Loading from "../Loading.tsx";
 import { useQuery, keepPreviousData, useMutation } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 
-const Gallery = () => {
+interface Props {
+	objectType: string;
+	nameKey: string;
+}
+
+const Gallery = ({
+	objectType = "deployment",
+	nameKey = "deployment_deviceID",
+}: Props) => {
 	const [searchParams, setSearchParams] = useSearchParams();
-	const [formKeys, setFormKeys] = useState();
+	const [formKeys, setFormKeys] = useState<String[]>([]);
 	const [pageNum, setPageNum] = useState(searchParams.get("page") || 1);
 	const { authTokens, user } = useContext(AuthContext);
 
@@ -55,7 +63,7 @@ const Gallery = () => {
 	}, [pageNum, updateSearchParameters]);
 
 	const getDataFunc = async (currentSearchParams) => {
-		let apiURL = `deployment/?${currentSearchParams.toString()}`;
+		let apiURL = `${objectType}/?${currentSearchParams.toString()}`;
 		console.log(apiURL);
 		let response_json = await getData(apiURL, authTokens.access);
 		return response_json;
@@ -115,8 +123,9 @@ const Gallery = () => {
 		if (isError) {
 			return <p>An error occurred: {error.message}</p>;
 		}
+		if (!searchParams.get("page_size")) return;
 
-		let maxPage = Math.ceil(data.count / searchParams.get("page_size"));
+		let maxPage = Math.ceil(data.count / Number(searchParams.get("page_size")));
 
 		return (
 			<div>
@@ -155,7 +164,7 @@ const Gallery = () => {
 
 	const newDELETE = async function (objID) {
 		let response_json = await deleteData(
-			`deployment/${objID}`,
+			`${nameKey}/${objID}`,
 			authTokens.access
 		);
 		return response_json;
@@ -178,21 +187,25 @@ const Gallery = () => {
 
 	const showDetailModal = function () {
 		//console.log(searchParams.get("detail") && data !== undefined);
-		console.log("Detail modal");
 		let modalShow = searchParams.get("detail") && data;
 		if (!modalShow) {
 			return null;
 		}
-		let detailNum = searchParams.get("detail");
+		let detailNum = Number(searchParams.get("detail"));
 		let selectedData = null;
-		let maxPage = null;
-		let maxData = null;
-		if (detailNum >= 0) {
+
+		let maxPage;
+		let maxData;
+
+		if (detailNum !== null) {
 			selectedData = data.results[detailNum];
-			maxPage = Math.ceil(data.count / searchParams.get("page_size"));
+			maxPage = Math.ceil(data.count / Number(searchParams.get("page_size")));
 			maxData = data.results.length;
+		} else {
+			maxPage = null;
+			maxData = null;
 		}
-		let editMode = searchParams.get("edit");
+		let editMode = searchParams.get("edit") || false;
 
 		console.log(selectedData);
 		return (
@@ -207,7 +220,7 @@ const Gallery = () => {
 						maxDetail={maxData}
 						handleDetailChange={openDetail}
 						handlePageChange={changePage}
-						isLoading={isLoading | isPlaceholderData}
+						isLoading={isLoading || isPlaceholderData}
 						editMode={editMode}
 						canEdit={selectedData ? true : false}
 						canDelete={selectedData ? true : false}
@@ -215,26 +228,21 @@ const Gallery = () => {
 						handleDelete={
 							selectedData
 								? () => {
-										deleteItem(
-											selectedData["id"],
-											selectedData["deployment_deviceID"]
-										);
+										deleteItem(selectedData["id"]);
 								  }
 								: () => {}
 						}
 					>
-						{selectedData
-							? selectedData["deployment_deviceID"]
-							: "Add new deployment"}
+						{selectedData ? selectedData[nameKey] : `Add new ${objectType}`}
 					</DetailModalHeader>
 				}
 			>
 				{editMode ? (
-					<DetailEdit
+					<DeploymentDetailEdit
 						selectedData={selectedData}
 						onSubmit={onDetailSubmit}
 						onCancel={
-							detailNum > -1
+							detailNum && detailNum > -1
 								? (e) => {
 										setEdit(false);
 								  }
@@ -259,6 +267,7 @@ const Gallery = () => {
 					onSubmit={onSubmit}
 					setFormKeys={setFormKeys}
 					addNew={addNew}
+					nameKey={nameKey}
 				/>
 				{showGallery()}
 			</div>

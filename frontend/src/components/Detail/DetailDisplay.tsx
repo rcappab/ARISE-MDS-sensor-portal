@@ -1,20 +1,25 @@
 import React from "react";
-import { dtFormat } from "../utils/timezoneFunctions";
+import { dtFormat } from "../../utils/timezoneFunctions";
 
 interface Props {
-	selectedData: object;
+	selectedData: object | null;
+	hideKeys?: string[];
+	timeKeys?: string[];
+	jsonKeys?: string[];
 }
 
-const DetailDisplay = ({ selectedData }: Props) => {
-	const hideKeys = ["combo_project", "last_imageURL"];
-	const timeKeys = [
+const DetailDisplay = ({
+	selectedData,
+	hideKeys = ["combo_project", "last_imageURL"],
+	timeKeys = [
 		"created_on",
 		"modified_on",
 		"recording_dt",
 		"deploymentStart",
 		"deploymentEnd",
-	];
-
+	],
+	jsonKeys = ["extra_info"],
+}: Props) => {
 	const convertDates = function (key, value) {
 		if (timeKeys.includes(key)) {
 			let currentTime = value;
@@ -37,7 +42,7 @@ const DetailDisplay = ({ selectedData }: Props) => {
 
 		let value_result;
 
-		if (key === "extra_info") {
+		if (jsonKeys.includes(key)) {
 			value_result = (
 				<td className="extra-info-table p-0 border">
 					<table className="table table-sm mb-0 align-middle text-center">
@@ -66,7 +71,7 @@ const DetailDisplay = ({ selectedData }: Props) => {
 		);
 	};
 
-	return (
+	return selectedData ? (
 		<div id="detail-display">
 			<table className="table detail-table">
 				<tbody>
@@ -76,7 +81,7 @@ const DetailDisplay = ({ selectedData }: Props) => {
 				</tbody>
 			</table>
 		</div>
-	);
+	) : null;
 };
 
 export default DetailDisplay;

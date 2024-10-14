@@ -3,7 +3,7 @@ import GalleryTile from "./GalleryTile.tsx";
 
 interface Props {
 	data: [];
-	onTileClick: () => void;
+	onTileClick: (index) => void;
 }
 
 const GalleryDisplay = ({ data = [], onTileClick = () => {} }: Props) => {

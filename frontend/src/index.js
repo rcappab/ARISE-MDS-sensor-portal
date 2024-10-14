@@ -9,6 +9,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import ProtectedRoute from "./utils/ProtectedRoute.jsx";
 import { Toaster } from "react-hot-toast";
+import Gallery from "./components/Gallery/Gallery.tsx";
 
 const queryClient = new QueryClient();
 
@@ -19,6 +20,21 @@ const router = createBrowserRouter([
 			{
 				element: <ProtectedRoute />,
 				children: [{ path: "/", element: <HomePage /> }],
+			},
+			{
+				element: <ProtectedRoute />,
+				children: [
+					{ path: "/deployments", element: <Gallery /> },
+					{
+						path: "/devices",
+						element: (
+							<Gallery
+								objectType={"device"}
+								nameKey={"DeviceID"}
+							/>
+						),
+					},
+				],
 			},
 			{ path: "/login", element: <LoginPage />, children: [] },
 			{

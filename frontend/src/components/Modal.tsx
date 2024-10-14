@@ -5,7 +5,7 @@ interface Props {
 	modalShow: boolean;
 	children: ReactElement;
 	headerChildren: ReactElement | string;
-	onClose: () => null;
+	onClose: () => void;
 }
 
 const Modal = ({ modalShow, children, headerChildren, onClose }: Props) => {
