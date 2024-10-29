@@ -6,9 +6,13 @@ const HomePage = () => {
 	const { user } = useContext(AuthContext);
 
 	return user ? (
-		<div>This is the home page</div>
+		<div>
+			<title>Home</title>
+			This is the home page
+		</div>
 	) : (
 		<div>
+			<title>Please log in</title>
 			<p>You are not logged in, redirecting...</p>
 		</div>
 	);

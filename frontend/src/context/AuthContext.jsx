@@ -123,7 +123,7 @@ export const AuthProvider = ({ children }) => {
 	return (
 		<AuthContext.Provider value={contextData}>
 			<Header />
-			<div className="container">
+			<div className="container pt-3">
 				<Outlet />
 			</div>
 		</AuthContext.Provider>

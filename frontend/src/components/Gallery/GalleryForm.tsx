@@ -7,62 +7,43 @@ import FormDateSelector from "../FormDateSelector.tsx";
 import { useSearchParams } from "react-router-dom";
 
 interface Props {
+	objectType?: string;
 	onSubmit: () => void;
 	addNew: () => void;
 	setFormKeys: (val: string[]) => void;
 	nameKey: string;
+	orderBy: string;
+	pageSize: number;
+	pageNum: number;
+	onReset: (searchParams: any) => void;
 }
 
 function GalleryForm({
 	onSubmit,
 	addNew,
 	setFormKeys,
+	orderBy,
+	pageSize,
+	pageNum,
+	onReset,
 	nameKey = "deployment_deviceID",
+	objectType = "deployment",
 }: Props) {
-	let [searchParams, setSearchParams] = useSearchParams();
-	let [isActive, setIsActive] = useState(searchParams.get("is_active"));
-	let [orderBy, setOrderBy] = useState(
-		searchParams.get("ordering") ? searchParams.get("ordering") : nameKey
-	);
-	let [site, setSite] = useState(searchParams.get("site"));
-	let [deviceType, setDeviceType] = useState(searchParams.get("device_type"));
-	//let submit = useSubmit();
+	const [searchParams, setSearchParams] = useSearchParams();
+
 	const formRef = useRef<HTMLFormElement>(null);
-	const defaultPageSize = 1;
+
 	const handleSubmit = function (e) {
 		onSubmit();
 	};
-
-	const resetForm = function (e) {
-		e.preventDefault();
-		if (!formRef.current) return;
-		formRef.current.reset();
-		let formData = new FormData(formRef.current);
-		console.log(formData);
-		let searchParams = new URLSearchParams(
-			formData as unknown as Record<string, string>
-		);
-		for (let key of searchParams.keys()) {
-			if (key === "page") {
-				searchParams.set(key, (1).toString());
-			} else if (key === "page_size") {
-				searchParams.set(key, defaultPageSize.toString());
-			} else {
-				searchParams.set(key, "");
-			}
-		}
-		console.log(searchParams);
-		setSearchParams(searchParams);
-		setIsActive(null);
-		setSite(null);
-		setDeviceType(null);
-		setOrderBy(nameKey);
-	};
-
 	const handleAddNew = function (e) {
 		e.preventDefault();
 		addNew();
 	};
+
+	const [isActive, setIsActive] = useState(searchParams.get("is_active"));
+	const [site, setSite] = useState(searchParams.get("site"));
+	const [deviceType, setDeviceType] = useState(searchParams.get("device_type"));
 
 	useEffect(() => {
 		if (searchParams.size === 0) {
@@ -81,6 +62,113 @@ function GalleryForm({
 		setFormKeys(Array.from(formData.keys()));
 		console.log(Array.from(formData.keys()));
 	}, [formRef, setFormKeys]);
+
+	const resetForm = function (e) {
+		e.preventDefault();
+		if (!formRef.current) return;
+		formRef.current.reset();
+		let formData = new FormData(formRef.current);
+		console.log(formData);
+		let searchParams = new URLSearchParams(
+			formData as unknown as Record<string, string>
+		);
+		onReset(searchParams);
+
+		//Resetting select boxes
+		setIsActive(null);
+		setSite(null);
+		setDeviceType(null);
+
+		//call reset callback
+	};
+
+	const activeField = function () {
+		if (!["deployment", "device", "project", "datafile"].includes(objectType))
+			return;
+
+		return (
+			<div className="col-lg-2">
+				<div className="form-floating">
+					<FormSelect
+						id="select-is_active"
+						name="is_active"
+						label="Deployment active?"
+						choices={[
+							{ value: "True", label: "True" },
+							{ value: "False", label: "False" },
+						]}
+						isSearchable={false}
+						//defaultvalue={searchParams.get("is_active") || null}
+						value={isActive}
+						handleChange={setIsActive}
+					/>
+				</div>
+			</div>
+		);
+	};
+
+	const dateField = function (id, name, label, validtypes) {
+		if (!validtypes.includes(objectType)) return;
+
+		return (
+			<FormDateSelector
+				id={id}
+				name={name}
+				label={label}
+				defaultvalue={
+					!searchParams.get(name)
+						? undefined
+						: (searchParams.get(name) as string)
+				}
+				className="col-lg-2"
+			/>
+		);
+	};
+
+	const siteField = function () {
+		if (!["deployment", "device", "datafile"].includes(objectType)) return;
+
+		return (
+			<div className="col-lg-2">
+				<div className="form-floating">
+					<FormSelectAPI
+						id="select-site"
+						name="site"
+						label="Site"
+						choices={[]}
+						value={site}
+						apiURL="site/"
+						valueKey="id"
+						labelKey="short_name"
+						handleChange={setSite}
+					/>
+				</div>
+			</div>
+		);
+	};
+
+	const deviceTypeField = function () {
+		if (!["deployment", "device", "datafile"].includes(objectType)) return;
+
+		return (
+			<div className="col-lg-2">
+				<div className="form-floating">
+					<FormSelectAPI
+						key="select-datatype"
+						id="select-datatype"
+						name="device_type"
+						label="Device type"
+						choices={[]}
+						value={deviceType}
+						apiURL="datatype/"
+						valueKey="id"
+						labelKey="name"
+						handleChange={setDeviceType}
+					/>
+				</div>
+			</div>
+		);
+	};
 
 	return (
 		<div id="search-form-div">
@@ -106,119 +194,27 @@ function GalleryForm({
 							<label htmlFor="search">Search</label>
 						</div>
 					</div>
-
-					<div className="col-lg-2">
-						<div className="form-floating">
-							<FormSelect
-								id="select-is_active"
-								name="is_active"
-								label="Deployment active?"
-								choices={[
-									{ value: "True", label: "True" },
-									{ value: "False", label: "False" },
-								]}
-								isSearchable={false}
-								//defaultvalue={searchParams.get("is_active") || null}
-								value={isActive}
-								handleChange={setIsActive}
-							/>
-						</div>
-					</div>
-
-					<div className="col-lg-2">
-						<div className="form-floating">
-							<FormSelectAPI
-								id="select-site"
-								name="site"
-								label="Site"
-								choices={[]}
-								value={site}
-								apiURL="site/"
-								valueKey="id"
-								labelKey="short_name"
-								handleChange={setSite}
-							/>
-						</div>
-					</div>
-
-					<div className="col-lg-2">
-						<div className="form-floating">
-							<FormSelectAPI
-								key="select-datatype"
-								id="select-datatype"
-								name="device_type"
-								label="Device type"
-								choices={[]}
-								value={deviceType}
-								apiURL="datatype/"
-								valueKey="id"
-								labelKey="name"
-								handleChange={setDeviceType}
-							/>
-						</div>
-					</div>
-
-					<FormDateSelector
-						id="start_date"
-						name="deploymentStart__gte"
-						label="Deployment started after"
-						defaultvalue={
-							!searchParams.get("deploymentStart__gte")
-								? undefined
-								: (searchParams.get("deploymentStart__gte") as string)
-						}
-						className="col-lg-2"
-					/>
-
-					<FormDateSelector
-						id="end_date"
-						name="deploymentEnd__lte"
-						label="Deployment ended before"
-						defaultvalue={
-							!searchParams.get("deploymentEnd__lte")
-								? undefined
-								: (searchParams.get("deploymentStart__gte") as string)
-						}
-						className="col-lg-2"
-					/>
-
-					<div className="col-lg-2">
-						<div className="form-floating">
-							<input
-								className="form-control"
-								name="page_size"
-								type="number"
-								min="1"
-								max="100"
-								step="5"
-								defaultValue={searchParams.get("page_size") || defaultPageSize}
-							/>
-							<label htmlFor="page_size">Results per page</label>
-						</div>
-					</div>
-
-					<div className="col-lg-2">
-						<div className="form-floating">
-							<FormSelect
-								id="select-ordering"
-								name="ordering"
-								label="Order by"
-								choices={[
-									{ value: "deploymentdeviceID", label: "Alphabetical" },
-									{ value: "created_on", label: "Registration time" },
-									{
-										value: "-created_on",
-										label: "Registration time (descending)",
-									},
-								]}
-								isSearchable={false}
-								isClearable={false}
-								//defaultvalue={searchParams.get("is_active") || null}
-								value={orderBy}
-								handleChange={setOrderBy}
-							/>
-						</div>
-					</div>
+					{activeField()}
+					{siteField()}
+					{deviceTypeField()}
+					{dateField(
+						"start_date",
+						"deploymentStart__gte",
+						"Deployment started after",
+						["deployment"]
+					)}
+					{dateField(
+						"end_date",
+						"deploymentEnd__lte",
+						"Deployment ended before",
+						["deployment"]
+					)}
+					{dateField("start_date", "recording_dt__gte", "File recorded after", [
+						"datafile",
+					])}
+					{dateField("end_date", "recording_dt__lte", "File recorded before", [
+						"datafile",
+					])}
 
 					<div className="d-grid gap-2 d-md-block mt-2 pt-1 col-lg-4">
 						<button
@@ -250,7 +246,21 @@ function GalleryForm({
 					name="page"
 					className="d-none"
 					type="number"
-					value={1}
+					value={pageNum}
+					readOnly={true}
+				/>
+				<input
+					name="ordering"
+					className="d-none"
+					value={orderBy}
+					readOnly={true}
+				/>
+				<input
+					name="page_size"
+					className="d-none"
+					type="number"
+					value={pageSize}
+					readOnly={true}
 				/>
 				<input
 					name="id"

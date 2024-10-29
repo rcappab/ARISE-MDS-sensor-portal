@@ -5,14 +5,13 @@ import AuthContext from "../../context/AuthContext.jsx";
 import GalleryForm from "./GalleryForm.tsx";
 import GalleryDisplay from "./GalleryDisplay.tsx";
 import GalleryPageControls from "./GalleryPageControls.tsx";
-import Modal from "../Modal.tsx";
-import DetailModalHeader from "../Detail/DetailModalHeader.jsx";
-import DetailDisplay from "../Detail/DetailDisplay.tsx";
-import DeploymentDetailEdit from "../Detail/DeploymentDetailEdit.tsx";
+
 import Loading from "../Loading.tsx";
 import { useQuery, keepPreviousData, useMutation } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
+
+import DetailModal from "../Detail/DetailModal.tsx";
 
 interface Props {
 	objectType: string;
@@ -23,10 +22,74 @@ const Gallery = ({
 	objectType = "deployment",
 	nameKey = "deployment_deviceID",
 }: Props) => {
+	const defaultPageSize = 1;
 	const [searchParams, setSearchParams] = useSearchParams();
 	const [formKeys, setFormKeys] = useState<String[]>([]);
-	const [pageNum, setPageNum] = useState(searchParams.get("page") || 1);
+	const [pageNum, setPageNum] = useState(Number(searchParams.get("page")) || 1);
+	const [pageSize, setPageSize] = useState(
+		Number(searchParams.get("page_size")) || defaultPageSize
+	);
 	const { authTokens, user } = useContext(AuthContext);
+
+	let additionalOrdering;
+	if (objectType === "device") {
+		additionalOrdering = [{ value: "name", label: "Device name alphabetical" }];
+	} else if (objectType === "deployment") {
+		additionalOrdering = [
+			{ value: "deploymentStart", label: "Deployment start time" },
+		];
+	} else if (objectType === "datafile") {
+		additionalOrdering = [
+			{ value: "recording_dt", label: "Recording datetime ascending" },
+			{ value: "-recording_dt", label: "Recording datetime descending" },
+		];
+	} else {
+		additionalOrdering = [];
+	}
+
+	let defaultOrdering = nameKey;
+	if (objectType === "datafile") {
+		defaultOrdering = "recording_dt";
+	}
+	const [orderBy, setOrderBy] = useState(
+		searchParams.get("ordering")
+			? searchParams.get("ordering")
+			: defaultOrdering
+	);
+
+	const orderingChoices = [
+		{
+			value: nameKey,
+			label: `${nameKey.replace("_", " ")} alphabetical`,
+		},
+		{ value: "created_on", label: "Registration time" },
+		{
+			value: "-created_on",
+			label: "Registration time (descending)",
+		},
+	].concat(additionalOrdering);
+
+	const handleReset = function (searchParams) {
+		for (let key of searchParams.keys()) {
+			if (key === "page") {
+				searchParams.set(key, (1).toString());
+			} else if (key === "page_size") {
+				// Do we need to reset this?
+				searchParams.set(key, defaultPageSize.toString());
+			} else {
+				searchParams.set(key, "");
+			}
+		}
+		console.log(searchParams);
+		setSearchParams(searchParams);
+
+		setPageNum(1);
+
+		//perhaps we don't need to reset this?
+		setPageSize(defaultPageSize);
+		//perhaps we don't need to reset this?
+		setOrderBy(defaultOrdering);
+	};
 
 	const checkSearchParameters = function () {
 		let searchParamsObject = Object.fromEntries(searchParams);
@@ -61,6 +124,14 @@ const Gallery = ({
 		console.log(pageNum);
 		updateSearchParameters("page", pageNum);
 	}, [pageNum, updateSearchParameters]);
+
+	useEffect(() => {
+		updateSearchParameters("page_size", pageSize);
+	}, [pageSize, updateSearchParameters]);
+
+	useEffect(() => {
+		updateSearchParameters("ordering", orderBy);
+	}, [orderBy, updateSearchParameters]);
 
 	const getDataFunc = async (currentSearchParams) => {
 		let apiURL = `${objectType}/?${currentSearchParams.toString()}`;
@@ -131,16 +202,24 @@ const Gallery = ({
 			<div>
 				<GalleryPageControls
 					pageNum={pageNum}
-					changePageCallback={changePage}
+					pageSize={pageSize}
 					maxPage={maxPage}
+					orderBy={orderBy ? orderBy : ""}
+					orderingChoices={orderingChoices}
+					handleChangePage={changePage}
+					handleChangePageSize={setPageSize}
+					handleChangeOrdering={setOrderBy}
+					// change itemsperpage callback
+					// change result ordering callback
 				/>
 				<div
 					id="display-container"
-					className={isPlaceholderData ? "opacity-50" : ""}
+					className={`${isPlaceholderData ? "opacity-50" : ""} container`}
 				>
 					<GalleryDisplay
 						data={data.results}
 						onTileClick={openDetail}
+						nameKey={nameKey}
 					/>
 				</div>
 			</div>
@@ -185,92 +264,45 @@ const Gallery = ({
 		}
 	};
 
-	const showDetailModal = function () {
-		//console.log(searchParams.get("detail") && data !== undefined);
-		let modalShow = searchParams.get("detail") && data;
-		if (!modalShow) {
-			return null;
-		}
-		let detailNum = Number(searchParams.get("detail"));
-		let selectedData = null;
-
-		let maxPage;
-		let maxData;
-
-		if (detailNum !== null) {
-			selectedData = data.results[detailNum];
-			maxPage = Math.ceil(data.count / Number(searchParams.get("page_size")));
-			maxData = data.results.length;
+	const handleDetailModalCancel = function (detailNum) {
+		if (detailNum && detailNum > -1) {
+			setEdit(false);
 		} else {
-			maxPage = null;
-			maxData = null;
+			setEdit(false);
+			closeDetail();
 		}
-		let editMode = searchParams.get("edit") || false;
-
-		console.log(selectedData);
-		return (
-			<Modal
-				modalShow={modalShow}
-				onClose={closeDetail}
-				headerChildren={
-					<DetailModalHeader
-						detailNum={detailNum}
-						pageNum={pageNum}
-						maxPage={maxPage}
-						maxDetail={maxData}
-						handleDetailChange={openDetail}
-						handlePageChange={changePage}
-						isLoading={isLoading || isPlaceholderData}
-						editMode={editMode}
-						canEdit={selectedData ? true : false}
-						canDelete={selectedData ? true : false}
-						handleEdit={setEdit}
-						handleDelete={
-							selectedData
-								? () => {
-										deleteItem(selectedData["id"]);
-								  }
-								: () => {}
-						}
-					>
-						{selectedData ? selectedData[nameKey] : `Add new ${objectType}`}
-					</DetailModalHeader>
-				}
-			>
-				{editMode ? (
-					<DeploymentDetailEdit
-						selectedData={selectedData}
-						onSubmit={onDetailSubmit}
-						onCancel={
-							detailNum && detailNum > -1
-								? (e) => {
-										setEdit(false);
-								  }
-								: (e) => {
-										setEdit(false);
-										closeDetail();
-								  }
-						}
-					/>
-				) : (
-					<DetailDisplay selectedData={selectedData} />
-				)}
-			</Modal>
-		);
 	};
 
 	return (
-		<div className="container-lg">
-			<div>
-				{showDetailModal()}
-				<GalleryForm
-					onSubmit={onSubmit}
-					setFormKeys={setFormKeys}
-					addNew={addNew}
-					nameKey={nameKey}
-				/>
-				{showGallery()}
-			</div>
+		<div>
+			<title>{`Search ${objectType}s`}</title>
+			<h3>Search {objectType}s</h3>
+			<DetailModal
+				data={data}
+				closeDetail={closeDetail}
+				onDetailCancel={handleDetailModalCancel}
+				openDetail={openDetail}
+				changePage={changePage}
+				setEdit={setEdit}
+				deleteItem={deleteItem}
+				onDetailSubmit={onDetailSubmit}
+				nameKey={nameKey}
+				pageNum={pageNum}
+				objectType={objectType}
+				isLoading={isLoading || isPending ? true : false}
+			/>
+			<GalleryForm
+				onSubmit={onSubmit}
+				onReset={handleReset}
+				pageSize={pageSize}
+				pageNum={pageNum}
+				orderBy={orderBy ? orderBy : ""}
+				setFormKeys={setFormKeys}
+				addNew={addNew}
+				nameKey={nameKey}
+				objectType={objectType}
+			/>
+			{showGallery()}
 		</div>
 	);
 };

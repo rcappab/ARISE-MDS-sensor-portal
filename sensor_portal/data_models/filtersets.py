@@ -1,5 +1,6 @@
 import django_filters.rest_framework
-from .models import Deployment, Project, Device, DataFile
+
+from .models import DataFile, Deployment, Device, Project
 
 
 class GenericFilter(django_filters.FilterSet):
@@ -51,6 +52,10 @@ class DeploymentFilter(GenericFilter, ExtraInfoFilterMixIn):
 
 
 class ProjectFilter(GenericFilter):
+
+    is_active = django_filters.BooleanFilter(
+        field_name="deployments__is_active")
+
     class Meta:
         model = Project
         fields = GenericFilter.Meta.fields.copy()
@@ -62,6 +67,9 @@ class ProjectFilter(GenericFilter):
 
 
 class DeviceFilter(GenericFilter, ExtraInfoFilterMixIn):
+    is_active = django_filters.BooleanFilter(
+        field_name="deployments__is_active")
+
     class Meta:
         model = Device
         fields = GenericFilter.Meta.fields.copy()
@@ -79,6 +87,8 @@ class DataFileFilter(GenericFilter, ExtraInfoFilterMixIn):
                                                 exclude=True,
                                                 lookup_expr='isnull',
                                                 label='is favourite')
+    is_active = django_filters.BooleanFilter(
+        field_name="deployment__is_active")
 
     class Meta:
         model = DataFile
@@ -97,5 +107,5 @@ class DataFileFilter(GenericFilter, ExtraInfoFilterMixIn):
             'localstorage': ['exact'],
             'archived': ['exact'],
             'original_name': ['exact', 'icontains', 'in'],
-            'favourite_of': ['contains']
+            'favourite_of': ['contains'],
         })

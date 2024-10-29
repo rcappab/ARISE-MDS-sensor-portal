@@ -10,6 +10,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import ProtectedRoute from "./utils/ProtectedRoute.jsx";
 import { Toaster } from "react-hot-toast";
 import Gallery from "./components/Gallery/Gallery.tsx";
+import "bootstrap/dist/css/bootstrap.min.css";
+import DetailPage from "./components/Detail/DetailPage.tsx";
 
 const queryClient = new QueryClient();
 
@@ -30,7 +32,40 @@ const router = createBrowserRouter([
 						element: (
 							<Gallery
 								objectType={"device"}
-								nameKey={"DeviceID"}
+								nameKey={"deviceID"}
+							/>
+						),
+					},
+					{
+						path: "/projects",
+
+						children: [
+							{
+								path: "",
+								element: (
+									<Gallery
+										objectType={"project"}
+										nameKey={"projectID"}
+									/>
+								),
+							},
+							{
+								path: ":id",
+								element: (
+									<DetailPage
+										objectType="project"
+										nameKey={"projectID"}
+									/>
+								),
+							},
+						],
+					},
+					{
+						path: "/datafiles",
+						element: (
+							<Gallery
+								objectType={"datafile"}
+								nameKey={"file_name"}
 							/>
 						),
 					},

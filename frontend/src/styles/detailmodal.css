@@ -1,5 +1,5 @@
 .modal {
-	display: block;
+	display: block !important;
 	background-color: #5050506e;
 }
 

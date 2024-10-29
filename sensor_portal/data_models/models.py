@@ -1,23 +1,36 @@
-from django.db import models
-from django.urls import reverse
+import os
+import traceback
+from datetime import datetime, time, timedelta, timezone
+
+from bridgekeeper import perms
 from django.conf import settings
-from django.dispatch import receiver
 from django.contrib.auth.models import Group
-from django.db.models.signals import post_save, pre_delete, m2m_changed, post_delete
-from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned, ValidationError
-from django.db.models import Sum, F, Q, BooleanField, ExpressionWrapper, Case, When, DateTimeField
+from django.contrib.gis.db import models as gis_models
+from django.contrib.gis.geos import Point
+from django.core.exceptions import (
+    MultipleObjectsReturned,
+    ObjectDoesNotExist,
+    ValidationError,
+)
+from django.db import models
+from django.db.models import (
+    BooleanField,
+    Case,
+    DateTimeField,
+    ExpressionWrapper,
+    F,
+    Q,
+    Sum,
+    When,
+)
+from django.db.models.signals import m2m_changed, post_delete, post_save, pre_delete
+from django.dispatch import receiver
+from django.urls import reverse
 from django.utils import timezone as djtimezone
 from sizefield.models import FileSizeField
-from django.contrib.gis.geos import Point
-from django.contrib.gis.db import models as gis_models
-
-import traceback
-from datetime import datetime, timedelta, timezone, time
-import os
-from bridgekeeper import perms
+from utils.general import check_dt, get_global_project
 
 from . import validators
-from utils.general import check_dt, get_global_project
 
 
 class Basemodel(models.Model):
@@ -65,6 +78,9 @@ class Project(Basemodel):
     projectContact = models.CharField(max_length=50, blank=True)
     projectContactEmail = models.CharField(max_length=100, blank=True)
     organizationName = models.CharField(max_length=100, blank=True)
+
+    def is_active(self):
+        return self.deployments.filter(is_active=True).exists()
 
     # User ownership
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, related_name="owned_projects",
@@ -118,11 +134,14 @@ class Device(Basemodel):
     authentication = models.CharField(max_length=100, blank=True, null=True)
     extra_info = models.JSONField(default=dict, blank=True)
 
+    def is_active(self):
+        return self.deployments.filter(is_active=True).exists()
+
     def __str__(self):
         return self.deviceID
 
     def get_absolute_url(self):
-        return reverse('device-detail', kwargs={'pk': self.pk})
+        return f"/api/device/{self.pk}"
 
     def deployment_from_date(self, dt, user=None):
         dt = check_dt(dt)

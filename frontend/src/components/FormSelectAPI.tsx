@@ -7,7 +7,7 @@ import { getData, postData } from "../utils/FetchFunctions";
 interface Props {
 	name: string;
 	id: string;
-	value?: string | [string] | null;
+	value?: string | string[] | null;
 	label: string;
 	choices: [];
 	isSearchable?: boolean;

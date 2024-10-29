@@ -1,15 +1,19 @@
+from datetime import datetime as dt
+
 import magic
 from django.utils import timezone as djtimezone
 from PIL import ExifTags, Image
 from rest_framework import serializers
 from rest_framework_gis import serializers as geoserializers
 from user_management.models import User
+from user_management.serializers import (
+    UserGroupMemberSerializer,
+    UserGroupProfileSerializer,
+)
 from utils.serializers import SlugRelatedGetOrCreateField
-from datetime import datetime as dt
 
 from . import validators
-from .models import Project, Deployment, Device, DataFile, Site, DataType
-from user_management.serializers import UserGroupProfileSerializer, UserGroupMemberSerializer
+from .models import DataFile, DataType, Deployment, Device, Project, Site
 
 
 class CheckFormMixIn():
@@ -178,6 +182,7 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedM
                                                            self.instance_get('device', data))
         if not result:
             raise serializers.ValidationError(message)
+
         result, message = validators.deployment_start_time_after_end_time(self.instance_get('deploymentStart', data),
                                                                           self.instance_get('deploymentEnd', data))
         if not result:
@@ -211,6 +216,9 @@ class DeploymentSerializer_GeoJSON(DeploymentFieldsMixIn, geoserializers.GeoFeat
 
 
 class ProjectSerializer(OwnerMangerMixIn, CreatedModifiedMixIn, serializers.ModelSerializer):
+    is_active = serializers.BooleanField(
+        read_only=True)
+
     class Meta:
         model = Project
         exclude = []
@@ -221,11 +229,15 @@ class ProjectSerializer(OwnerMangerMixIn, CreatedModifiedMixIn, serializers.Mode
 
 
 class DeviceSerializer(OwnerMangerMixIn, CreatedModifiedMixIn, serializers.ModelSerializer):
-    type = serializers.SlugRelatedField(slug_field='name',
-                                        queryset=DataType.objects.all(),
-                                        allow_null=True)
+    type = serializers.SlugRelatedField(
+        slug_field='name', queryset=DataType.objects.all(), required=False)
+    type_id = serializers.PrimaryKeyRelatedField(queryset=DataType.objects.all().values_list('pk', flat=True),
+                                                 required=False)
+
     username = serializers.CharField()
     authentication = serializers.CharField()
+    is_active = serializers.BooleanField(
+        read_only=True)
 
     class Meta:
         model = Device
@@ -246,6 +258,23 @@ class DeviceSerializer(OwnerMangerMixIn, CreatedModifiedMixIn, serializers.Model
         if not user_is_manager:
             [initial_rep.pop(field, '') for field in fields_to_pop]
         return initial_rep
+
+    def validate(self, data):
+        data = super().validate(data)
+
+        if not self.partial:
+            # check if a device has been attached (via either method)
+            result, message, data = validators.check_two_keys(
+                'device_type',
+                'device_type_id',
+                data,
+                Device,
+                self.form_submission
+            )
+            if not result:
+                raise serializers.ValidationError(message)
+
+        return data
 
 
 class DataFileSerializer(CreatedModifiedMixIn, serializers.ModelSerializer):
@@ -282,6 +311,8 @@ class DataFileUploadSerializer(serializers.Serializer):
     data_types = serializers.ListField(child=serializers.SlugRelatedField(slug_field='name',
                                                                           queryset=DataType.objects.all()),
                                        required=False)
+    is_active = serializers.BooleanField(
+        source="deployment.is_active", read_only=True)
 
     def create(self, validated_data):
         return validated_data

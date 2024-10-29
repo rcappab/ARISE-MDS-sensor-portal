@@ -6,7 +6,7 @@ import CreatableSelect from "react-select/creatable";
 interface Props {
 	name: string;
 	id: string;
-	value?: string | [string] | null;
+	value?: string | string[] | null;
 	label: string;
 	choices: any[] | undefined;
 	isSearchable?: boolean;
@@ -65,7 +65,7 @@ const FormSelect = ({
 					});
 				} else {
 					chosenDefault = _choices.find(function (item) {
-						return value === item.value;
+						return String(value) === String(item.value);
 					});
 				}
 				//console.log(name, _choices, value, chosenDefault);

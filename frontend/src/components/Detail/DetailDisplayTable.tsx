@@ -8,7 +8,7 @@ interface Props {
 	jsonKeys?: string[];
 }
 
-const DetailDisplay = ({
+const DetailDisplayTable = ({
 	selectedData,
 	hideKeys = ["combo_project", "last_imageURL"],
 	timeKeys = [
@@ -49,7 +49,7 @@ const DetailDisplay = ({
 						<tbody>
 							{Object.keys(value).map((e_iKey, i) => {
 								return (
-									<tr>
+									<tr key={`${key}_${e_iKey}`}>
 										<th scope="row">{e_iKey}</th>
 										<td>{value[e_iKey]}</td>
 									</tr>
@@ -64,7 +64,7 @@ const DetailDisplay = ({
 		}
 
 		return (
-			<tr>
+			<tr key={key}>
 				<th scope="row">{key}</th>
 				{value_result}
 			</tr>
@@ -72,16 +72,14 @@ const DetailDisplay = ({
 	};
 
 	return selectedData ? (
-		<div id="detail-display">
-			<table className="table detail-table">
-				<tbody>
-					{Object.keys(selectedData).map((key, i) => {
-						return tableRow(key, selectedData[key]);
-					})}
-				</tbody>
-			</table>
-		</div>
+		<table className="table detail-table">
+			<tbody>
+				{Object.keys(selectedData).map((key, i) => {
+					return tableRow(key, selectedData[key]);
+				})}
+			</tbody>
+		</table>
 	) : null;
 };
 
-export default DetailDisplay;
+export default DetailDisplayTable;

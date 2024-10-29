@@ -1,30 +1,32 @@
-import React, { useCallback } from "react";
-import { Form } from "react-router-dom";
-import FormSelectAPI from "../FormSelectAPI.tsx";
-import { useState, useRef, useEffect, useContext } from "react";
-import FormDateTZSelect from "../FormDateTZSelect.tsx";
-import { useMutation } from "@tanstack/react-query";
-import AuthContext from "../../context/AuthContext.jsx";
-import { patchData, postData } from "../../utils/FetchFunctions.js";
-import FormMap from "../FormMap.tsx";
+import React, { useState } from "react";
+import DetailEditForm from "./DetailEditForm.tsx";
 import JSONInput from "../JSONInput.tsx";
-import toast from "react-hot-toast";
+import FormMap from "../FormMap.tsx";
+import FormDateTZSelect from "../FormDateTZSelect.tsx";
+import FormSelectAPI from "../FormSelectAPI.tsx";
 
 interface Props {
 	selectedData?: object | null;
 	onSubmit?: (e: Event, addNew: boolean, response: object) => void;
 	onCancel?: (e: any) => void;
+	setErrorDict: (newVal: object) => void;
+	setWasValidated: (newVal: boolean) => void;
+	onReset: () => void;
+	errorDict: object;
+	wasValidated: boolean;
 }
 
-const DeploymentDetailEdit = ({
-	selectedData = null,
-	onSubmit = (e, addNew, response) => {},
-	onCancel = () => {},
+const DetailEditDeployment = ({
+	selectedData,
+	onSubmit,
+	onCancel,
+	setErrorDict,
+	setWasValidated,
+	onReset = () => {},
+	errorDict = {},
+	wasValidated = false,
 }: Props) => {
-	const { authTokens } = useContext(AuthContext);
-
-	const formRef = useRef<HTMLFormElement>(null);
-	const [stopEdit, setStopEdit] = useState(false);
+	// deployment
 
 	const [deploymentID, setdeploymentID] = useState(
 		selectedData ? selectedData["deploymentID"] : ""
@@ -77,9 +79,9 @@ const DeploymentDetailEdit = ({
 		}
 	};
 
-	const resetData = function () {
-		setWasValidated(false);
-		setErrorDict({});
+	const resetDetailData = function () {
+		onReset();
+		//Deployment only
 		setdeploymentID("");
 		setdevice_type_id(null);
 		setdevice_n(null);
@@ -92,190 +94,35 @@ const DeploymentDetailEdit = ({
 		setExtraInfo({});
 	};
 
-	const [wasValidated, setWasValidated] = useState(false);
-	const [errorDict, setErrorDict] = useState({});
-
-	const doValidation = useCallback(
-		function (responseData = null) {
-			let form = formRef.current;
-			if (form === null) {
-				return;
-			}
-
-			let newErrorDict = {};
-			let valid = true;
-			for (const input of form.getElementsByTagName("input")) {
-				if (!responseData) {
-					newErrorDict[input.name] = input.validationMessage;
-				} else {
-					let responseError = responseData[input.name];
-					if (responseError) {
-						newErrorDict[input.name] = responseData[input.name];
-					} else {
-						newErrorDict[input.name] = "";
-					}
-				}
-				if (newErrorDict[input.name] !== "") {
-					valid = false;
-				}
-			}
-
-			setErrorDict(newErrorDict);
-			console.log(newErrorDict);
-			console.log(errorDict);
-			return valid;
-		},
-		[errorDict]
-	);
-
-	const handleFormChange = useCallback(
-		function () {
-			console.log("Form change " + wasValidated);
-			if (wasValidated) {
-				doValidation();
-			}
-		},
-		[wasValidated, doValidation]
-	);
-
-	useEffect(() => {
-		handleFormChange();
-	}, [
-		device_type_id,
-		project_id,
-		site_id,
-		device_id,
-		deploymentStart,
-		deploymentEnd,
-		latitude,
-		longitude,
-		extraInfo,
-		handleFormChange,
-	]);
-
-	const startLoadingToast = () => {
-		const toastId = toast.loading("Loading...");
-		return toastId;
-	};
-
-	const handleSubmission = async function (e) {
-		e.preventDefault();
-		let toastId = startLoadingToast();
-		let form = e.target;
-		let formData = new FormData(form);
-
-		console.log(formData);
-		console.log(project_id);
-
-		let addNew = formData.get("id") === "";
-		//let allFormKeys = Array.from(formData.keys());
-		//console.log(allFormKeys);
-		setWasValidated(true);
-		let formValid = doValidation();
-		if (!formValid) {
-			toast.error("Error in submission", {
-				id: toastId,
-			});
-			return;
-		}
-
-		// project ID should be replaced with an array of nullable
-		for (let [key, value] of formData.entries()) {
-			if (value === "" && key !== "project_id") {
-				formData.delete(key);
-			}
-		}
-
-		console.log("Add new :" + addNew);
-		console.log(formData);
-
-		let objData = Object.fromEntries(formData);
-		objData["project_id"] = JSON.parse(objData["project_id"] as string);
-		objData["extra_info"] = JSON.parse(objData["extra_info"] as string);
-		console.log(objData);
-		let response;
-		if (!addNew) {
-			response = await doPatch.mutateAsync({
-				apiURL: `deployment/${formData.get("id")}/`,
-				newData: objData,
-			});
-		} else {
-			response = await doPost.mutateAsync({
-				apiURL: `deployment/`,
-				newData: objData,
-			});
-		}
-
-		console.log(response);
-
-		if (!response["ok"]) {
-			formValid = doValidation(response);
-			toast.error("Error in submission", {
-				id: toastId,
-			});
-			if (!formValid) {
-				return;
-			}
-		}
-
-		if (addNew) {
-			toast.success("Deployment succesfully added", {
-				id: toastId,
-			});
-		} else {
-			toast.success("Deployment succesfully edited", {
-				id: toastId,
-			});
-		}
-
-		if (stopEdit) {
-			onSubmit(e, addNew, response);
-		} else if (addNew) {
-			resetData();
-		} else if (!addNew) {
-			selectedData = response;
-		}
-	};
-
-	const newPATCH = async function (x: { apiURL: string; newData: object }) {
-		let response_json = await patchData(x.apiURL, authTokens.access, x.newData);
-		//console.log(response_json);
-		return response_json;
-	};
-
-	const doPatch = useMutation({
-		mutationFn: (inputValue: { apiURL: string; newData: object }) =>
-			newPATCH(inputValue),
-	});
-
-	const newPOST = async function (x: { apiURL: string; newData: object }) {
-		let response_json = await postData(x.apiURL, authTokens.access, x.newData);
-		//console.log(response_json);
-		return response_json;
-	};
-
-	const doPost = useMutation({
-		mutationFn: (inputValue: { apiURL: string; newData: object }) =>
-			newPOST(inputValue),
-	});
+	// useEffect(() => {
+	// 	handleFormChange();
+	// }, [
+	// 	device_type_id,
+	// 	project_id,
+	// 	site_id,
+	// 	device_id,
+	// 	deploymentStart,
+	// 	deploymentEnd,
+	// 	latitude,
+	// 	longitude,
+	// 	extraInfo,
+	// 	handleFormChange,
+	// ]);
 
 	return (
-		<div>
-			<Form
-				id="detailForm"
-				noValidate
-				className={`${wasValidated ? "form-validated" : ""}`}
-				onChange={handleFormChange}
-				onSubmit={handleSubmission}
-				ref={formRef}
-			>
-				<input
-					name="id"
-					className="d-none"
-					id="post-id"
-					value={selectedData ? selectedData["id"] : ""}
-					readOnly={true}
-				/>
+		<DetailEditForm
+			objectType="deployment"
+			setErrorDict={setErrorDict}
+			wasValidated={wasValidated}
+			setWasValidated={setWasValidated}
+			selectedData={selectedData}
+			onSubmit={onSubmit}
+			onCancel={onCancel}
+			onReset={resetDetailData}
+			JSONFields={["project_id", "extra_info"]}
+		>
+			<>
+				{/* here starts the deployment fields */}
 				<div className="row px-1 py-1 mb-3 border rounded">
 					<div className="col-md-4">
 						<label htmlFor="post-deployment">Deployment ID</label>
@@ -544,7 +391,7 @@ const DeploymentDetailEdit = ({
 					/>
 				</div>
 				<div className="row py-1 mb-3 border rounded">
-					<label htmlFor="post-latitude">Extra fields</label>
+					<label htmlFor="post-extra_info">Extra fields</label>
 					<JSONInput
 						id="post-extra_info"
 						name="extra_info"
@@ -554,44 +401,10 @@ const DeploymentDetailEdit = ({
 						errorDict={errorDict["extra_info"] ? errorDict["extra_info"] : {}}
 					/>
 				</div>
-				<div className="row gy-1 mb-2">
-					<div className="col-md-4">
-						<button
-							name="saveStopButton"
-							className="btn btn-primary btn-lg w-100"
-							type="submit"
-							onClick={(e) => {
-								setStopEdit(true);
-							}}
-						>
-							Save
-						</button>
-					</div>
-					<div className="col-md-4">
-						<button
-							name="saveContinueButton"
-							className="btn btn-primary btn-lg w-100"
-							type="submit"
-							onClick={(e) => {
-								setStopEdit(false);
-							}}
-						>
-							Save and keep editing
-						</button>
-					</div>
-					<div className="col-md-4">
-						<button
-							name="cancelButton"
-							className="btn btn-danger btn-lg w-100"
-							onClick={onCancel}
-						>
-							Cancel
-						</button>
-					</div>
-				</div>
-			</Form>
-		</div>
+				{/* here ends the deployment fields */}
+			</>
+		</DetailEditForm>
 	);
 };
 
-export default DeploymentDetailEdit;
+export default DetailEditDeployment;

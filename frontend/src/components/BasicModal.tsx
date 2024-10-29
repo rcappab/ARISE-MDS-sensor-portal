@@ -8,7 +8,12 @@ interface Props {
 	onClose: () => void;
 }
 
-const Modal = ({ modalShow, children, headerChildren, onClose }: Props) => {
+const BasicModal = ({
+	modalShow,
+	children,
+	headerChildren,
+	onClose,
+}: Props) => {
 	//$el.scrollTo({top: 0, behavior: 'instant'}
 
 	const onBackGroundClick = function (e) {
@@ -49,4 +54,4 @@ const Modal = ({ modalShow, children, headerChildren, onClose }: Props) => {
 	return showModal();
 };
 
-export default Modal;
+export default BasicModal;
