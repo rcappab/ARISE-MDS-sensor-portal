@@ -8,20 +8,13 @@ import GalleryPageControls from "./GalleryPageControls.tsx";
 
 import Loading from "../Loading.tsx";
 import { useQuery, keepPreviousData, useMutation } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import DetailModal from "../Detail/DetailModal.tsx";
+import Error404page from "../../pages/Error404page.jsx";
 
-interface Props {
-	objectType: string;
-	nameKey: string;
-}
-
-const Gallery = ({
-	objectType = "deployment",
-	nameKey = "deployment_deviceID",
-}: Props) => {
+const Gallery = () => {
 	const defaultPageSize = 1;
 	const [searchParams, setSearchParams] = useSearchParams();
 	const [formKeys, setFormKeys] = useState<String[]>([]);
@@ -31,7 +24,24 @@ const Gallery = ({
 	);
 	const { authTokens, user } = useContext(AuthContext);
 
+	let { fromObject, fromID, objectType } = useParams();
+
+	if (objectType === undefined && fromID === undefined) {
+		objectType = fromObject;
+	} else {
+		fromObject = fromObject.substring(0, fromObject.length - 1);
+	}
+	objectType = objectType.substring(0, objectType.length - 1);
+
+	const nameKey = {
+		deployment: "deploymentdeviceID",
+		device: "deviceID",
+		project: "projectID",
+		datafile: "filename",
+	}[objectType];
+
 	let additionalOrdering;
+
 	if (objectType === "device") {
 		additionalOrdering = [{ value: "name", label: "Device name alphabetical" }];
 	} else if (objectType === "deployment") {
@@ -56,6 +66,87 @@ const Gallery = ({
 			? searchParams.get("ordering")
 			: defaultOrdering
 	);
+
+	const validGalleries = {
+		deployment: ["datafile"],
+		device: ["deployment", "datafile"],
+		project: ["deployment", "datafile"],
+		datafile: [],
+	}[fromObject];
+
+	const updateSearchParameters = useCallback(
+		function (key, val) {
+			let oldSearchParams = searchParams;
+			if (oldSearchParams.size > 0) {
+				oldSearchParams.set(key, val);
+				setSearchParams(oldSearchParams);
+			}
+		},
+		[searchParams, setSearchParams]
+	);
+
+	useEffect(() => {
+		console.log(pageNum);
+		updateSearchParameters("page", pageNum);
+	}, [pageNum, updateSearchParameters]);
+
+	useEffect(() => {
+		updateSearchParameters("page_size", pageSize);
+	}, [pageSize, updateSearchParameters]);
+
+	useEffect(() => {
+		updateSearchParameters("ordering", orderBy);
+	}, [orderBy, updateSearchParameters]);
+
+	const getDataFunc = async (currentSearchParams) => {
+		let apiURL = `${objectType}/?${currentSearchParams.toString()}`;
+		console.log(apiURL);
+		let response_json = await getData(apiURL, authTokens.access);
+		return response_json;
+	};
+
+	const checkSearchParameters = function () {
+		let searchParamsObject = Object.fromEntries(searchParams);
+		if (formKeys) {
+			Object.entries(searchParamsObject).forEach(([key, value]) => {
+				if (!formKeys.includes(key)) {
+					delete searchParamsObject[key];
+				}
+			});
+		}
+		return new URLSearchParams(searchParamsObject);
+	};
+
+	const {
+		isLoading,
+		isError,
+		isPending,
+		data,
+		error,
+		isPlaceholderData,
+		refetch,
+	} = useQuery({
+		queryKey: ["data", user, checkSearchParameters().toString()],
+		queryFn: () => getDataFunc(searchParams),
+		enabled: searchParams.size > 0,
+		placeholderData: keepPreviousData,
+	});
+
+	const newDELETE = async function (objID) {
+		let response_json = await deleteData(
+			`${objectType}/${objID}`,
+			authTokens.access
+		);
+		return response_json;
+	};
+
+	const doDelete = useMutation({
+		mutationFn: (objID) => newDELETE(objID),
+	});
+
+	if (fromID !== undefined && !validGalleries?.includes(objectType)) {
+		return <Error404page />;
+	}
 
 	const orderingChoices = [
 		{
@@ -91,69 +182,11 @@ const Gallery = ({
 		setOrderBy(defaultOrdering);
 	};
 
-	const checkSearchParameters = function () {
-		let searchParamsObject = Object.fromEntries(searchParams);
-		if (formKeys) {
-			Object.entries(searchParamsObject).forEach(([key, value]) => {
-				if (!formKeys.includes(key)) {
-					delete searchParamsObject[key];
-				}
-			});
-		}
-		return new URLSearchParams(searchParamsObject);
-	};
-
-	const updateSearchParameters = useCallback(
-		function (key, val) {
-			let oldSearchParams = searchParams;
-			if (oldSearchParams.size > 0) {
-				oldSearchParams.set(key, val);
-				setSearchParams(oldSearchParams);
-			}
-		},
-		[searchParams, setSearchParams]
-	);
-
 	const removeSearchParameters = function (key) {
 		let oldSearchParams = searchParams;
 		oldSearchParams.delete(key);
 		setSearchParams(oldSearchParams);
 	};
-
-	useEffect(() => {
-		console.log(pageNum);
-		updateSearchParameters("page", pageNum);
-	}, [pageNum, updateSearchParameters]);
-
-	useEffect(() => {
-		updateSearchParameters("page_size", pageSize);
-	}, [pageSize, updateSearchParameters]);
-
-	useEffect(() => {
-		updateSearchParameters("ordering", orderBy);
-	}, [orderBy, updateSearchParameters]);
-
-	const getDataFunc = async (currentSearchParams) => {
-		let apiURL = `${objectType}/?${currentSearchParams.toString()}`;
-		console.log(apiURL);
-		let response_json = await getData(apiURL, authTokens.access);
-		return response_json;
-	};
-
-	const {
-		isLoading,
-		isError,
-		isPending,
-		data,
-		error,
-		isPlaceholderData,
-		refetch,
-	} = useQuery({
-		queryKey: ["data", user, checkSearchParameters().toString()],
-		queryFn: () => getDataFunc(searchParams),
-		enabled: searchParams.size > 0,
-		placeholderData: keepPreviousData,
-	});
 
 	const onSubmit = function () {
 		setPageNum(1);
@@ -241,23 +274,11 @@ const Gallery = ({
 		}
 	};
 
-	const newDELETE = async function (objID) {
-		let response_json = await deleteData(
-			`${nameKey}/${objID}`,
-			authTokens.access
-		);
-		return response_json;
-	};
-
-	const doDelete = useMutation({
-		mutationFn: (objID) => newDELETE(objID),
-	});
-
 	const deleteItem = async function (objID) {
 		let response = await doDelete.mutateAsync(objID);
 		console.log(response);
 		if (response["ok"]) {
-			toast(`Deleted ${objID}`);
+			toast(`${objectType} deleted`);
 			setPageNum(1);
 			refetch();
 			closeDetail();
@@ -276,7 +297,11 @@ const Gallery = ({
 	return (
 		<div>
 			<title>{`Search ${objectType}s`}</title>
-			<h3>Search {objectType}s</h3>
+
+			<h3>
+				Search {fromID === undefined ? "" : `${fromObject} ${fromID} `}
+				{objectType}s
+			</h3>
 			<DetailModal
 				data={data}
 				closeDetail={closeDetail}

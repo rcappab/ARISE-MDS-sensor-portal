@@ -37,7 +37,7 @@ const DetailEditProject = ({
 
 	return (
 		<DetailEditForm
-			objectType="device"
+			objectType="project"
 			setErrorDict={setErrorDict}
 			wasValidated={wasValidated}
 			setWasValidated={setWasValidated}
@@ -75,7 +75,7 @@ const DetailEditProject = ({
 					<div className="col-md-4">
 						<label htmlFor="post-projectName">Oroject name</label>
 						<input
-							name="name"
+							name="projectName"
 							className={`form-control ${
 								wasValidated
 									? errorDict["projectName"]

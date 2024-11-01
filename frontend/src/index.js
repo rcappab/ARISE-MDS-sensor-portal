@@ -12,6 +12,7 @@ import { Toaster } from "react-hot-toast";
 import Gallery from "./components/Gallery/Gallery.tsx";
 import "bootstrap/dist/css/bootstrap.min.css";
 import DetailPage from "./components/Detail/DetailPage.tsx";
+import Error404page from "./pages/Error404page.jsx";
 
 const queryClient = new QueryClient();
 
@@ -26,55 +27,31 @@ const router = createBrowserRouter([
 			{
 				element: <ProtectedRoute />,
 				children: [
-					{ path: "/deployments", element: <Gallery /> },
 					{
-						path: "/devices",
-						element: (
-							<Gallery
-								objectType={"device"}
-								nameKey={"deviceID"}
-							/>
-						),
-					},
-					{
-						path: "/projects",
-
+						path: "/:fromObject",
 						children: [
 							{
 								path: "",
-								element: (
-									<Gallery
-										objectType={"project"}
-										nameKey={"projectID"}
-									/>
-								),
+								element: <Gallery />,
 							},
 							{
-								path: ":id",
-								element: (
-									<DetailPage
-										objectType="project"
-										nameKey={"projectID"}
-									/>
-								),
+								path: ":fromID",
+								children: [
+									{
+										path: "",
+										element: <DetailPage />,
+									},
+									{ path: ":objectType", element: <Gallery /> },
+								],
 							},
 						],
-					},
-					{
-						path: "/datafiles",
-						element: (
-							<Gallery
-								objectType={"datafile"}
-								nameKey={"file_name"}
-							/>
-						),
 					},
 				],
 			},
 			{ path: "/login", element: <LoginPage />, children: [] },
 			{
 				path: "*",
-				element: <p>404 Error - Nothing here...</p>,
+				element: <Error404page />,
 			},
 		],
 	},

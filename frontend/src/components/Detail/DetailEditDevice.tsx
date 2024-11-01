@@ -65,6 +65,7 @@ const DetailEditDevice = ({
 			onSubmit={onSubmit}
 			onCancel={onCancel}
 			onReset={resetDetailData}
+			JSONFields={["extra_info"]}
 		>
 			<>
 				<div className="row px-1 py-1 mb-3 border rounded">

@@ -1,6 +1,6 @@
 import React from "react";
 import { useEffect, useRef, useState } from "react";
-import { Form } from "react-router-dom";
+import { Form, useParams } from "react-router-dom";
 import FormSelect from "../FormSelect.tsx";
 import FormSelectAPI from "../FormSelectAPI.tsx";
 import FormDateSelector from "../FormDateSelector.tsx";
@@ -30,6 +30,9 @@ function GalleryForm({
 	objectType = "deployment",
 }: Props) {
 	const [searchParams, setSearchParams] = useSearchParams();
+	const params = useParams();
+	const fromObject = params.fromObject;
+	const fromID = params.fromID;
 
 	const formRef = useRef<HTMLFormElement>(null);
 
@@ -263,17 +266,6 @@ function GalleryForm({
 					readOnly={true}
 				/>
 				<input
-					name="id"
-					className="d-none"
-					id="deployment"
-					defaultValue={
-						!searchParams.get("id")
-							? undefined
-							: (searchParams.get("id") as string)
-					}
-				/>
-
-				<input
 					name="device"
 					className="d-none"
 					id="device"
@@ -281,6 +273,28 @@ function GalleryForm({
 						!searchParams.get("device")
 							? undefined
 							: (searchParams.get("device") as string)
+					}
+				/>
+
+				<input
+					name="deployment"
+					className="d-none"
+					id="deployment"
+					defaultValue={
+						!searchParams.get("deployment")
+							? undefined
+							: (searchParams.get("deployment") as string)
+					}
+				/>
+
+				<input
+					name="project"
+					className="d-none"
+					id="project"
+					defaultValue={
+						!searchParams.get("project")
+							? undefined
+							: (searchParams.get("project") as string)
 					}
 				/>
 			</Form>
