@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
 import reportWebVitals from "./reportWebVitals";
 import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
@@ -13,6 +13,7 @@ import Gallery from "./components/Gallery/Gallery.tsx";
 import "bootstrap/dist/css/bootstrap.min.css";
 import DetailPage from "./components/Detail/DetailPage.tsx";
 import Error404page from "./pages/Error404page.jsx";
+import ObjectTypeCheck from "./components/ObjectTypeCheck.tsx";
 
 const queryClient = new QueryClient();
 
@@ -28,20 +29,25 @@ const router = createBrowserRouter([
 				element: <ProtectedRoute />,
 				children: [
 					{
-						path: "/:fromObject",
+						element: <ObjectTypeCheck />,
 						children: [
 							{
-								path: "",
-								element: <Gallery />,
-							},
-							{
-								path: ":fromID",
+								path: "/:fromObject",
 								children: [
 									{
 										path: "",
-										element: <DetailPage />,
+										element: <Gallery />,
 									},
-									{ path: ":objectType", element: <Gallery /> },
+									{
+										path: ":fromID",
+										children: [
+											{
+												path: "",
+												element: <DetailPage />,
+											},
+											{ path: ":objectType", element: <Gallery /> },
+										],
+									},
 								],
 							},
 						],

@@ -1,6 +1,6 @@
 import React from "react";
 import { useEffect, useRef, useState } from "react";
-import { Form, useParams } from "react-router-dom";
+import { Form, useOutletContext, useParams } from "react-router-dom";
 import FormSelect from "../FormSelect.tsx";
 import FormSelectAPI from "../FormSelectAPI.tsx";
 import FormDateSelector from "../FormDateSelector.tsx";
@@ -8,6 +8,8 @@ import { useSearchParams } from "react-router-dom";
 
 interface Props {
 	objectType?: string;
+	fromObject?: string;
+	fromID?: string;
 	onSubmit: () => void;
 	addNew: () => void;
 	setFormKeys: (val: string[]) => void;
@@ -28,11 +30,10 @@ function GalleryForm({
 	onReset,
 	nameKey = "deployment_deviceID",
 	objectType = "deployment",
+	fromObject = undefined,
+	fromID = undefined,
 }: Props) {
 	const [searchParams, setSearchParams] = useSearchParams();
-	const params = useParams();
-	const fromObject = params.fromObject;
-	const fromID = params.fromID;
 
 	const formRef = useRef<HTMLFormElement>(null);
 
@@ -173,6 +174,21 @@ function GalleryForm({
 		);
 	};
 
+	const fromObjectFilter = function () {
+		if (fromID === undefined) {
+			return null;
+		} else {
+			return (
+				<input
+					name={fromObject}
+					className="d-none"
+					id={fromObject}
+					defaultValue={fromID}
+				/>
+			);
+		}
+	};
+
 	return (
 		<div id="search-form-div">
 			<Form
@@ -265,38 +281,7 @@ function GalleryForm({
 					value={pageSize}
 					readOnly={true}
 				/>
-				<input
-					name="device"
-					className="d-none"
-					id="device"
-					defaultValue={
-						!searchParams.get("device")
-							? undefined
-							: (searchParams.get("device") as string)
-					}
-				/>
-
-				<input
-					name="deployment"
-					className="d-none"
-					id="deployment"
-					defaultValue={
-						!searchParams.get("deployment")
-							? undefined
-							: (searchParams.get("deployment") as string)
-					}
-				/>
-
-				<input
-					name="project"
-					className="d-none"
-					id="project"
-					defaultValue={
-						!searchParams.get("project")
-							? undefined
-							: (searchParams.get("project") as string)
-					}
-				/>
+				{fromObjectFilter()}
 			</Form>
 		</div>
 	);

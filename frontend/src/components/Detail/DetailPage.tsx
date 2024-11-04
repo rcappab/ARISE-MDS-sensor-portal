@@ -1,6 +1,6 @@
 import React, { useContext, useState } from "react";
 import DetailModalContent from "./DetailModalContent.tsx";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useOutletContext, useParams } from "react-router-dom";
 import { deleteData, getData } from "../../utils/FetchFunctions";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import AuthContext from "../../context/AuthContext";
@@ -11,16 +11,7 @@ const DetailPage = () => {
 	const { authTokens, user } = useContext(AuthContext);
 	const [editMode, setEditMode] = useState(false);
 	const navigate = useNavigate();
-	let { fromObject, fromID } = useParams();
-
-	const objectType = fromObject.substring(0, fromObject.length - 1);
-
-	const nameKey = {
-		deployment: "deploymentdeviceID",
-		device: "deviceID",
-		project: "projectID",
-		datafile: "filename",
-	}[objectType];
+	const { fromID, objectType, nameKey } = useOutletContext();
 
 	const getDataFunc = async () => {
 		let apiURL = `${objectType}/?id=${fromID}`;

@@ -1,6 +1,7 @@
 import React from "react";
 import "../../styles/base.css";
 import Loading from "../Loading.tsx";
+import { useNavigate } from "react-router-dom";
 
 const DetailModalHeader = (props) => {
 	const changeDetail = function (change) {
@@ -51,6 +52,8 @@ const DetailModalHeader = (props) => {
 			return false;
 		}
 	};
+
+	const navigate = useNavigate();
 
 	const handleEdit = function (e) {
 		console.log("edit button clicked");

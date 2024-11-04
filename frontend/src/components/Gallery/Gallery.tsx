@@ -8,13 +8,13 @@ import GalleryPageControls from "./GalleryPageControls.tsx";
 
 import Loading from "../Loading.tsx";
 import { useQuery, keepPreviousData, useMutation } from "@tanstack/react-query";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useOutletContext, useParams, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import DetailModal from "../Detail/DetailModal.tsx";
-import Error404page from "../../pages/Error404page.jsx";
 
 const Gallery = () => {
+	const { fromID, fromObject, objectType, nameKey } = useOutletContext();
 	const defaultPageSize = 1;
 	const [searchParams, setSearchParams] = useSearchParams();
 	const [formKeys, setFormKeys] = useState<String[]>([]);
@@ -23,22 +23,6 @@ const Gallery = () => {
 		Number(searchParams.get("page_size")) || defaultPageSize
 	);
 	const { authTokens, user } = useContext(AuthContext);
-
-	let { fromObject, fromID, objectType } = useParams();
-
-	if (objectType === undefined && fromID === undefined) {
-		objectType = fromObject;
-	} else {
-		fromObject = fromObject.substring(0, fromObject.length - 1);
-	}
-	objectType = objectType.substring(0, objectType.length - 1);
-
-	const nameKey = {
-		deployment: "deploymentdeviceID",
-		device: "deviceID",
-		project: "projectID",
-		datafile: "filename",
-	}[objectType];
 
 	let additionalOrdering;
 
@@ -67,12 +51,10 @@ const Gallery = () => {
 			: defaultOrdering
 	);
 
-	const validGalleries = {
-		deployment: ["datafile"],
-		device: ["deployment", "datafile"],
-		project: ["deployment", "datafile"],
-		datafile: [],
-	}[fromObject];
+	useEffect(() => {
+		setPageNum(1);
+		setOrderBy(defaultOrdering);
+	}, [objectType, defaultOrdering]);
 
 	const updateSearchParameters = useCallback(
 		function (key, val) {
@@ -123,6 +105,7 @@ const Gallery = () => {
 		isPending,
 		data,
 		error,
+		isRefetching,
 		isPlaceholderData,
 		refetch,
 	} = useQuery({
@@ -143,10 +126,6 @@ const Gallery = () => {
 	const doDelete = useMutation({
 		mutationFn: (objID) => newDELETE(objID),
 	});
-
-	if (fromID !== undefined && !validGalleries?.includes(objectType)) {
-		return <Error404page />;
-	}
 
 	const orderingChoices = [
 		{
@@ -220,7 +199,7 @@ const Gallery = () => {
 	};
 
 	const showGallery = function () {
-		if (isLoading || isPending) {
+		if (isLoading || isPending || isRefetching) {
 			return <Loading />;
 		}
 
@@ -326,6 +305,8 @@ const Gallery = () => {
 				addNew={addNew}
 				nameKey={nameKey}
 				objectType={objectType}
+				fromObject={fromObject}
+				fromID={fromID}
 			/>
 			{showGallery()}
 		</div>

@@ -1,5 +1,5 @@
 import React from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import BasicModal from "../BasicModal.tsx";
 import DetailModalHeader from "./DetailModalHeader.jsx";
 import DetailModalContent from "./DetailModalContent.tsx";
@@ -36,6 +36,7 @@ const DetailModal = ({
 }: Props) => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const modalShow = searchParams.get("detail") && data ? true : false;
+	const navigate = useNavigate();
 	if (!modalShow) {
 		return null;
 	}
@@ -81,6 +82,18 @@ const DetailModal = ({
 					}
 				>
 					{selectedData ? selectedData[nameKey] : `Add new ${objectType}`}
+
+					{selectedData ? (
+						<a
+							className="btn btn-outline-light paginator-button modal-title"
+							aria-label="Go to page"
+							onClick={() => {
+								navigate(`/${objectType}s/${selectedData["id"]}`);
+							}}
+						>
+							Open in new page
+						</a>
+					) : null}
 				</DetailModalHeader>
 			}
 		>
