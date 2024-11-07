@@ -1,47 +1,49 @@
 from bridgekeeper import perms
 from bridgekeeper.rules import is_staff, is_active, is_authenticated
-from bridgekeeper.rules import R
-from .rules import *
+from .rules import IsOwner, IsManager, IsViewer, CanViewProjectContainingDevice, CanManageProjectContainingDeployment, \
+    CanViewProjectContainingDeployment, CanViewDeployedDevice, CanManageProjectContainingDataFile, CanManageDeploymentContainingDataFile, \
+    CanManageDeviceContainingDataFile, CanViewProjectContainingDataFile, CanViewDeploymentContainingDataFile, CanViewDeviceContainingDataFile
 
 # PROJECT
-perms ['data_models.add_project'] = is_authenticated & is_active
+perms['data_models.add_project'] = is_authenticated & is_active
 perms['data_models.change_project'] = is_authenticated & (is_staff
-                                                          | IsProjectOwner()
-                                                          | IsProjectManager()) & is_active  # must be project owner OR manager
-perms['data_models.delete_project'] = is_authenticated & (is_staff | IsProjectOwner()) & is_active  # must be project owner
+                                                          | IsOwner()
+                                                          | IsManager()) & is_active  # must be project owner OR manager
+perms['data_models.delete_project'] = is_authenticated & (
+    is_staff | IsOwner()) & is_active  # must be project owner
 perms['data_models.view_project'] = is_authenticated & (is_staff
-                                                        | IsProjectOwner()
-                                                        | IsProjectManager()  # project owner OR project manager
-                                                        | InProjectViewerGroup()  # OR in project group
+                                                        | IsOwner()
+                                                        | IsManager()  # project owner OR project manager
+                                                        | IsViewer()  # OR in project group
                                                         ) & is_active  # deployment/device viewers don't need to see project objects?
 
 # DEVICE
-perms ['data_models.add_device'] = is_authenticated & is_active
+perms['data_models.add_device'] = is_authenticated & is_active
 perms['data_models.change_device'] = is_authenticated & (is_staff
-                                                         | IsDeviceOwner()
-                                                         | IsDeviceManager()) & is_active # must be deployment owner OR manager
+                                                         | IsOwner()
+                                                         | IsManager()) & is_active  # must be deployment owner OR manager
 perms['data_models.delete_device'] = is_authenticated & (is_staff
-                                                         | IsDeviceOwner()) & is_active # must be deployment owner
+                                                         | IsOwner()) & is_active  # must be deployment owner
 perms['data_models.view_device'] = is_authenticated & (is_staff
-                                                       | IsDeviceOwner()
-                                                       | IsDeviceManager()
-                                                       | InDeviceViewerGroup()
+                                                       | IsOwner()
+                                                       | IsManager()
+                                                       | IsViewer()
                                                        | CanViewProjectContainingDevice()
                                                        ) & is_active  # deployment viewers don't need to see device?
 
 # DEPLOYMENT
-perms ['data_models.add_deployment'] = is_authenticated & is_active
+perms['data_models.add_deployment'] = is_authenticated & is_active
 perms['data_models.change_deployment'] = is_authenticated & (is_staff
-                                                             | IsDeploymentOwner()
-                                                             | IsDeploymentManager()
-                                                             | CanManageProjectContainingDeployment()) & is_active  # must be device owner OR manager
+                                                             | IsOwner()
+                                                             | IsManager()
+                                                             | IsViewer()) & is_active  # must be device owner OR manager
 perms['data_models.delete_deployment'] = is_authenticated & (is_staff
-                                                             | IsDeploymentOwner()
+                                                             | IsOwner()
                                                              | CanManageProjectContainingDeployment()) & is_active  # must be device owner OR manager
 perms['data_models.view_deployment'] = is_authenticated & (is_staff
-                                                           | IsDeploymentOwner()
-                                                           | IsDeploymentManager()
-                                                           | InDeploymentViewerGroup()
+                                                           | IsOwner()
+                                                           | IsManager()
+                                                           | IsViewer()
                                                            | CanManageProjectContainingDeployment()
                                                            | CanViewProjectContainingDeployment()
                                                            | CanViewDeployedDevice()) & is_active
@@ -64,7 +66,8 @@ perms['data_models.view_datafile'] = is_authenticated & (is_staff
                                                          | CanViewDeploymentContainingDataFile()
                                                          | CanViewDeviceContainingDataFile()) & is_active
 
-perms['data_models.view_site'] = is_authenticated & is_active #should check if a user can view a deployment at that site
+# should check if a user can view a deployment at that site
+perms['data_models.view_site'] = is_authenticated & is_active
 perms['data_models.add_site'] = is_authenticated & is_active
 perms['data_models.change_site'] = is_authenticated & is_staff
 perms['data_models.delete_site'] = is_authenticated & is_staff

@@ -23,10 +23,10 @@ const DetailEditProject = ({
 	wasValidated = false,
 }: Props) => {
 	const [projectID, setProjectID] = useState(
-		selectedData ? selectedData["projectID"] : null
+		selectedData ? selectedData["project_ID"] : null
 	);
 	const [projectName, setProjectName] = useState(
-		selectedData ? selectedData["projectName"] : null
+		selectedData ? selectedData["name"] : null
 	);
 
 	const resetDetailData = function () {
@@ -49,17 +49,17 @@ const DetailEditProject = ({
 			<>
 				<div className="row px-1 py-1 mb-3 border rounded">
 					<div className="col-md-4">
-						<label htmlFor="post-projectID">Project ID</label>
+						<label htmlFor="post-project_ID">Project ID</label>
 						<input
-							name="projectID"
+							name="project_ID"
 							className={`form-control ${
 								wasValidated
-									? errorDict["projectID"]
+									? errorDict["project_ID"]
 										? "is-invalid"
 										: "is-valid"
 									: ""
 							}`}
-							id="post-projectID"
+							id="post-project_ID"
 							value={projectID}
 							onChange={(e) => {
 								setProjectID(e.target.value);
@@ -69,21 +69,21 @@ const DetailEditProject = ({
 
 						<div className="form-text">
 							Short identifier for this project.
-							<div className="invalid-feedback">{errorDict["projectID"]}</div>
+							<div className="invalid-feedback">{errorDict["project_ID"]}</div>
 						</div>
 					</div>
 					<div className="col-md-4">
-						<label htmlFor="post-projectName">Oroject name</label>
+						<label htmlFor="post-name">Oroject name</label>
 						<input
-							name="projectName"
+							name="name"
 							className={`form-control ${
 								wasValidated
-									? errorDict["projectName"]
+									? errorDict["name"]
 										? "is-invalid"
 										: "is-valid"
 									: ""
 							}`}
-							id="post-device"
+							id="post-name"
 							value={projectName}
 							onChange={(e) => {
 								setProjectName(e.target.value);
@@ -92,8 +92,8 @@ const DetailEditProject = ({
 						/>
 
 						<div className="form-text">
-							Alternative name for device.
-							<div className="invalid-feedback">{errorDict["projectName"]}</div>
+							Full name for project.
+							<div className="invalid-feedback">{errorDict["name"]}</div>
 						</div>
 					</div>
 				</div>

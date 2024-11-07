@@ -28,34 +28,34 @@ const DetailEditDeployment = ({
 }: Props) => {
 	// deployment
 
-	const [deploymentID, setdeploymentID] = useState(
-		selectedData ? selectedData["deploymentID"] : ""
+	const [deploymentID, setDeploymentID] = useState(
+		selectedData ? selectedData["deployment_ID"] : ""
 	);
-	const [device_type_id, setdevice_type_id] = useState(
-		selectedData ? selectedData["device_type_id"] : null
+	const [device_type_ID, setDevice_type_ID] = useState(
+		selectedData ? selectedData["device_type_ID"] : null
 	);
-	const [device_n, setdevice_n] = useState(
+	const [device_n, setDevice_n] = useState(
 		selectedData ? selectedData["device_n"] : 1
 	);
 
-	const [project_id, setproject_id] = useState(
-		selectedData ? selectedData["project_id"] : []
+	const [project_ID, setProject_ID] = useState(
+		selectedData ? selectedData["project_ID"] : []
 	);
 
-	const [site_id, setsite_id] = useState(
-		selectedData ? selectedData["site_id"] : null
+	const [site_ID, setSite_ID] = useState(
+		selectedData ? selectedData["site_ID"] : null
 	);
 
-	const [device_id, setdevice_id] = useState(
-		selectedData ? selectedData["device_id"] : null
+	const [device_ID, setDevice_ID] = useState(
+		selectedData ? selectedData["device_ID"] : null
 	);
 
-	const [deploymentStart, setDeploymentStart] = useState(
-		selectedData ? selectedData["deploymentStart"] : new Date().toJSON()
+	const [deployment_start, setDeployment_start] = useState(
+		selectedData ? selectedData["deployment_start"] : new Date().toJSON()
 	);
 
-	const [deploymentEnd, setDeploymentEnd] = useState(
-		selectedData ? selectedData["deploymentEnd"] : null
+	const [deployment_end, setDeployment_end] = useState(
+		selectedData ? selectedData["deployment_end"] : null
 	);
 
 	const [latitude, setLatitude] = useState(
@@ -66,7 +66,7 @@ const DetailEditDeployment = ({
 	);
 
 	const [extraInfo, setExtraInfo] = useState(
-		selectedData ? selectedData["extra_info"] : {}
+		selectedData ? selectedData["extra_data"] : {}
 	);
 
 	const setLatLong = function (latlong) {
@@ -82,14 +82,14 @@ const DetailEditDeployment = ({
 	const resetDetailData = function () {
 		onReset();
 		//Deployment only
-		setdeploymentID("");
-		setdevice_type_id(null);
-		setdevice_n(null);
-		setproject_id([]);
-		setsite_id(null);
-		setdevice_id(null);
-		setDeploymentStart(new Date().toJSON());
-		setDeploymentEnd(null);
+		setDeploymentID("");
+		setDevice_type_ID(null);
+		setDevice_n(null);
+		setProject_ID([]);
+		setSite_ID(null);
+		setDevice_ID(null);
+		setDeployment_start(new Date().toJSON());
+		setDeployment_end(null);
 		setLatLong(null);
 		setExtraInfo({});
 	};
@@ -97,12 +97,12 @@ const DetailEditDeployment = ({
 	// useEffect(() => {
 	// 	handleFormChange();
 	// }, [
-	// 	device_type_id,
-	// 	project_id,
-	// 	site_id,
-	// 	device_id,
-	// 	deploymentStart,
-	// 	deploymentEnd,
+	// 	device_type_ID,
+	// 	project_ID,
+	// 	site_ID,
+	// 	device_ID,
+	// 	deployment_start,
+	// 	deployment_end,
 	// 	latitude,
 	// 	longitude,
 	// 	extraInfo,
@@ -119,26 +119,26 @@ const DetailEditDeployment = ({
 			onSubmit={onSubmit}
 			onCancel={onCancel}
 			onReset={resetDetailData}
-			JSONFields={["project_id", "extra_info"]}
+			JSONFields={["project_ID", "extra_data"]}
 		>
 			<>
 				{/* here starts the deployment fields */}
 				<div className="row px-1 py-1 mb-3 border rounded">
 					<div className="col-md-4">
-						<label htmlFor="post-deployment">Deployment ID</label>
+						<label htmlFor="post-deployment_ID">Deployment ID</label>
 						<input
-							name="deploymentID"
+							name="deployment_ID"
 							className={`form-control ${
 								wasValidated
-									? errorDict["deploymentID"]
+									? errorDict["deployment_ID"]
 										? "is-invalid"
 										: "is-valid"
 									: ""
 							}`}
-							id="post-deployment"
+							id="post-deployment_ID"
 							value={deploymentID}
 							onChange={(e) => {
-								setdeploymentID(e.target.value);
+								setDeploymentID(e.target.value);
 							}}
 							required
 						/>
@@ -146,36 +146,36 @@ const DetailEditDeployment = ({
 						<div className="form-text">
 							Identifier for this deployment.
 							<div className="invalid-feedback">
-								{errorDict["deploymentID"]}
+								{errorDict["deployment_ID"]}
 							</div>
 						</div>
 					</div>
 					<div className="col-md-4">
-						<label htmlFor="post-devicetype">Device type</label>
+						<label htmlFor="post-device_type_ID">Device type</label>
 						<FormSelectAPI
-							id="post-devicetype"
-							name="device_type_id"
+							id="post-device_type_ID"
+							name="device_type_ID"
 							label="Device type"
 							choices={[]}
-							value={device_type_id}
+							value={device_type_ID}
 							apiURL="datatype/"
 							valueKey="id"
 							labelKey="name"
-							handleChange={setdevice_type_id}
+							handleChange={setDevice_type_ID}
 							isClearable={false}
-							valid={errorDict["device_type_id"] === ""}
+							valid={errorDict["device_type_ID"] === ""}
 						/>
 						<input
 							hidden
-							name="device_type_id"
-							value={device_type_id ? device_type_id : ""}
+							name="device_type_ID"
+							value={device_type_ID ? device_type_ID : ""}
 							required
 						></input>
 
 						<div className="form-text">
 							Device type of your deployment
 							<div className="invalid-feedback">
-								{errorDict["device_type_id"]}
+								{errorDict["device_type_ID"]}
 							</div>
 						</div>
 					</div>
@@ -193,7 +193,7 @@ const DetailEditDeployment = ({
 							id="post-device_n"
 							value={device_n}
 							type="number"
-							onChange={setdevice_n}
+							onChange={setDevice_n}
 							min={1}
 							max={100}
 							required
@@ -206,128 +206,128 @@ const DetailEditDeployment = ({
 				</div>
 				<div className="row py-1 px-1 mb-3 border rounded">
 					<div className="col-md-4">
-						<label htmlFor="post-device">Device being deployed</label>
+						<label htmlFor="post-device_ID">Device being deployed</label>
 						<FormSelectAPI
-							id="post-device"
-							name="device_id"
+							id="post-device_ID"
+							name="device_ID"
 							label="Device"
 							choices={[]}
-							value={device_id}
-							apiURL={device_type_id ? `device/?type=${device_type_id}` : ""}
+							value={device_ID}
+							apiURL={device_type_ID ? `device/?type=${device_type_ID}` : ""}
 							valueKey="id"
-							labelKey="deviceID"
+							labelKey="device_ID"
 							creatable={false}
 							isClearable={true}
-							handleChange={setdevice_id}
-							valid={errorDict["device_id"] === ""}
+							handleChange={setDevice_ID}
+							valid={errorDict["device_ID"] === ""}
 						/>
 						<input
 							hidden
-							name="device_id"
-							value={device_id ? device_id : ""}
+							name="device_ID"
+							value={device_ID ? device_ID : ""}
 							required
 						></input>
 						<div className="form-text">
 							Deployment device.
-							<div className="invalid-feedback">{errorDict["device_id"]}</div>
+							<div className="invalid-feedback">{errorDict["device_ID"]}</div>
 						</div>
 					</div>
 					<div className="col-md-4">
-						<label htmlFor="post-project">Project</label>
+						<label htmlFor="post-project_ID">Project</label>
 						<FormSelectAPI
-							id="post-project"
-							name="project_id"
+							id="post-project_ID"
+							name="project_ID"
 							label="Projects"
 							choices={[]}
-							value={project_id}
+							value={project_ID}
 							apiURL="project/"
 							valueKey="id"
-							labelKey="projectID"
+							labelKey="project_ID"
 							multiple={true}
-							handleChange={setproject_id}
-							valid={errorDict["project_id"] === ""}
+							handleChange={setProject_ID}
+							valid={errorDict["project_ID"] === ""}
 						/>
 						<input
 							hidden
-							name="project_id"
-							value={project_id ? JSON.stringify(project_id) : ""}
+							name="project_ID"
+							value={project_ID ? JSON.stringify(project_ID) : ""}
 						></input>
 						<div className="form-text">
 							Projects to associate with deployment.
-							<div className="invalid-feedback">{errorDict["project_id"]}</div>
+							<div className="invalid-feedback">{errorDict["project_ID"]}</div>
 						</div>
 					</div>
 					<div className="col-md-4">
-						<label htmlFor="post-site">Site</label>
+						<label htmlFor="post-site_ID">Site</label>
 						<FormSelectAPI
-							id="post-site"
-							name="site_id"
+							id="post-site_ID"
+							name="site_ID"
 							label="Site"
 							choices={[]}
-							value={site_id}
+							value={site_ID}
 							apiURL="site/"
 							valueKey="id"
 							labelKey="name"
 							creatable={true}
-							handleChange={setsite_id}
-							valid={errorDict["site_id"] === ""}
+							handleChange={setSite_ID}
+							valid={errorDict["site_ID"] === ""}
 						/>
 						<input
 							hidden
-							name="site_id"
-							value={site_id ? site_id : ""}
+							name="site_ID"
+							value={site_ID ? site_ID : ""}
 							required
 						></input>
 						<div className="form-text">
 							Deployment site. New sites can be added.
-							<div className="invalid-feedback">{errorDict["site_id"]}</div>
+							<div className="invalid-feedback">{errorDict["site_ID"]}</div>
 						</div>
 					</div>
 				</div>
 				<div className="row py-1 px-3 mb-3 border rounded">
 					<div className="col-md-6 ps-md-0 pe-md-1">
-						<label htmlFor="post-start_date">Deployment start</label>
+						<label htmlFor="post-deployment_start">Deployment start</label>
 						<FormDateTZSelect
-							id="post-start_date"
-							name="deploymentStart"
+							id="post-deployment_start"
+							name="deployment_start"
 							label="Deployment started"
 							text="Date and time deployment starts."
-							defaultvalue={deploymentStart}
-							handleChange={setDeploymentStart}
+							defaultvalue={deployment_start}
+							handleChange={setDeployment_start}
 							required={true}
 							valid={
-								errorDict["deploymentStart"] === "" &&
-								errorDict["deploymentStart_TZ"] === "" &&
-								errorDict["deploymentStart_dt"] === ""
+								errorDict["deployment_start"] === "" &&
+								errorDict["deployment_start_TZ"] === "" &&
+								errorDict["deployment_start_dt"] === ""
 							}
 							validated={wasValidated}
 						/>
 						<div className="form-text">
 							Deployment start date time.
 							<div className="invalid-feedback">
-								{`${errorDict["deploymentStart"]} ${errorDict["deploymentStart_TZ"]} ${errorDict["deploymentStart_dt"]}`}
+								{`${errorDict["deployment_start"]} ${errorDict["deployment_start_TZ"]} ${errorDict["deployment_start_dt"]}`}
 							</div>
 						</div>
 					</div>
 					<div className="col-md-6 ps-md-1 pe-md-0">
-						<label htmlFor="post-end_date">Deployment end</label>
+						<label htmlFor="post-deployment_end">Deployment end</label>
 						<FormDateTZSelect
-							id="post-end_date"
-							name="deploymentEnd"
+							id="post-deployment_end"
+							name="deployment_end"
 							label="Deployment ended"
 							text="Date and time deployment ends."
-							defaultvalue={deploymentEnd}
-							handleChange={setDeploymentEnd}
+							defaultvalue={deployment_end}
+							handleChange={setDeployment_end}
 							valid={
-								errorDict["deploymentEnd"] === "" &&
-								errorDict["deploymentEnd_TZ"] === "" &&
-								errorDict["deploymentEnd_dt"] === ""
+								errorDict["deployment_end"] === "" &&
+								errorDict["deployment_end_TZ"] === "" &&
+								errorDict["deployment_end_dt"] === ""
 							}
 							validated={wasValidated}
 						/>
 						<div className="form-text">
 							Deployment end date time. Can be left blank.
-							<div className="invalid-feedback">{`${errorDict["deploymentEnd"]} ${errorDict["deploymentEnd_TZ"]} ${errorDict["deploymentEnd_dt"]}`}</div>
+							<div className="invalid-feedback">{`${errorDict["deployment_end"]} ${errorDict["deployment_end_TZ"]} ${errorDict["deployment_end_dt"]}`}</div>
 						</div>
 					</div>
 				</div>
@@ -391,14 +391,14 @@ const DetailEditDeployment = ({
 					/>
 				</div>
 				<div className="row py-1 mb-3 border rounded">
-					<label htmlFor="post-extra_info">Extra fields</label>
+					<label htmlFor="post-extra_data">Extra fields</label>
 					<JSONInput
-						id="post-extra_info"
-						name="extra_info"
+						id="post-extra_data"
+						name="extra_data"
 						value={extraInfo}
 						onJSONchange={setExtraInfo}
 						wasValidated={wasValidated}
-						errorDict={errorDict["extra_info"] ? errorDict["extra_info"] : {}}
+						errorDict={errorDict["extra_data"] ? errorDict["extra_data"] : {}}
 					/>
 				</div>
 				{/* here ends the deployment fields */}

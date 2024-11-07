@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from django.contrib.auth.models import Group
-from .models import GroupProfile, User
+from .models import User
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
@@ -68,47 +68,47 @@ class GroupSerializer(serializers.ModelSerializer):
         fields = ['name', 'user_set',]
 
 
-class UserGroupMemberSerializer(serializers.ModelSerializer):
-    usergroup = GroupSerializer()
+# class UserGroupMemberSerializer(serializers.ModelSerializer):
+#     usergroup = GroupSerializer()
 
-    class Meta:
-        model = GroupProfile
-        fields = ['usergroup',]
+#     class Meta:
+#         model = GroupProfile
+#         fields = ['usergroup',]
 
-    def to_representation(self, instance):
-        initial_rep = super(UserGroupMemberSerializer,
-                            self).to_representation(instance)
+#     def to_representation(self, instance):
+#         initial_rep = super(UserGroupMemberSerializer,
+#                             self).to_representation(instance)
 
-        print(initial_rep)
+#         print(initial_rep)
 
-        # all_members = [x[['user_set']] for x in initial_rep['usergroup']]
+#         # all_members = [x[['user_set']] for x in initial_rep['usergroup']]
 
-        # return [x for y in all_members for x in y]
-        return initial_rep.get('usergroup').get('user_set')
+#         # return [x for y in all_members for x in y]
+#         return initial_rep.get('usergroup').get('user_set')
 
 
-class UserGroupProfileSerializer(serializers.ModelSerializer):
-    usergroup = GroupSerializer()
-    project = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field='projectID')
-    deployment = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field='deployment_deviceID')
-    device = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field='deviceID')
+# class UserGroupProfileSerializer(serializers.ModelSerializer):
+#     usergroup = GroupSerializer()
+#     project = serializers.SlugRelatedField(
+#         many=True, read_only=True, slug_field='projectID')
+#     deployment = serializers.SlugRelatedField(
+#         many=True, read_only=True, slug_field='deployment_deviceID')
+#     device = serializers.SlugRelatedField(
+#         many=True, read_only=True, slug_field='deviceID')
 
-    class Meta:
-        model = GroupProfile
-        fields = ['usergroup', 'project', 'deployment', 'device']
+#     class Meta:
+#         model = GroupProfile
+#         fields = ['usergroup', 'project', 'deployment', 'device']
 
-    def to_representation(self, instance):
-        initial_rep = super(UserGroupProfileSerializer,
-                            self).to_representation(instance)
+#     def to_representation(self, instance):
+#         initial_rep = super(UserGroupProfileSerializer,
+#                             self).to_representation(instance)
 
-        all_fields = list(initial_rep.keys())
-        [initial_rep.pop(field, '')
-         for field in all_fields if initial_rep.get(field) == []]
-        initial_rep.update(initial_rep.pop('usergroup'))
-        return initial_rep
+#         all_fields = list(initial_rep.keys())
+#         [initial_rep.pop(field, '')
+#          for field in all_fields if initial_rep.get(field) == []]
+#         initial_rep.update(initial_rep.pop('usergroup'))
+#         return initial_rep
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):

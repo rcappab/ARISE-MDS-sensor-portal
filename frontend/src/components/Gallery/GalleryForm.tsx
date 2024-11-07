@@ -13,7 +13,6 @@ interface Props {
 	onSubmit: () => void;
 	addNew: () => void;
 	setFormKeys: (val: string[]) => void;
-	nameKey: string;
 	orderBy: string;
 	pageSize: number;
 	pageNum: number;
@@ -28,7 +27,6 @@ function GalleryForm({
 	pageSize,
 	pageNum,
 	onReset,
-	nameKey = "deployment_deviceID",
 	objectType = "deployment",
 	fromObject = undefined,
 	fromID = undefined,
@@ -218,13 +216,13 @@ function GalleryForm({
 					{deviceTypeField()}
 					{dateField(
 						"start_date",
-						"deploymentStart__gte",
+						"deployment_start__gte",
 						"Deployment started after",
 						["deployment"]
 					)}
 					{dateField(
 						"end_date",
-						"deploymentEnd__lte",
+						"deployment_end__lte",
 						"Deployment ended before",
 						["deployment"]
 					)}

@@ -51,7 +51,7 @@ def post_save_device(sender, instance, created, **kwargs):
             add_device_user = True
 
     if add_device_user:
-        device_user = DeviceUser(username=f"{instance.deviceID}_user",
+        device_user = DeviceUser(username=f"{instance.device_ID}_user",
                                  device=instance,
                                  is_active=True)
         if (instance.authentication is not None) & (instance.authentication != ""):
@@ -88,26 +88,34 @@ def create_user_token(sender, instance, created, **kwargs):
             User.objects.filter(pk=instance.pk).update(
                 password=make_password(instance.auth_token.key))
 
+# def create_user_group(group_name):
+#     try:
+#         usergroup = Group.objects.get(name=group_name)
+#     except ObjectDoesNotExist:
+#         usergroup = Group(name=group_name)
+#         usergroup.save()
+#     return usergroup
 
-class GroupProfile(models.Model):
-    usergroup = models.OneToOneField(
-        Group, on_delete=models.CASCADE, related_name='profile')
-    project = models.ManyToManyField(Project, related_name="usergroup")
-    deployment = models.ManyToManyField(Deployment, related_name="usergroup")
-    device = models.ManyToManyField(Device, related_name="usergroup")
+# Users now linked directly to the relevant objects
+# class GroupProfile(models.Model):
+#     usergroup = models.OneToOneField(
+#         Group, on_delete=models.CASCADE, related_name='profile')
+#     project = models.ManyToManyField(Project, related_name="usergroup")
+#     deployment = models.ManyToManyField(Deployment, related_name="usergroup")
+#     device = models.ManyToManyField(Device, related_name="usergroup")
 
-    def __str__(self):
-        return (self.usergroup.name + " profile")
-
-
-@receiver(post_save, sender=Group)
-def create_user_group_profile(sender, instance, created, **kwargs):
-    if not getattr(instance, 'from_admin_site', False):
-        if created:
-            GroupProfile.objects.create(usergroup=instance)
+#     def __str__(self):
+#         return (self.usergroup.name + " profile")
 
 
-@receiver(post_save, sender=Group)
-def save_user_group_profile(sender, instance, **kwargs):
-    if not getattr(instance, 'from_admin_site', False):
-        instance.profile.save()
+# @receiver(post_save, sender=Group)
+# def create_user_group_profile(sender, instance, created, **kwargs):
+#     if not getattr(instance, 'from_admin_site', False):
+#         if created:
+#             GroupProfile.objects.create(usergroup=instance)
+
+
+# @receiver(post_save, sender=Group)
+# def save_user_group_profile(sender, instance, **kwargs):
+#     if not getattr(instance, 'from_admin_site', False):
+#         instance.profile.save()

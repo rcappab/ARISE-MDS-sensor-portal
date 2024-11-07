@@ -24,17 +24,17 @@ const DetailEditDevice = ({
 	errorDict = {},
 	wasValidated = false,
 }: Props) => {
-	const [type_id, setType_ID] = useState(
-		selectedData ? selectedData["type_id"] : null
+	const [typeID, setTypeID] = useState(
+		selectedData ? selectedData["type_ID"] : null
 	);
 	const [deviceID, setDeviceID] = useState(
-		selectedData ? selectedData["deviceID"] : null
+		selectedData ? selectedData["device_ID"] : null
 	);
 	const [deviceName, setDeviceName] = useState(
 		selectedData ? selectedData["name"] : null
 	);
-	const [extraInfo, setExtraInfo] = useState(
-		selectedData ? selectedData["extra_info"] : {}
+	const [extraData, setExtraData] = useState(
+		selectedData ? selectedData["extra_data"] : {}
 	);
 
 	const [autoUpdate, setAutoUpdate] = useState(
@@ -49,11 +49,14 @@ const DetailEditDevice = ({
 		onReset();
 		setDeviceID("");
 		setDeviceName("");
-		setType_ID(null);
-		setExtraInfo({});
+		setTypeID(null);
+		setExtraData({});
 		setAutoUpdate(true);
 		setUpdateTime(48);
 	};
+
+	console.log(selectedData);
+	console.log(typeID);
 
 	return (
 		<DetailEditForm
@@ -65,22 +68,22 @@ const DetailEditDevice = ({
 			onSubmit={onSubmit}
 			onCancel={onCancel}
 			onReset={resetDetailData}
-			JSONFields={["extra_info"]}
+			JSONFields={["extra_data"]}
 		>
 			<>
 				<div className="row px-1 py-1 mb-3 border rounded">
 					<div className="col-md-4">
-						<label htmlFor="post-device">Device ID</label>
+						<label htmlFor="post-device_ID">Device ID</label>
 						<input
-							name="deviceID"
+							name="device_ID"
 							className={`form-control ${
 								wasValidated
-									? errorDict["deviceID"]
+									? errorDict["device_ID"]
 										? "is-invalid"
 										: "is-valid"
 									: ""
 							}`}
-							id="post-deviceID"
+							id="post-device_ID"
 							value={deviceID}
 							onChange={(e) => {
 								setDeviceID(e.target.value);
@@ -90,7 +93,7 @@ const DetailEditDevice = ({
 
 						<div className="form-text">
 							Identifier for this device.
-							<div className="invalid-feedback">{errorDict["deviceID"]}</div>
+							<div className="invalid-feedback">{errorDict["device_ID"]}</div>
 						</div>
 					</div>
 					<div className="col-md-4">
@@ -104,7 +107,7 @@ const DetailEditDevice = ({
 										: "is-valid"
 									: ""
 							}`}
-							id="post-device"
+							id="post-name"
 							value={deviceName}
 							onChange={(e) => {
 								setDeviceName(e.target.value);
@@ -120,30 +123,31 @@ const DetailEditDevice = ({
 				</div>
 				<div className="row px-1 py-1 mb-3 border rounded">
 					<div className="col-md-4">
-						<label htmlFor="post-devicetype">Device type</label>
+						<label htmlFor="post-type_ID">Device type</label>
 						<FormSelectAPI
-							id="post-devicetype"
-							name="type_id"
+							id="post-type_ID"
+							name="type_ID"
 							label="Device type"
 							choices={[]}
-							value={type_id}
+							value={typeID}
 							apiURL="datatype/"
 							valueKey="id"
 							labelKey="name"
-							handleChange={setType_ID}
+							handleChange={setTypeID}
 							isClearable={false}
-							valid={errorDict["type_id"] === ""}
+							valid={errorDict["type_ID"] === ""}
 						/>
 						<input
 							hidden
-							name="device_type_id"
-							value={type_id ? type_id : ""}
+							id="hidden-post-type_ID"
+							name="type_ID"
+							value={typeID ? typeID : ""}
 							required
 						></input>
 
 						<div className="form-text">
 							Device type.
-							<div className="invalid-feedback">{errorDict["type_id"]}</div>
+							<div className="invalid-feedback">{errorDict["type_ID"]}</div>
 						</div>
 					</div>
 				</div>
@@ -204,14 +208,14 @@ const DetailEditDevice = ({
 					) : null}
 				</div>
 				<div className="row px-1 py-1 mb-3 border rounded">
-					<label htmlFor="post-extra_info">Extra fields</label>
+					<label htmlFor="post-extra_data">Extra fields</label>
 					<JSONInput
-						id="post-extra_info"
-						name="extra_info"
-						value={extraInfo}
-						onJSONchange={setExtraInfo}
+						id="post-extra_data"
+						name="extra_data"
+						value={extraData}
+						onJSONchange={setExtraData}
 						wasValidated={wasValidated}
-						errorDict={errorDict["extra_info"] ? errorDict["extra_info"] : {}}
+						errorDict={errorDict["extra_data"] ? errorDict["extra_data"] : {}}
 					/>
 				</div>
 			</>

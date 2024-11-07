@@ -6,14 +6,15 @@ from PIL import ExifTags, Image
 from rest_framework import serializers
 from rest_framework_gis import serializers as geoserializers
 from user_management.models import User
-from user_management.serializers import (
-    UserGroupMemberSerializer,
-    UserGroupProfileSerializer,
-)
+# from user_management.serializers import (
+#     UserGroupMemberSerializer,
+#     UserGroupProfileSerializer,
+# )
+
 from utils.serializers import SlugRelatedGetOrCreateField
 
 from . import validators
-from .models import DataFile, DataType, Deployment, Device, Project, Site
+from .models import DataFile, DataType, Deployment, Device, Project, Site, DeviceModel
 
 
 class CheckFormMixIn():
@@ -39,31 +40,49 @@ class CreatedModifiedMixIn(serializers.ModelSerializer):
 
 
 class OwnerMangerMixIn(serializers.ModelSerializer):
+    # user_is_manager = serializers.BooleanField(read_only=True, default = False)
     owner = serializers.StringRelatedField(read_only=True)
     managers = serializers.SlugRelatedField(many=True,
                                             slug_field="username",
                                             queryset=User.objects.all(),
                                             allow_null=True,
-                                            required=False)
-    viewers = UserGroupMemberSerializer(
-        many=True, read_only=True, source='usergroup')
-    # viewers = serializers.ListField(child=serializers.CharField(
-    # ), write_only=True, required=False, allow_empty=True)
+                                            required=False,
+                                            read_only=False)
+    annotators = serializers.SlugRelatedField(many=True,
+                                              slug_field="username",
+                                              queryset=User.objects.all(),
+                                              allow_null=True,
+                                              required=False,
+                                              read_only=False)
+    viewers = serializers.SlugRelatedField(many=True,
+                                           slug_field="username",
+                                           queryset=User.objects.all(),
+                                           allow_null=True,
+                                           required=False,
+                                           read_only=False)
+    # viewers = UserGroupMemberSerializer(
+    #     many=True, read_only=False, source='usergroup')
+    # annotators = UserGroupMemberSerializer(
+    #     many=True, read_only=False, source='usergroup')
 
     def to_representation(self, instance):
         initial_rep = super(OwnerMangerMixIn, self).to_representation(instance)
         fields_to_pop = [
             'owner',
             'managers',
+            'annotators'
             'viewers',
         ]
-        user_is_manager = self.context['request'].user.has_perm(
+        initial_rep['user_is_manager'] = self.context['request'].user.has_perm(
             self.management_perm, obj=instance)
-        if not user_is_manager:
+
+        if not initial_rep['user_is_manager']:
             [initial_rep.pop(field, '') for field in fields_to_pop]
-        else:
-            initial_rep['viewers'] = [
-                x for xs in initial_rep['viewers'] for x in xs]
+        # else:
+        #     initial_rep['annotators'] = [
+        #         x for xs in initial_rep['annotators'] for x in xs]
+        #     initial_rep['viewers'] = [
+        #         x for xs in initial_rep['viewers'] for x in xs]
         return initial_rep
 
     def update(self, instance, validated_data):
@@ -71,37 +90,43 @@ class OwnerMangerMixIn(serializers.ModelSerializer):
             instance, validated_data)
         user_is_manager = self.context['request'].user.has_perm(
             self.management_perm, obj=instance)
-        if user_is_manager:
-            group = instance.usergroup.all().order_by('pk')[0].usergroup
 
-            usernames = validated_data.get('viewers')
-            if usernames:
-                group.user_set.clear()
-                users_to_add = User.objects.all().filter(
-                    username__in=usernames)
-                for user in users_to_add:
-                    group.user_set.add(user)
-                group.save()
+        # if user_is_manager:
+
+        #     usergroup = instance.usergroup.all().order_by('pk')[0].usergroup
+        #     new_usergroup_usernames = validated_data.get('viewers')
+
+        #     self.add_users_to_group(new_usergroup_usernames, usergroup)
+
         instance.save()
         return instance
+
+    # def add_users_to_group(usernames, group):
+    #     if usernames:
+    #         group.user_set.clear()
+    #         users_to_add = User.objects.all().filter(
+    #             username__in=usernames)
+    #         for user in users_to_add:
+    #             group.user_set.add(user)
+    #         group.save()
 
 
 class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedMixIn, CheckFormMixIn,
                             serializers.ModelSerializer):
     device_type = serializers.SlugRelatedField(
         slug_field='name', queryset=DataType.objects.all(), required=False)
-    device_type_id = serializers.PrimaryKeyRelatedField(queryset=DataType.objects.all().values_list('pk', flat=True),
+    device_type_ID = serializers.PrimaryKeyRelatedField(source="device_type", queryset=DataType.objects.all().values_list('pk', flat=True),
                                                         required=False)
     device = serializers.SlugRelatedField(
-        slug_field='deviceID', queryset=Device.objects.all(), required=False)
-    device_id = serializers.PrimaryKeyRelatedField(queryset=Device.objects.all().values_list('pk', flat=True),
+        slug_field='device_ID', queryset=Device.objects.all(), required=False)
+    device_ID = serializers.PrimaryKeyRelatedField(source="device", queryset=Device.objects.all().values_list('pk', flat=True),
                                                    required=False)
     project = serializers.SlugRelatedField(many=True,
-                                           slug_field='projectID',
+                                           slug_field='project_ID',
                                            queryset=Project.objects.all(),
                                            allow_null=True,
                                            required=False)
-    project_id = serializers.PrimaryKeyRelatedField(source="project",
+    project_ID = serializers.PrimaryKeyRelatedField(source="project",
                                                     many=True,
                                                     queryset=Project.objects.all().values_list('pk', flat=True),
                                                     required=False,
@@ -109,13 +134,13 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedM
     site = SlugRelatedGetOrCreateField(slug_field='short_name',
                                        queryset=Site.objects.all(),
                                        required=False, allow_null=True)
-    site_id = serializers.PrimaryKeyRelatedField(queryset=Site.objects.all().values_list('pk', flat=True),
+    site_ID = serializers.PrimaryKeyRelatedField(queryset=Site.objects.all().values_list('pk', flat=True),
                                                  required=False, allow_null=True)
 
     # always return in UTC regardless of server setting
-    deploymentStart = serializers.DateTimeField(
+    deployment_start = serializers.DateTimeField(
         default=djtimezone.now(), default_timezone=djtimezone.utc)
-    deploymentEnd = serializers.DateTimeField(
+    deployment_end = serializers.DateTimeField(
         default_timezone=djtimezone.utc, required=False)
 
     # check project permissions here or in viewpoint
@@ -148,7 +173,7 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedM
         # #check if a device type has been set via either method
         # result, message, data = validators.check_two_keys(
         #     'device_type',
-        #     'device_type_id',
+        #     'device_type_ID',
         #     data,
         #     DataType
         # )
@@ -159,7 +184,7 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedM
             # check if a device has been attached (via either method)
             result, message, data = validators.check_two_keys(
                 'device',
-                'device_id',
+                'device_ID',
                 data,
                 Device,
                 self.form_submission
@@ -170,7 +195,7 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedM
             # check if a site has been attached (via either method)
             result, message, data = validators.check_two_keys(
                 'site',
-                'site_id',
+                'site_ID',
                 data,
                 Site,
                 self.form_submission
@@ -183,16 +208,16 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedM
         if not result:
             raise serializers.ValidationError(message)
 
-        result, message = validators.deployment_start_time_after_end_time(self.instance_get('deploymentStart', data),
-                                                                          self.instance_get('deploymentEnd', data))
+        result, message = validators.deployment_start_time_after_end_time(self.instance_get('deployment_start', data),
+                                                                          self.instance_get('deployment_end', data))
         if not result:
             raise serializers.ValidationError(message)
 
         print(data)
 
-        result, message = validators.deployment_check_overlap(self.instance_get('deploymentStart', data),
+        result, message = validators.deployment_check_overlap(self.instance_get('deployment_start', data),
                                                               self.instance_get(
-                                                                  'deploymentEnd', data),
+                                                                  'deployment_end', data),
                                                               self.instance_get(
                                                                   'device', data),
                                                               self.instance_get('id', data))
@@ -231,8 +256,12 @@ class ProjectSerializer(OwnerMangerMixIn, CreatedModifiedMixIn, serializers.Mode
 class DeviceSerializer(OwnerMangerMixIn, CreatedModifiedMixIn, serializers.ModelSerializer):
     type = serializers.SlugRelatedField(
         slug_field='name', queryset=DataType.objects.all(), required=False)
-    type_id = serializers.PrimaryKeyRelatedField(queryset=DataType.objects.all().values_list('pk', flat=True),
+    type_ID = serializers.PrimaryKeyRelatedField(source="type", queryset=DataType.objects.all().values_list('pk', flat=True),
                                                  required=False)
+    model = serializers.SlugRelatedField(
+        slug_field='name', queryset=DeviceModel.objects.all(), required=False)
+    model_ID = serializers.PrimaryKeyRelatedField(source="model", queryset=DeviceModel.objects.all().values_list('pk', flat=True),
+                                                  required=False)
 
     username = serializers.CharField()
     authentication = serializers.CharField()
@@ -266,7 +295,7 @@ class DeviceSerializer(OwnerMangerMixIn, CreatedModifiedMixIn, serializers.Model
             # check if a device has been attached (via either method)
             result, message, data = validators.check_two_keys(
                 'device_type',
-                'device_type_id',
+                'device_type_ID',
                 data,
                 Device,
                 self.form_submission
@@ -278,9 +307,9 @@ class DeviceSerializer(OwnerMangerMixIn, CreatedModifiedMixIn, serializers.Model
 
 
 class DataFileSerializer(CreatedModifiedMixIn, serializers.ModelSerializer):
-    deployment = serializers.SlugRelatedField(slug_field='deployment_deviceID',
+    deployment = serializers.SlugRelatedField(slug_field='deployment_device_ID',
                                               queryset=Deployment.objects.all())
-    deployment_id = serializers.PrimaryKeyRelatedField(read_only=True)
+    deployment_ID = serializers.PrimaryKeyRelatedField(read_only=True)
     file_type = serializers.StringRelatedField()
     recording_dt = serializers.DateTimeField(default_timezone=djtimezone.utc)
 

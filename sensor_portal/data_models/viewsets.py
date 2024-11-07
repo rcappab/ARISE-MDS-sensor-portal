@@ -8,8 +8,10 @@ from utils.general import get_new_name, handle_uploaded_file
 from utils.viewsets import OptionalPaginationViewSet
 
 from .filtersets import *
-from .models import *
+from .models import Deployment, Device, DataFile, Site, DataType, Project
 from .serializers import *
+
+import os
 
 
 class AddOwnerViewSet(viewsets.ModelViewSet):
@@ -27,9 +29,10 @@ class CheckFormViewSet(viewsets.ModelViewSet):
 
 
 class DeploymentViewSet(AddOwnerViewSet, CheckFormViewSet, OptionalPaginationViewSet):
-    search_fields = ['deployment_deviceID', 'device__name', 'device__deviceID']
-    ordering = ['deployment_deviceID', 'created_on']
-    ordering_fields = ordering = ['deployment_deviceID', 'created_on']
+    search_fields = ['deployment_device_ID',
+                     'device__name', 'device__device_ID']
+    ordering = ['deployment_device_ID', 'created_on']
+    ordering_fields = ordering = ['deployment_device_ID', 'created_on']
     queryset = Deployment.objects.all()
     filterset_class = DeploymentFilter
     filter_backends = viewsets.ModelViewSet.filter_backends + \
@@ -56,26 +59,26 @@ class DeploymentViewSet(AddOwnerViewSet, CheckFormViewSet, OptionalPaginationVie
             for project_object in project_objects:
                 if not self.request.user.has_perm('data_models.change_project', project_object):
                     raise PermissionDenied(
-                        f"You don't have permission to add a deployment to {project_object.projectID}")
+                        f"You don't have permission to add a deployment to {project_object.project_ID}")
         device_object = serializer.validated_data.get('device')
         if device_object is not None:
             if not self.request.user.has_perm('data_models.change_device', device_object):
                 raise PermissionDenied(
-                    f"You don't have permission to deploy {device_object.deviceID}")
+                    f"You don't have permission to deploy {device_object.device_ID}")
 
 
 class ProjectViewSet(AddOwnerViewSet, OptionalPaginationViewSet):
     serializer_class = ProjectSerializer
     queryset = Project.objects.all()
     filterset_class = ProjectFilter
-    search_fields = ['projectID', 'projectName', 'organizationName']
+    search_fields = ['project_ID', 'name', 'organization']
 
 
 class DeviceViewSet(AddOwnerViewSet, OptionalPaginationViewSet):
     serializer_class = DeviceSerializer
     queryset = Device.objects.all()
     filterset_class = DeviceFilter
-    search_fields = ['deviceID', 'name', 'model', 'make']
+    search_fields = ['device_ID', 'name', 'model__name']
 
 
 class DataFileViewSet(OptionalPaginationViewSet):
@@ -83,9 +86,9 @@ class DataFileViewSet(OptionalPaginationViewSet):
     queryset = DataFile.objects.all()
     filterset_class = DataFileFilter
     search_fields = ['file_name',
-                     'deployment__deployment_deviceID',
+                     'deployment__deployment_device_ID',
                      'deployment__device__name',
-                     'deployment__device__deviceID']
+                     'deployment__device__device_ID']
 
     def perform_update(self, serializer):
         self.check_attachment(serializer)
@@ -95,7 +98,7 @@ class DataFileViewSet(OptionalPaginationViewSet):
         deployment_object = serializer.validated_data.get('deployment')
         if not self.request.user.has_perm('data_models.change_deployment', deployment_object):
             raise PermissionDenied(f"You don't have permission to add a datafile"
-                                   f" to {deployment_object.deployment_deviceID}")
+                                   f" to {deployment_object.deployment_device_ID}")
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -147,7 +150,7 @@ class DataFileViewSet(OptionalPaginationViewSet):
             if deployment.isnumeric():
                 deployment_pk = int(deployment)
             try:
-                deployment_object = Deployment.objects.filter(Q(Q(deployment_deviceID=deployment) |
+                deployment_object = Deployment.objects.filter(Q(Q(deployment_device_ID=deployment) |
                                                                 Q(pk=deployment_pk)))
             except ObjectDoesNotExist:
                 raise serializers.ValidationError("Incorrect deployment")
@@ -166,7 +169,7 @@ class DataFileViewSet(OptionalPaginationViewSet):
                 device_pk = int(device)
             try:
                 device_object = Device.objects.get(
-                    Q(Q(deviceID=device) | Q(pk=device_pk)))
+                    Q(Q(device_ID=device) | Q(pk=device_pk)))
             except ObjectDoesNotExist:
                 raise serializers.ValidationError("Incorrect device")
 
@@ -177,7 +180,7 @@ class DataFileViewSet(OptionalPaginationViewSet):
             print(valid_files)
             if all([not x for x in valid_files]):
                 raise serializers.ValidationError(
-                    f"No deployments found in device {device_object.deviceID}")
+                    f"No deployments found in device {device_object.device_ID}")
             # Filter to only valids
             deployment_objects = [
                 x for x in deployment_objects if x is not None]
@@ -223,7 +226,7 @@ class DataFileViewSet(OptionalPaginationViewSet):
             file_local_path = os.path.join(
                 settings.FILE_STORAGE_ROOT, file_data_type.name)
             file_path = os.path.join(
-                file_deployment.deployment_deviceID, upload_date)
+                file_deployment.deployment_device_ID, upload_date)
             filename = file.name
             file_extension = os.path.splitext(filename)[1]
             new_file_name = get_new_name(file_deployment,

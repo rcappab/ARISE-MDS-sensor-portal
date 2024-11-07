@@ -15,10 +15,10 @@ class GenericFilter(django_filters.FilterSet):
         }
 
 
-class ExtraInfoFilterMixIn(django_filters.FilterSet):
-    extra_info = django_filters.CharFilter(method='extra_info_filter')
+class ExtraDataFilterMixIn(django_filters.FilterSet):
+    extra_data = django_filters.CharFilter(method='extra_data_filter')
 
-    def extra_info_filter(self, queryset, name, value):
+    def extra_data_filter(self, queryset, name, value):
         # unpack value
         newvalue = value.split("__")[-1]
         newname = "__".join(value.split("__")[:-1])
@@ -28,24 +28,24 @@ class ExtraInfoFilterMixIn(django_filters.FilterSet):
         })
 
 
-class DeploymentFilter(GenericFilter, ExtraInfoFilterMixIn):
+class DeploymentFilter(GenericFilter, ExtraDataFilterMixIn):
 
     class Meta:
         model = Deployment
         fields = GenericFilter.get_fields().copy()
         fields.update({
-            'deployment_deviceID': ['exact', 'icontains', 'in'],
+            'deployment_device_ID': ['exact', 'icontains', 'in'],
             'is_active': ['exact'],
-            'deploymentStart': ['exact', 'lte', 'gte'],
-            'deploymentEnd': ['exact', 'lte', 'gte'],
+            'deployment_start': ['exact', 'lte', 'gte'],
+            'deployment_end': ['exact', 'lte', 'gte'],
             'site': ['exact', 'in'],
             'site__name': ['exact', 'icontains', 'in'],
             'site__short_name': ['exact', 'icontains', 'in'],
             'device': ['exact', 'in'],
-            'device__deviceID': ['exact', 'icontains', 'in'],
+            'device__device_ID': ['exact', 'icontains', 'in'],
             'device__name': ['exact', 'icontains', 'in'],
             'project': ['exact'],
-            'project__projectID': ['exact'],
+            'project__project_ID': ['exact'],
             'device_type': ['exact', 'in'],
             'device_type__name': ['exact', 'icontains', 'in'],
         })
@@ -60,13 +60,13 @@ class ProjectFilter(GenericFilter):
         model = Project
         fields = GenericFilter.Meta.fields.copy()
         fields.update({
-            'projectID': ['exact', 'icontains', 'in'],
-            'projectName': ['exact', 'icontains', 'in'],
-            'organizationName': ['exact', 'icontains', 'in'],
+            'project_ID': ['exact', 'icontains', 'in'],
+            'name': ['exact', 'icontains', 'in'],
+            'organisation': ['exact', 'icontains', 'in'],
         })
 
 
-class DeviceFilter(GenericFilter, ExtraInfoFilterMixIn):
+class DeviceFilter(GenericFilter, ExtraDataFilterMixIn):
     is_active = django_filters.BooleanFilter(
         field_name="deployments__is_active")
 
@@ -76,13 +76,12 @@ class DeviceFilter(GenericFilter, ExtraInfoFilterMixIn):
         fields.update({
             'type': ['exact', 'in'],
             'type__name': ['exact', 'icontains', 'in'],
-            'deviceID': ['exact', 'icontains', 'in'],
-            'make': ['exact', 'icontains', 'in'],
-            'model': ['exact', 'icontains', 'in'],
+            'device_ID': ['exact', 'icontains', 'in'],
+            'model__name': ['exact', 'icontains', 'in'],
         })
 
 
-class DataFileFilter(GenericFilter, ExtraInfoFilterMixIn):
+class DataFileFilter(GenericFilter, ExtraDataFilterMixIn):
     is_favourite = django_filters.BooleanFilter(field_name='favourite_of',
                                                 exclude=True,
                                                 lookup_expr='isnull',
@@ -95,7 +94,7 @@ class DataFileFilter(GenericFilter, ExtraInfoFilterMixIn):
         fields = GenericFilter.Meta.fields.copy()
         fields.update({
             'deployment': ['exact', 'in'],
-            'deployment__deployment_deviceID': ['exact', 'in', 'icontains'],
+            'deployment__deployment_device_ID': ['exact', 'in', 'icontains'],
             'deployment__device': ['exact', 'in'],
             'file_type': ['exact', 'in'],
             'file_type__name': ['exact', 'icontains', 'in'],
@@ -104,7 +103,7 @@ class DataFileFilter(GenericFilter, ExtraInfoFilterMixIn):
             'file_format': ['exact', 'icontains', 'in'],
             'upload_date': ['exact', 'gte', 'lte'],
             'recording_dt': ['exact', 'date__exact', 'gte', 'lte', 'date__gte', 'date__lte', 'time__gte', 'time__lte'],
-            'localstorage': ['exact'],
+            'local_storage': ['exact'],
             'archived': ['exact'],
             'original_name': ['exact', 'icontains', 'in'],
             'favourite_of': ['contains'],

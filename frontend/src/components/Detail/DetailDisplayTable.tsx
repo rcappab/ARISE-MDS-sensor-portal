@@ -15,10 +15,10 @@ const DetailDisplayTable = ({
 		"created_on",
 		"modified_on",
 		"recording_dt",
-		"deploymentStart",
-		"deploymentEnd",
+		"deployment_start",
+		"deployment_end",
 	],
-	jsonKeys = ["extra_info"],
+	jsonKeys = ["extra_data"],
 }: Props) => {
 	const convertDates = function (key, value) {
 		if (timeKeys.includes(key)) {

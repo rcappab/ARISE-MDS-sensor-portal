@@ -8,23 +8,24 @@ from django.core.exceptions import ObjectDoesNotExist
 import traceback
 
 
-
 def get_global_project():
     from data_models.models import Project
     try:
-        global_project = Project.objects.get(projectID=settings.GLOBAL_PROJECT_ID)
+        global_project = Project.objects.get(
+            project_ID=settings.GLOBAL_PROJECT_ID)
         return global_project
     except ObjectDoesNotExist:
-        global_project = Project(projectID=settings.GLOBAL_PROJECT_ID,
-                                 projectName=settings.GLOBAL_PROJECT_ID,
-                                 projectObjectives="Global project for all deployments")
+        global_project = Project(project_ID=settings.GLOBAL_PROJECT_ID,
+                                 name=settings.GLOBAL_PROJECT_ID,
+                                 objectives="Global project for all deployments")
         global_project.save()
         return global_project
     except:
         print(" Error: " + traceback.format_exc())
         pass
 
-def check_dt(dt, device_timezone = None):
+
+def check_dt(dt, device_timezone=None):
     if dt is None:
         return dt
 
@@ -38,6 +39,7 @@ def check_dt(dt, device_timezone = None):
         dt = mytz.localize(dt)
 
     return dt
+
 
 def get_new_name(deployment, recording_dt, file_local_path, file_path, file_n=None):
     if file_n is None:

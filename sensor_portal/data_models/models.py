@@ -52,14 +52,6 @@ class Site(Basemodel):
         return self.name
 
 
-@receiver(post_save, sender=Site)
-def post_save_project(sender, instance, created, **kwargs):
-    if created:
-        if instance.short_name == "":
-            instance.short_name = instance.name[:10]
-            instance.save()
-
-
 class DataType(Basemodel):
     name = models.CharField(max_length=50)
 
@@ -69,15 +61,14 @@ class DataType(Basemodel):
 
 class Project(Basemodel):
     # Metadata
-    projectID = models.CharField(max_length=10, unique=True)
-    projectName = models.CharField(max_length=50)
-    projectObjectives = models.CharField(max_length=500, blank=True)
-    countryCode = models.CharField(max_length=10, blank=True)
-    principalInvestigator = models.CharField(max_length=50, blank=True)
-    principalInvestigatorEmail = models.CharField(max_length=100, blank=True)
-    projectContact = models.CharField(max_length=50, blank=True)
-    projectContactEmail = models.CharField(max_length=100, blank=True)
-    organizationName = models.CharField(max_length=100, blank=True)
+    project_ID = models.CharField(max_length=10, unique=True)
+    name = models.CharField(max_length=50)
+    objectives = models.CharField(max_length=500, blank=True)
+    principal_investigator = models.CharField(max_length=50, blank=True)
+    principal_investigator_email = models.CharField(max_length=100, blank=True)
+    contact = models.CharField(max_length=50, blank=True)
+    contact_email = models.CharField(max_length=100, blank=True)
+    organisation = models.CharField(max_length=100, blank=True)
 
     def is_active(self):
         return self.deployments.filter(is_active=True).exists()
@@ -87,37 +78,60 @@ class Project(Basemodel):
                               on_delete=models.SET_NULL, null=True)
     managers = models.ManyToManyField(
         settings.AUTH_USER_MODEL, blank=True, related_name="managed_projects")
+    viewers = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="viewable_projects")
+    annotators = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="annotatable_projects")
 
     # Archiving
     archive_files = models.BooleanField(default=True)
     clean_time = models.IntegerField(default=90)
 
     def __str__(self):
-        return self.projectID
+        return self.project_ID
 
     def get_absolute_url(self):
         return reverse('project-detail', kwargs={'pk': self.pk})
 
 
-@receiver(post_save, sender=Project)
-def post_save_project(sender, instance, created, **kwargs):
-    if created:
-        groupname = f"{instance.projectID}_project_group"
-        try:
-            usergroup = Group.objects.get(name=groupname)
-        except ObjectDoesNotExist:
-            usergroup = Group(name=groupname)
-            usergroup.save()
-        usergroup_profile = usergroup.profile
-        usergroup_profile.project.add(instance)
-        usergroup_profile.save()
+# @receiver(post_save, sender=Project)
+# def post_save_project(sender, instance, created, **kwargs):
+#     if created:
+#         if instance.short_name == "":
+#             instance.short_name = instance.name[:10]
+#             instance.save()
+
+        # viewer_groupname = f"{instance.projectID}_project_viewers"
+        # viewer_usergroup = create_user_group(viewer_groupname)
+        # viewer_usergroup_profile = viewer_usergroup.profile
+        # viewer_usergroup_profile.project.add(instance)
+        # viewer_usergroup_profile.save()
+
+        # annotator_groupname = f"{instance.projectID}_project_annotators"
+        # annotator_usergroup = create_user_group(annotator_groupname)
+        # annotator_usergroup_profile = annotator_usergroup.profile
+        # annotator_usergroup_profile.project.add(instance)
+        # annotator_usergroup_profile.save()
+
+
+class DeviceModel(Basemodel):
+    name = models.CharField(max_length=50, blank=True, unique=True)
+    manufacturer = models.CharField(max_length=50, blank=True)
+    type = models.ForeignKey(DataType, models.PROTECT,
+                             related_name="device_models")
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, related_name="owned_device_models",
+                              on_delete=models.SET_NULL, null=True)
+
+    def __str__(self):
+        return self.name
 
 
 class Device(Basemodel):
-    deviceID = models.CharField(max_length=20, unique=True)
+    device_ID = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=50, blank=True)
-    model = models.CharField(max_length=50, blank=True)
-    make = models.CharField(max_length=200, blank=True)
+    model = models.ForeignKey(
+        DeviceModel, models.PROTECT, related_name="registered_devices")
+
     type = models.ForeignKey(DataType, models.PROTECT, related_name="devices")
 
     # User ownership
@@ -125,6 +139,10 @@ class Device(Basemodel):
                               on_delete=models.SET_NULL, null=True)
     managers = models.ManyToManyField(
         settings.AUTH_USER_MODEL, blank=True, related_name="managed_devices")
+    viewers = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="viewable_devices")
+    annotators = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="annotatable_devices")
 
     autoupdate = models.BooleanField(default=False)
     update_time = models.IntegerField(default=48)
@@ -132,13 +150,13 @@ class Device(Basemodel):
     username = models.CharField(
         max_length=100, unique=True, null=True, blank=True, default=None)
     authentication = models.CharField(max_length=100, blank=True, null=True)
-    extra_info = models.JSONField(default=dict, blank=True)
+    extra_data = models.JSONField(default=dict, blank=True)
 
     def is_active(self):
         return self.deployments.filter(is_active=True).exists()
 
     def __str__(self):
-        return self.deviceID
+        return self.device_ID
 
     def get_absolute_url(self):
         return f"/api/device/{self.pk}"
@@ -153,21 +171,21 @@ class Device(Basemodel):
 
         # For deployments that have not ended - end date is shifted 100 years
 
-        all_deploys = all_deploys.annotate(deploymentEnd_indefinite=Case(
-            When(deploymentEnd__isnull=True,
+        all_deploys = all_deploys.annotate(deployment_end_indefinite=Case(
+            When(deployment_end__isnull=True,
                  then=ExpressionWrapper(
-                     F('deploymentStart') + timedelta(days=365 * 100),
+                     F('deployment_start') + timedelta(days=365 * 100),
                      output_field=DateTimeField()
                  )
                  ),
-            default=F('deploymentEnd')
+            default=F('deployment_end')
         )
         )
 
         # Annotate by whether the datetime lies in the deployment range
 
         all_deploys = all_deploys.annotate(in_deployment=ExpressionWrapper(
-            Q(Q(deploymentStart__lte=dt) & Q(deploymentEnd_indefinite__gte=dt)),
+            Q(Q(deployment_start__lte=dt) & Q(deployment_end_indefinite__gte=dt)),
             output_field=BooleanField()
         )
         )
@@ -191,52 +209,54 @@ class Device(Basemodel):
 
         print(deployment_pk)
         all_deploys = self.deployments.all().exclude(pk=deployment_pk)
-        all_deploys = all_deploys.annotate(deploymentEnd_indefinite=Case(
-            When(deploymentEnd__isnull=True,
+        all_deploys = all_deploys.annotate(deployment_end_indefinite=Case(
+            When(deployment_end__isnull=True,
                  then=ExpressionWrapper(
-                     F('deploymentStart') + timedelta(days=365 * 100),
+                     F('deployment_start') + timedelta(days=365 * 100),
                      output_field=DateTimeField()
                  )
                  ),
-            default=F('deploymentEnd')
+            default=F('deployment_end')
         )
         )
-        print(all_deploys.values('deploymentEnd', 'deploymentEnd_indefinite'))
+        print(all_deploys.values('deployment_end', 'deployment_end_indefinite'))
         all_deploys = all_deploys.annotate(in_deployment=ExpressionWrapper(
-            Q(Q(deploymentEnd_indefinite__gte=new_start)
-              & Q(deploymentStart__lte=new_end)),
+            Q(Q(deployment_end_indefinite__gte=new_start)
+              & Q(deployment_start__lte=new_end)),
             output_field=BooleanField()
         )
         )
 
         overlapping_deploys = all_deploys.filter(in_deployment=True)
-        return list(overlapping_deploys.values_list('deployment_deviceID', flat=True))
+        return list(overlapping_deploys.values_list('deployment_device_ID', flat=True))
 
 
-@receiver(post_save, sender=Device)
-def post_save_device(sender, instance, created, **kwargs):
-    if created:
-        groupname = f"{instance.deviceID}_device_group"
-        try:
-            usergroup = Group.objects.get(name=groupname)
-        except ObjectDoesNotExist:
-            usergroup = Group(name=groupname)
-            usergroup.save()
-        usergroup_profile = usergroup.profile
-        usergroup_profile.device.add(instance)
-        usergroup_profile.save()
+# @receiver(post_save, sender=Device)
+# def post_save_device(sender, instance, created, **kwargs):
+#     if created:
+#         viewer_groupname = f"{instance.projectID}_device_viewers"
+#         viewer_usergroup = create_user_group(viewer_groupname)
+#         viewer_usergroup_profile = viewer_usergroup.profile
+#         viewer_usergroup_profile.project.add(instance)
+#         viewer_usergroup_profile.save()
+
+#         annotator_groupname = f"{instance.projectID}_device_annotators"
+#         annotator_usergroup = create_user_group(annotator_groupname)
+#         annotator_usergroup_profile = annotator_usergroup.profile
+#         annotator_usergroup_profile.project.add(instance)
+#         annotator_usergroup_profile.save()
 
 
 class Deployment(Basemodel):
-    deployment_deviceID = models.CharField(
+    deployment_device_ID = models.CharField(
         max_length=100, blank=True, editable=False, unique=True)
-    deploymentID = models.CharField(max_length=50)
+    deployment_ID = models.CharField(max_length=50)
     device_type = models.ForeignKey(
         DataType, models.PROTECT, related_name="deployments", null=True)
     device_n = models.IntegerField(default=1)
 
-    deploymentStart = models.DateTimeField(default=djtimezone.now)
-    deploymentEnd = models.DateTimeField(blank=True, null=True)
+    deployment_start = models.DateTimeField(default=djtimezone.now)
+    deployment_end = models.DateTimeField(blank=True, null=True)
 
     device = models.ForeignKey(
         Device, on_delete=models.PROTECT, related_name="deployments")
@@ -254,7 +274,7 @@ class Deployment(Basemodel):
         spatial_index=True
     )
 
-    extra_info = models.JSONField(default=dict, blank=True)
+    extra_data = models.JSONField(default=dict, blank=True)
     is_active = models.BooleanField(default=True)
 
     # User ownership
@@ -262,6 +282,10 @@ class Deployment(Basemodel):
                               on_delete=models.SET_NULL, null=True)
     managers = models.ManyToManyField(
         settings.AUTH_USER_MODEL, blank=True, related_name="managed_deployments")
+    viewers = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="viewable_deployments")
+    annotators = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="annotatable_deployments")
 
     combo_project = models.CharField(
         max_length=100, blank=True, null=True, editable=False)
@@ -276,7 +300,7 @@ class Deployment(Basemodel):
         return reverse('deployment-detail', kwargs={'pk': self.pk})
 
     def __str__(self):
-        return self.deployment_deviceID
+        return self.deployment_device_ID
 
     def clean(self):
         result, message = validators.deployment_check_type(
@@ -284,17 +308,17 @@ class Deployment(Basemodel):
         if not result:
             raise ValidationError(message)
         result, message = validators.deployment_start_time_after_end_time(
-            self.deploymentStart, self.deploymentEnd)
+            self.deployment_start, self.deployment_end)
         if not result:
             raise ValidationError(message)
         result, message = validators.deployment_check_overlap(
-            self.deploymentStart, self.deploymentEnd, self.device, self.pk)
+            self.deployment_start, self.deployment_end, self.device, self.pk)
         if not result:
             raise ValidationError(message)
         super(Deployment, self).clean()
 
     def save(self, *args, **kwargs):
-        self.deployment_deviceID = f"{self.deploymentID}_{self.device.type.name}_{self.device_n}"
+        self.deployment_device_ID = f"{self.deployment_ID}_{self.device.type.name}_{self.device_n}"
         self.is_active = self.check_active()
 
         if not self.device_type:
@@ -316,15 +340,15 @@ class Deployment(Basemodel):
     def get_combo_project(self):
         if self.project.all().exists:
             all_proj_id = list(
-                self.project.all().values_list("projectID", flat=True))
+                self.project.all().values_list("project_ID", flat=True))
             all_proj_id.sort()
             return " ".join(all_proj_id)
         else:
             return ""
 
     def check_active(self):
-        if self.deploymentStart <= djtimezone.now():
-            if self.deploymentEnd is None or self.deploymentEnd >= djtimezone.now():
+        if self.deployment_start <= djtimezone.now():
+            if self.deployment_end is None or self.deployment_end >= djtimezone.now():
                 return True
 
         return False
@@ -336,8 +360,8 @@ class Deployment(Basemodel):
         for dt in dt_list:
             dt = check_dt(dt)
 
-            result_list.append(dt >= self.deploymentStart & (
-                dt <= self.deploymentEnd | self.deploymentEnd is None))
+            result_list.append(dt >= self.deployment_start & (
+                dt <= self.deployment_end | self.deployment_end is None))
 
         return result_list
 
@@ -369,17 +393,19 @@ class Deployment(Basemodel):
 
 @receiver(post_save, sender=Deployment)
 def post_save_deploy(sender, instance, created, **kwargs):
-    if created:
-        print("doing created stuff")
-        groupname = f"{instance.deployment_deviceID}_deployment_group"
-        try:
-            usergroup = Group.objects.get(name=groupname)
-        except ObjectDoesNotExist:
-            usergroup = Group(name=groupname)
-            usergroup.save()
-        usergroup_profile = usergroup.profile
-        usergroup_profile.deployment.add(instance)
-        usergroup_profile.save()
+    # if created:
+    #     print("doing created stuff")
+    #     viewer_groupname = f"{instance.projectID}_deployment_viewers"
+    #     viewer_usergroup = create_user_group(viewer_groupname)
+    #     viewer_usergroup_profile = viewer_usergroup.profile
+    #     viewer_usergroup_profile.project.add(instance)
+    #     viewer_usergroup_profile.save()
+
+    #     annotator_groupname = f"{instance.projectID}_deployment_annotators"
+    #     annotator_usergroup = create_user_group(annotator_groupname)
+    #     annotator_usergroup_profile = annotator_usergroup.profile
+    #     annotator_usergroup_profile.project.add(instance)
+    #     annotator_usergroup_profile.save()
 
     global_project = get_global_project()
     print(global_project)
@@ -401,19 +427,19 @@ def update_project(sender, instance, action, reverse, *args, **kwargs):
             combo_project=combo_project)
 
 
-@receiver(post_delete, sender=Device)
-@receiver(post_delete, sender=Deployment)
-@receiver(post_delete, sender=Project)
-def clear_user_groups(sender, instance, **kwargs):
-    all_groups = Group.objects.all()
-    all_groups = all_groups.annotate(
-        all_is_null=ExpressionWrapper(
-            (Q(Q(profile__project=None) & Q(profile__device=None)
-             & Q(profile__deployment=None))),
-            output_field=BooleanField()
-        )
-    )
-    all_groups.filter(all_is_null=True).delete()
+# @receiver(post_delete, sender=Device)
+# @receiver(post_delete, sender=Deployment)
+# @receiver(post_delete, sender=Project)
+# def clear_user_groups(sender, instance, **kwargs):
+#     all_groups = Group.objects.all()
+#     all_groups = all_groups.annotate(
+#         all_is_null=ExpressionWrapper(
+#             (Q(Q(profile__project=None) & Q(profile__device=None)
+#              & Q(profile__deployment=None))),
+#             output_field=BooleanField()
+#         )
+#     )
+#     all_groups.filter(all_is_null=True).delete()
 
 
 class DataFile(Basemodel):
@@ -431,11 +457,11 @@ class DataFile(Basemodel):
     path = models.CharField(max_length=500)
     local_path = models.CharField(max_length=500, blank=True)
 
-    extra_info = models.JSONField(default=dict, blank=True)
-    extra_reps = models.JSONField(default=dict, blank=True)
+    extra_data = models.JSONField(default=dict, blank=True)
+    extra_versions = models.JSONField(default=dict, blank=True)
     thumb_path = models.JSONField(default=None, blank=True, null=True)
 
-    localstorage = models.BooleanField(default=True)
+    local_storage = models.BooleanField(default=True)
     archived = models.BooleanField(default=False)
     # tarfile = models.ForeignKey(TarFile, on_delete=models.SET_NULL, blank=True, null=True, related_name="Files")
     favourite_of = models.ManyToManyField(
@@ -443,7 +469,6 @@ class DataFile(Basemodel):
 
     do_not_remove = models.BooleanField(default=False)
     original_name = models.CharField(max_length=100, blank=True, null=True)
-
     file_url = models.CharField(max_length=500, null=True, blank=True)
     tag = models.CharField(max_length=250, null=True, blank=True)
 

@@ -1,9 +1,9 @@
 const validObjects = ["deployment", "device", "project", "datafile"];
 
 const nameKeys = {
-	deployment: "deployment_deviceID",
-	device: "deviceID",
-	project: "projectID",
+	deployment: "deployment_device_ID",
+	device: "device_ID",
+	project: "project_ID",
 	datafile: "filename",
 };
 

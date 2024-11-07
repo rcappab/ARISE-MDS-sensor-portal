@@ -1,5 +1,3 @@
-from user_management.models import User, GroupProfile
-from django.contrib.auth.models import Group
 from bridgekeeper.rules import R
 from django.db.models import Q
 
@@ -28,15 +26,15 @@ def check_super(user):
     return None
 
 
-## PROJECT RULES
-class IsProjectOwner(R):
+# PROJECT RULES
+class IsOwner(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
         if initial_bool is not None:
             return initial_bool
         else:
-            return instance in user.owned_projects.all()
+            return user == instance.owner()
 
     def query(self, user):
         accumulated_q = query_super(user)
@@ -44,18 +42,18 @@ class IsProjectOwner(R):
         if accumulated_q is not None:
             return accumulated_q
         else:
-            accumulated_q = Q(pk__in=user.owned_projects.values_list('pk', flat=True))
+            accumulated_q = Q(owner=user)
             return final_query(accumulated_q)
 
 
-class IsProjectManager(R):
+class IsManager(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
         if initial_bool is not None:
             return initial_bool
         else:
-            return instance in user.managed_projects.all()
+            return user in instance.managers.all()
 
     def query(self, user):
         accumulated_q = query_super(user)
@@ -63,20 +61,19 @@ class IsProjectManager(R):
         if accumulated_q is not None:
             return accumulated_q
         else:
-            accumulated_q = Q(pk__in=user.managed_projects.values_list('pk', flat=True))
+            accumulated_q = Q(
+                managers=user)
             return final_query(accumulated_q)
 
 
-class InProjectViewerGroup(R):
+class IsViewer(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
         if initial_bool is not None:
             return initial_bool
         else:
-            return instance.pk in user.groups.filter(profile__project__isnull=False). \
-                values_list('profile__project__pk', flat=True). \
-                distinct()
+            return user in instance.viewers.all()
 
     def query(self, user):
         accumulated_q = query_super(user)
@@ -85,9 +82,7 @@ class InProjectViewerGroup(R):
             return accumulated_q
         else:
             # in project group
-            accumulated_q = Q(pk__in=user.groups.filter(profile__project__isnull=False).
-                              values_list('profile__project__pk', flat=True).
-                              distinct())
+            accumulated_q = Q(viewers=user)
 
             return final_query(accumulated_q)
 
@@ -99,13 +94,14 @@ class CanViewDeploymentInProject(R):
         if initial_bool is not None:
             return initial_bool
         else:
-            is_groupmember = instance.pk in user.groups.filter(profile__deployment__isnull=False). \
-                values_list('profile__deployment__project__pk', flat=True). \
-                distinct()
-            is_manager = instance.pk in user.managed_deployments.all()
-            is_owner = instance.pk in user.owned_deployments.all()
+            is_viewer = user.pk in instance.values_list(
+                'project__viewers__pk', flat=True)
+            is_manager = user.pk in instance.values_list(
+                'project__managers__pk', flat=True)
+            is_owner = user.pk in instance.values_list(
+                'project__owner__pk', flat=True)
 
-            return any([is_groupmember, is_manager, is_owner])
+            return any([is_viewer, is_manager, is_owner])
 
     def query(self, user):
         accumulated_q = query_super(user)
@@ -115,13 +111,12 @@ class CanViewDeploymentInProject(R):
         else:
             # can view/manage/own a deployment within project
             # view
-            accumulated_q = Q(deployments__pk__in=user.groups.filter(profile__deployment__isnull=False).
-                              values_list('profile__deployment__pk', flat=True).
-                              distinct())
+            accumulated_q = Q(project__viewers=user)
             # manage
-            accumulated_q = accumulated_q | Q(deployments__pk__in=user.managed_deployments)
-            # own
-            accumulated_q = accumulated_q | Q(deployments__pk__in=user.owned_deployments)
+            accumulated_q = accumulated_q | Q(
+                project__managers=user)
+            # owner
+            accumulated_q = accumulated_q | Q(project__owner=user)
 
         return final_query(accumulated_q)
 
@@ -133,13 +128,14 @@ class CanViewDeviceInProject(R):
         if initial_bool is not None:
             return initial_bool
         else:
-            is_groupmember = instance.pk in user.groups.filter(profile__device__isnull=False). \
-                values_list('profile__device__deployments__project__pk', flat=True). \
-                distinct()
-            is_manager = instance.pk in user.managed_deployments.all()
-            is_owner = instance.pk in user.owned_deployments.all()
+            is_viewer = user.pk in instance.values_list(
+                'deployments__project__viewers__pk', flat=True)
+            is_manager = user.pk in instance.values_list(
+                'deployments__project__managers__pk', flat=True)
+            is_owner = user.pk in instance.values_list(
+                'deployments__project__owner__pk', flat=True)
 
-            return any([is_groupmember, is_manager, is_owner])
+            return any([is_viewer, is_manager, is_owner])
 
     def query(self, user):
         accumulated_q = query_super(user)
@@ -149,81 +145,15 @@ class CanViewDeviceInProject(R):
         else:
             # can view/manage/own a deployment within project
             # view
-            accumulated_q = Q(pk__in=user.groups.filter(profile__device__isnull=False).
-                              values_list('profile__device__deployments__project__pk', flat=True).
-                              distinct())
+            accumulated_q = Q(deployments__project__viewers=user)
             # manage
-            accumulated_q = accumulated_q | Q(pk__in=user.managed_devices.values_list('deployments__project__pk'))
+            accumulated_q = accumulated_q | Q(
+                deployments__project__managers=user)
             # own
-            accumulated_q = accumulated_q | Q(pk__in=user.owned_devices.values_list('deployments__project__pk'))
+            accumulated_q = accumulated_q | Q(
+                deployments__project__owner=user)
 
         return final_query(accumulated_q)
-
-
-## DEVICE RULES
-class IsDeviceOwner(R):
-    def check(self, user, instance=None):
-        initial_bool = check_super(user)
-
-        if initial_bool is not None:
-            return initial_bool
-        else:
-            return instance in user.owned_devices.all()
-
-    def query(self, user):
-        accumulated_q = query_super(user)
-
-        if accumulated_q is not None:
-            return accumulated_q
-        else:
-            accumulated_q = Q(pk__in=user.owned_devices.values_list('pk', flat=True))
-            return final_query(accumulated_q)
-
-
-class IsDeviceManager(R):
-    def check(self, user, instance=None):
-        initial_bool = check_super(user)
-
-        if initial_bool is not None:
-            return initial_bool
-        else:
-            return instance in user.managed_devices.all()
-
-    def query(self, user):
-        accumulated_q = query_super(user)
-
-        if accumulated_q is not None:
-            return accumulated_q
-        else:
-            accumulated_q = Q(pk__in=user.managed_devices.values_list('pk', flat=True))
-            return final_query(accumulated_q)
-
-
-class InDeviceViewerGroup(R):
-    def check(self, user, instance=None):
-        initial_bool = check_super(user)
-
-        if initial_bool is not None:
-            return initial_bool
-        else:
-            return instance.pk in user.groups.filter(profile__device__isnull=False). \
-                values_list('profile__device__pk', flat=True). \
-                distinct()
-
-    def query(self, user):
-        print('QUERY IN DEVICE VIEWER GROUP')
-        accumulated_q = query_super(user)
-
-        if accumulated_q is not None:
-            return accumulated_q
-        else:
-            # in device group
-
-            accumulated_q = Q(pk__in=user.groups.filter(profile__device__isnull=False).
-                              values_list('profile__device__pk', flat=True).
-                              distinct())
-
-            return final_query(accumulated_q)
 
 
 class CanViewProjectContainingDevice(R):
@@ -233,13 +163,14 @@ class CanViewProjectContainingDevice(R):
         if initial_bool is not None:
             return initial_bool
         else:
-            is_groupmember = instance.pk in user.groups.filter(profile__project__isnull=False). \
-                values_list('profile__project__deployments__device__pk', flat=True). \
-                distinct()
-            is_manager = instance.pk in user.managed_projects.values_list('deployments__device__pk').distinct()
-            is_owner = instance in user.owned_projects.values_list('deployments__device__pk').distinct()
+            is_viewer = user.pk in instance.values_list(
+                "deployments__project__viewers__pk", flat=True)
+            is_manager = user.pk in instance.values_list(
+                "deployments__project__managers__pk", flat=True)
+            is_owner = user.pk in instance.values_list(
+                "deployments__project__owner__pk", flat=True)
 
-            return any([is_groupmember, is_manager, is_owner])
+            return any([is_viewer, is_manager, is_owner])
 
     def query(self, user):
         accumulated_q = query_super(user)
@@ -249,80 +180,14 @@ class CanViewProjectContainingDevice(R):
         else:
             # can view/manage/own a deployment within project
             # view
-            accumulated_q = Q(pk__in=user.groups.filter(profile__project__isnull=False).
-                              values_list('profile__project__deployments__device__pk', flat=True).
-                              distinct())
+            accumulated_q = Q(deployments__project__viewers=user)
             # manage
-            accumulated_q = accumulated_q | Q(pk__in=user.managed_projects.
-                                              values_list('deployments__device__pk', flat=True).distinct())
+            accumulated_q = accumulated_q | Q(
+                deployments__project__managers=user)
             # own
-            accumulated_q = accumulated_q | Q(pk__in=user.owned_projects.
-                                              values_list('deployments__device__pk', flat=True).distinct())
+            accumulated_q = accumulated_q | Q(deployments__project__owner=user)
 
         return final_query(accumulated_q)
-
-
-class IsDeploymentOwner(R):
-    def check(self, user, instance=None):
-        initial_bool = check_super(user)
-
-        if initial_bool is not None:
-            return initial_bool
-        else:
-            return instance in user.owned_deployments.all()
-
-    def query(self, user):
-        accumulated_q = query_super(user)
-
-        if accumulated_q is not None:
-            return accumulated_q
-        else:
-            accumulated_q = Q(pk__in=user.owned_deployments.values_list('pk', flat=True))
-            return final_query(accumulated_q)
-
-
-class IsDeploymentManager(R):
-    def check(self, user, instance=None):
-        initial_bool = check_super(user)
-
-        if initial_bool is not None:
-            return initial_bool
-        else:
-            return instance in user.managed_deployments.all()
-
-    def query(self, user):
-        accumulated_q = query_super(user)
-
-        if accumulated_q is not None:
-            return accumulated_q
-        else:
-            accumulated_q = Q(pk__in=user.managed_deployments.values_list('pk', flat=True))
-            return final_query(accumulated_q)
-
-
-class InDeploymentViewerGroup(R):
-    def check(self, user, instance=None):
-        initial_bool = check_super(user)
-
-        if initial_bool is not None:
-            return initial_bool
-        else:
-            return instance.pk in user.groups.filter(profile__deployment__isnull=False). \
-                values_list('profile__deployment__pk', flat=True). \
-                distinct()
-
-    def query(self, user):
-        accumulated_q = query_super(user)
-
-        if accumulated_q is not None:
-            return accumulated_q
-        else:
-            # in project group
-            accumulated_q = Q(pk__in=user.groups.filter(profile__deployment__isnull=False).
-                              values_list('profile__deployment__pk', flat=True).
-                              distinct())
-
-            return final_query(accumulated_q)
 
 
 class CanManageProjectContainingDeployment(R):
@@ -332,8 +197,9 @@ class CanManageProjectContainingDeployment(R):
         if initial_bool is not None:
             return initial_bool
         else:
-            is_manager = instance.pk in user.managed_projects.values_list('deployments__pk').distinct()
-            is_owner = instance in user.owned_projects.values_list('deployments__pk').distinct()
+            is_manager = user.pk in instance.values_list(
+                "project__managers__pk")
+            is_owner = user.pk in instance.values_list("project__owner__pk")
 
             return any([is_manager, is_owner])
 
@@ -345,11 +211,9 @@ class CanManageProjectContainingDeployment(R):
         else:
             # can manage/own a deployment within project
             # manage
-            accumulated_q = Q(pk__in=user.managed_projects.
-                              values_list('deployments__pk', flat=True).distinct())
+            accumulated_q = Q(project__managers=user)
             # own
-            accumulated_q = accumulated_q | Q(pk__in=user.owned_projects.
-                                              values_list('deployments__pk', flat=True).distinct())
+            accumulated_q = accumulated_q | Q(project__owner=user)
 
         return final_query(accumulated_q)
 
@@ -361,9 +225,7 @@ class CanViewProjectContainingDeployment(R):
         if initial_bool is not None:
             return initial_bool
         else:
-            return instance.pk in user.groups.filter(profile__project__isnull=False). \
-                values_list('profile__project__deployments__pk', flat=True). \
-                distinct()
+            return user.pk in instance.values_list("project__viewers__pk")
 
     def query(self, user):
         accumulated_q = query_super(user)
@@ -373,9 +235,7 @@ class CanViewProjectContainingDeployment(R):
         else:
             # can view/manage/own a deployment within project
             # view
-            accumulated_q = Q(pk__in=user.groups.filter(profile__project__isnull=False).
-                              values_list('profile__project__deployments__pk', flat=True).
-                              distinct())
+            accumulated_q = Q(project__viewers=user)
 
         return final_query(accumulated_q)
 
@@ -387,13 +247,12 @@ class CanViewDeployedDevice(R):
         if initial_bool is not None:
             return initial_bool
         else:
-            is_groupmember = instance.pk in user.groups.filter(profile__device__isnull=False). \
-                values_list('profile__device__deployments__pk', flat=True). \
-                distinct()
-            is_manager = instance.pk in user.managed_devices.values_list('deployments__pk').distinct()
-            is_owner = instance in user.owned_devices.values_list('deployments__pk').distinct()
+            is_viewer = user.pk in instance.values_list("device__viewers__pk")
+            is_manager = user.pk in instance.values_list(
+                "device__managers__pk")
+            is_owner = user.pk in instance.values_list("device__owner__pk")
 
-            return any([is_groupmember, is_manager, is_owner])
+            return any([is_viewer, is_manager, is_owner])
 
     def query(self, user):
         accumulated_q = query_super(user)
@@ -403,15 +262,11 @@ class CanViewDeployedDevice(R):
         else:
             # can view/manage/own a deployment within project
             # view
-            accumulated_q = Q(pk__in=user.groups.filter(profile__device__isnull=False).
-                              values_list('profile__device__deployments__pk', flat=True).
-                              distinct())
+            accumulated_q = Q(device__viewers=user)
             # manage
-            accumulated_q = accumulated_q | Q(pk__in=user.managed_devices.
-                                              values_list('deployments__pk', flat=True).distinct())
+            accumulated_q = accumulated_q | Q(device__managers=user)
             # own
-            accumulated_q = accumulated_q | Q(pk__in=user.owned_devices.
-                                              values_list('deployments__pk', flat=True).distinct())
+            accumulated_q = accumulated_q | Q(device__owner=user)
 
         return final_query(accumulated_q)
 
@@ -423,8 +278,10 @@ class CanManageProjectContainingDataFile(R):
         if initial_bool is not None:
             return initial_bool
         else:
-            is_manager = instance.pk in user.managed_projects.values_list('deployments__datafiles__pk').distinct()
-            is_owner = instance in user.owned_projects.values_list('deployments__datafiles__pk').distinct()
+            is_manager = user.pk in instance.values_list(
+                "deployment__project__managers__pk", flat=True)
+            is_owner = user.pk in instance.values_list(
+                "deployment__project__owner__pk", flat=True)
 
             return any([is_manager, is_owner])
 
@@ -436,11 +293,9 @@ class CanManageProjectContainingDataFile(R):
         else:
             # can view/manage/own a deployment within project
             # view
-            accumulated_q = Q(pk__in=user.managed_projects.
-                              values_list('deployments__datafiles__pk', flat=True).distinct())
+            accumulated_q = Q(deployment__project__managers=user)
             # own
-            accumulated_q = accumulated_q | Q(pk__in=user.owned_projects.
-                                              values_list('deployments__datafiles__pk', flat=True).distinct())
+            accumulated_q = accumulated_q | Q(deployment__project__owner=user)
 
         return final_query(accumulated_q)
 
@@ -452,9 +307,8 @@ class CanViewProjectContainingDataFile(R):
         if initial_bool is not None:
             return initial_bool
         else:
-            return instance.pk in user.groups.filter(profile__project__isnull=False). \
-                values_list('profile__project__deployments__datafiles__pk', flat=True). \
-                distinct()
+            return user.pk in instance.values_list(
+                "deployment__project__viewers__pk", flat=True)
 
     def query(self, user):
         accumulated_q = query_super(user)
@@ -464,9 +318,7 @@ class CanViewProjectContainingDataFile(R):
         else:
             # can view/manage/own a deployment within project
             # view
-            accumulated_q = Q(pk__in=user.groups.filter(profile__project__isnull=False).
-                              values_list('profile__project__deployments__datafiles__pk', flat=True).
-                              distinct())
+            accumulated_q = Q(deployment__project__viewers=user)
 
         return final_query(accumulated_q)
 
@@ -478,8 +330,10 @@ class CanManageDeploymentContainingDataFile(R):
         if initial_bool is not None:
             return initial_bool
         else:
-            is_manager = instance.pk in user.managed_deployments.values_list('datafiles__pk').distinct()
-            is_owner = instance in user.owned_deployments.values_list('datafiles__pk').distinct()
+            is_manager = user.pk in instance.values_list(
+                "deployment__managers__pk", flat=True)
+            is_owner = user.pk in instance.values_list(
+                "deployment__owner__pk", flat=True)
 
             return any([is_manager, is_owner])
 
@@ -491,11 +345,9 @@ class CanManageDeploymentContainingDataFile(R):
         else:
             # can view/manage/own a deployment within project
             # view
-            accumulated_q = Q(pk__in=user.managed_projects.
-                              values_list('datafiles__pk', flat=True).distinct())
+            accumulated_q = Q(deployment__managers=user)
             # own
-            accumulated_q = accumulated_q | Q(pk__in=user.owned_projects.
-                                              values_list('datafiles__pk', flat=True).distinct())
+            accumulated_q = accumulated_q | Q(deployment__owner=user)
 
         return final_query(accumulated_q)
 
@@ -507,9 +359,8 @@ class CanViewDeploymentContainingDataFile(R):
         if initial_bool is not None:
             return initial_bool
         else:
-            return instance.pk in user.groups.filter(profile__deployment__isnull=False). \
-                values_list('profile__deployments__datafiles__pk', flat=True). \
-                distinct()
+            return user.pk in instance.values_list(
+                "deployment__viewers__pk", flat=True)
 
     def query(self, user):
         accumulated_q = query_super(user)
@@ -519,9 +370,7 @@ class CanViewDeploymentContainingDataFile(R):
         else:
             # can view/manage/own a deployment within project
             # view
-            accumulated_q = Q(pk__in=user.groups.filter(profile__deployment__isnull=False).
-                              values_list('profile__deployment__datafiles__pk', flat=True).
-                              distinct())
+            accumulated_q = Q(deployment__viewers=user)
 
         return final_query(accumulated_q)
 
@@ -533,8 +382,10 @@ class CanManageDeviceContainingDataFile(R):
         if initial_bool is not None:
             return initial_bool
         else:
-            is_manager = instance.pk in user.managed_devices.values_list('deployments__datafiles__pk').distinct()
-            is_owner = instance in user.owned_devices.values_list('deployments__datafiles__pk').distinct()
+            is_manager = user.pk in user.values_list(
+                "deployment__device__managers__pk", flat=True)
+            is_owner = user.pk in user.values_list(
+                "deployment__device__owner__pk", flat=True)
 
             return any(is_manager, is_owner)
 
@@ -546,11 +397,9 @@ class CanManageDeviceContainingDataFile(R):
         else:
             # can view/manage/own a deployment within project
             # view
-            accumulated_q = Q(pk__in=user.managed_devices.
-                              values_list('deployments__datafiles__pk', flat=True).distinct())
+            accumulated_q = Q(deployment__device__managers=user)
             # own
-            accumulated_q = accumulated_q | Q(pk__in=user.owned_devices.
-                                              values_list('deployments__datafiles__pk', flat=True).distinct())
+            accumulated_q = accumulated_q | Q(deployment__device__owner=user)
 
         return final_query(accumulated_q)
 
@@ -562,9 +411,8 @@ class CanViewDeviceContainingDataFile(R):
         if initial_bool is not None:
             return initial_bool
         else:
-            return instance.pk in user.groups.filter(profile__device__isnull=False). \
-                values_list('profile__device__deployments__datafiles__pk', flat=True). \
-                distinct()
+            return user.pk in user.values_list(
+                "deployment__device__viewers__pk", flat=True)
 
     def query(self, user):
         accumulated_q = query_super(user)
@@ -574,8 +422,6 @@ class CanViewDeviceContainingDataFile(R):
         else:
             # can view/manage/own a deployment within project
             # view
-            accumulated_q = Q(pk__in=user.groups.filter(profile__device__isnull=False).
-                              values_list('profile__device__deployments__datafiles__pk', flat=True).
-                              distinct())
+            accumulated_q = Q(deployment__device__viewers=user)
 
         return final_query(accumulated_q)

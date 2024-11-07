@@ -25,10 +25,10 @@ const DetailModalContent = ({
 		"created_on",
 		"modified_on",
 		"recording_dt",
-		"deploymentStart",
-		"deploymentEnd",
+		"deployment_start",
+		"deployment_end",
 	],
-	jsonKeys = ["extra_info"],
+	jsonKeys = ["extra_data"],
 }: Props) => {
 	return editMode ? (
 		<DetailEdit
