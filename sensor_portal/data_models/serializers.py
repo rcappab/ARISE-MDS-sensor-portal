@@ -6,15 +6,15 @@ from PIL import ExifTags, Image
 from rest_framework import serializers
 from rest_framework_gis import serializers as geoserializers
 from user_management.models import User
+from utils.serializers import SlugRelatedGetOrCreateField
+
+from . import validators
+from .models import DataFile, DataType, Deployment, Device, DeviceModel, Project, Site
+
 # from user_management.serializers import (
 #     UserGroupMemberSerializer,
 #     UserGroupProfileSerializer,
 # )
-
-from utils.serializers import SlugRelatedGetOrCreateField
-
-from . import validators
-from .models import DataFile, DataType, Deployment, Device, Project, Site, DeviceModel
 
 
 class CheckFormMixIn():
@@ -48,18 +48,30 @@ class OwnerMangerMixIn(serializers.ModelSerializer):
                                             allow_null=True,
                                             required=False,
                                             read_only=False)
+
+    managers_ID = serializers.PrimaryKeyRelatedField(source="managers", many=True, queryset=User.objects.all().values_list('pk', flat=True),
+                                                     required=False)
+
     annotators = serializers.SlugRelatedField(many=True,
                                               slug_field="username",
                                               queryset=User.objects.all(),
                                               allow_null=True,
                                               required=False,
                                               read_only=False)
+
+    annotators_ID = serializers.PrimaryKeyRelatedField(source="annotators", many=True, queryset=User.objects.all().values_list('pk', flat=True),
+                                                       required=False)
+
     viewers = serializers.SlugRelatedField(many=True,
                                            slug_field="username",
                                            queryset=User.objects.all(),
                                            allow_null=True,
                                            required=False,
                                            read_only=False)
+
+    viewers_ID = serializers.PrimaryKeyRelatedField(source="viewers", many=True, queryset=User.objects.all().values_list('pk', flat=True),
+                                                    required=False)
+
     # viewers = UserGroupMemberSerializer(
     #     many=True, read_only=False, source='usergroup')
     # annotators = UserGroupMemberSerializer(

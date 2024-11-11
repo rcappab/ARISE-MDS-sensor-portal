@@ -25,6 +25,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/", include(api)),
     path('api/', include('user_management.urls'))
+
     # re_path(r"^api-auth/", include("rest_framework.urls",
     #        namespace="rest_framework"))
 ] + static(settings.FILE_STORAGE_URL, document_root=settings.FILE_STORAGE_ROOT) \

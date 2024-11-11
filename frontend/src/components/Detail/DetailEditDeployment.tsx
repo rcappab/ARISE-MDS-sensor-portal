@@ -4,6 +4,7 @@ import JSONInput from "../JSONInput.tsx";
 import FormMap from "../FormMap.tsx";
 import FormDateTZSelect from "../FormDateTZSelect.tsx";
 import FormSelectAPI from "../FormSelectAPI.tsx";
+import UserSelector from "../UserSelector.tsx";
 
 interface Props {
 	selectedData?: object | null;
@@ -400,6 +401,9 @@ const DetailEditDeployment = ({
 						wasValidated={wasValidated}
 						errorDict={errorDict["extra_data"] ? errorDict["extra_data"] : {}}
 					/>
+				</div>
+				<div className="row px-3 py-1 mb-3 border rounded">
+					<UserSelector chosenUsers={selectedData["managers_ID"]} />
 				</div>
 				{/* here ends the deployment fields */}
 			</>
