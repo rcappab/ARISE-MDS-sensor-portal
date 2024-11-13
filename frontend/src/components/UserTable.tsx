@@ -4,7 +4,7 @@ interface Props {
 	tableID: string;
 	userData?: [];
 	button?: boolean;
-	buttonOnClick?: () => void;
+	buttonOnClick?: (number) => void;
 	buttonClass?: string;
 	buttonText?: string;
 }
@@ -13,7 +13,7 @@ const UserTable = ({
 	tableID = "",
 	userData = [],
 	button = false,
-	buttonOnClick = () => {},
+	buttonOnClick = (number) => {},
 	buttonClass = "",
 	buttonText = "",
 }: Props) => {
@@ -24,6 +24,17 @@ const UserTable = ({
 				{Object.keys(currentData).map((key, i) => {
 					return <td key={`${index}_${key}`}>{currentData[key]}</td>;
 				})}
+				{button ? (
+					<button
+						className={buttonClass}
+						onClick={(e) => {
+							e.preventDefault();
+							buttonOnClick(currentData["id"]);
+						}}
+					>
+						{buttonText}
+					</button>
+				) : null}
 			</tr>
 		);
 	};
