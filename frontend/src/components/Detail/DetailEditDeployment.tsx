@@ -5,6 +5,7 @@ import FormMap from "../FormMap.tsx";
 import FormDateTZSelect from "../FormDateTZSelect.tsx";
 import FormSelectAPI from "../FormSelectAPI.tsx";
 import UserSelector from "../UserSelector.tsx";
+import PermissionEditor from "../PermissionEditor.tsx";
 
 interface Props {
 	selectedData?: object | null;
@@ -403,7 +404,15 @@ const DetailEditDeployment = ({
 					/>
 				</div>
 				<div className="row px-3 py-1 mb-3 border rounded">
-					<UserSelector chosenUsers={selectedData["managers_ID"]} />
+					<PermissionEditor
+						permissions={[
+							{
+								permissionName: "Managers",
+								permissionUsers: selectedData["managers_id"],
+								onPermissionChange: () => {},
+							},
+						]}
+					/>
 				</div>
 				{/* here ends the deployment fields */}
 			</>

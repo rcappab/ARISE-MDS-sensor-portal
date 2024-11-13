@@ -17,24 +17,31 @@ const UserTable = ({
 	buttonClass = "",
 	buttonText = "",
 }: Props) => {
+	const hideKeys = ["id"];
+
 	const tableRow = (currentData, index) => {
 		console.log(currentData);
 		return (
 			<tr key={index}>
 				{Object.keys(currentData).map((key, i) => {
+					if (hideKeys.includes(key)) {
+						return null;
+					}
 					return <td key={`${index}_${key}`}>{currentData[key]}</td>;
 				})}
-				{button ? (
-					<button
-						className={buttonClass}
-						onClick={(e) => {
-							e.preventDefault();
-							buttonOnClick(currentData["id"]);
-						}}
-					>
-						{buttonText}
-					</button>
-				) : null}
+				<td>
+					{button ? (
+						<button
+							className={buttonClass}
+							onClick={(e) => {
+								e.preventDefault();
+								buttonOnClick(currentData["id"]);
+							}}
+						>
+							{buttonText}
+						</button>
+					) : null}
+				</td>
 			</tr>
 		);
 	};
@@ -44,15 +51,19 @@ const UserTable = ({
 		return (
 			<tr key={0}>
 				{Object.keys(currentData).map((key, i) => {
+					if (hideKeys.includes(key)) {
+						return null;
+					}
 					return (
 						<th
 							key={`0_${key}`}
 							id={`0_${key}`}
 						>
-							{key}
+							{key.replace("_", " ")}
 						</th>
 					);
 				})}
+				<th></th>
 			</tr>
 		);
 	};
@@ -62,7 +73,7 @@ const UserTable = ({
 	}
 
 	return (
-		<table>
+		<table className="w-100 table">
 			<thead>{tableHead(userData[0])}</thead>
 			<tbody>
 				{userData.map((currentData, i) => {

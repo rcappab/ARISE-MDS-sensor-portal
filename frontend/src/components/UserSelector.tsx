@@ -7,12 +7,12 @@ import Loading from "./Loading.tsx";
 
 interface Props {
 	chosenUsers: Number[];
-	handleUserChoice: (number, boolean) => void;
+	onPermissionChange: (number, boolean) => void;
 }
 
 const UserSelector = ({
 	chosenUsers = [],
-	handleUserChoice = () => {},
+	onPermissionChange = () => {},
 }: Props) => {
 	const { authTokens } = useContext(AuthContext);
 
@@ -65,14 +65,13 @@ const UserSelector = ({
 					buttonClass="btn btn-danger"
 				/>
 			)}
-
+			Search users:{" "}
 			<input
 				value={searchString}
 				onChange={(e) => {
 					setSearchString(e.target.value);
 				}}
 			/>
-
 			{searchString !== "" ? (
 				searchDataLoading || searchDataPending ? (
 					<Loading />
