@@ -19,8 +19,9 @@ const UserTable = ({
 }: Props) => {
 	const hideKeys = ["id"];
 
+	console.log(userData);
+
 	const tableRow = (currentData, index) => {
-		console.log(currentData);
 		return (
 			<tr key={index}>
 				{Object.keys(currentData).map((key, i) => {

@@ -12,15 +12,24 @@ interface Props {
 }
 
 const PermissionEditor = ({ permissions = [] }: Props) => {
+	console.log(permissions);
 	return (
 		<>
 			{permissions.map((permission) => {
+				console.log(permission);
 				return (
-					<UserSelectorModal
-						permissionname={permission.permissionName}
-						chosenUsers={permission.permissionUsers}
-						onPermissionChange={permission.onPermissionChange}
-					/>
+					<>
+						<UserSelectorModal
+							permissionname={permission.permissionName}
+							chosenUsers={permission.permissionUsers}
+							onPermissionChange={permission.onPermissionChange}
+						/>
+						<input
+							name={`${permission.permissionName.toLowerCase()}_ID`}
+							value={JSON.stringify(permission.permissionUsers)}
+							hidden
+						></input>
+					</>
 				);
 			})}
 		</>

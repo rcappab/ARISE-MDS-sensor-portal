@@ -71,6 +71,10 @@ const DetailEditDeployment = ({
 		selectedData ? selectedData["extra_data"] : {}
 	);
 
+	const [managers_ID, setManagers_ID] = useState(
+		selectedData ? selectedData["managers_ID"] : {}
+	);
+
 	const setLatLong = function (latlong) {
 		if (latlong) {
 			setLatitude(Number(String(latlong.lat).substring(0, 7)));
@@ -408,8 +412,11 @@ const DetailEditDeployment = ({
 						permissions={[
 							{
 								permissionName: "Managers",
-								permissionUsers: selectedData["managers_id"],
-								onPermissionChange: () => {},
+								permissionUsers: managers_ID,
+								onPermissionChange: (newSelection) => {
+									console.log(newSelection);
+									setManagers_ID(newSelection);
+								},
 							},
 						]}
 					/>

@@ -7,17 +7,19 @@ import Loading from "./Loading.tsx";
 
 interface Props {
 	chosenUsers: Number[];
-	onPermissionChange: (number, boolean) => void;
+	onPermissionChange: (newValue: number[]) => void;
 }
 
 const UserSelector = ({
 	chosenUsers = [],
-	onPermissionChange = () => {},
+	onPermissionChange = (newValue: number[]) => {},
 }: Props) => {
 	const { authTokens } = useContext(AuthContext);
 
 	const [searchString, setSearchString] = useState("");
 	//get chosen user data
+
+	console.log(chosenUsers);
 
 	const {
 		data: chosenData,
@@ -25,7 +27,7 @@ const UserSelector = ({
 		isPending: chosenDataPending,
 	} = useQuery({
 		queryKey: ["chosenData"],
-		queryFn: () => getDataFunc(`user/?id__in=${chosenUsers}`),
+		queryFn: () => getDataFunc(`user/?id__in=${chosenUsers}&page_size=100`),
 	});
 
 	const {
@@ -35,7 +37,9 @@ const UserSelector = ({
 	} = useQuery({
 		queryKey: ["searchData_" + searchString],
 		queryFn: () =>
-			getDataFunc(`user/?id__not_in=${chosenUsers}&search=${searchString}`),
+			getDataFunc(
+				`user/?id__not_in=${chosenUsers}&search=${searchString}&page_size=10`
+			),
 		enabled: searchString !== "",
 	});
 
@@ -44,13 +48,19 @@ const UserSelector = ({
 		return response_json;
 	};
 
-	//search field
+	const handleAddClick = (clickedUserID) => {
+		let newChosenUsers = chosenUsers.concat(clickedUserID);
+		console.log(newChosenUsers);
+		onPermissionChange(newChosenUsers);
+	};
 
-	//handle remove user button click
-
-	//chosen user table
-
-	//search user table
+	const handleRemoveClick = (clickedUserID) => {
+		let newChosenUsers = chosenUsers.filter(
+			(userID) => userID == clickedUserID
+		);
+		console.log(newChosenUsers);
+		onPermissionChange(newChosenUsers);
+	};
 
 	return (
 		<>
@@ -63,6 +73,7 @@ const UserSelector = ({
 					buttonText="Remove"
 					button={true}
 					buttonClass="btn btn-danger"
+					buttonOnClick={handleRemoveClick}
 				/>
 			)}
 			Search users:{" "}
@@ -82,6 +93,7 @@ const UserSelector = ({
 						buttonText="Add"
 						button={true}
 						buttonClass="btn btn-primary"
+						buttonOnClick={handleAddClick}
 					/>
 				)
 			) : null}
