@@ -114,6 +114,7 @@ const DetailEditForm = ({
 
 		let objData = Object.fromEntries(formData);
 		for (let key of JSONFields) {
+			console.log(objData[key]);
 			objData[key] = JSON.parse(objData[key] as string);
 		}
 

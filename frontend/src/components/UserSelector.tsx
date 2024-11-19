@@ -26,7 +26,7 @@ const UserSelector = ({
 		isLoading: chosenDataLoading,
 		isPending: chosenDataPending,
 	} = useQuery({
-		queryKey: ["chosenData"],
+		queryKey: ["chosenData", chosenUsers],
 		queryFn: () => getDataFunc(`user/?id__in=${chosenUsers}&page_size=100`),
 	});
 
@@ -56,9 +56,9 @@ const UserSelector = ({
 
 	const handleRemoveClick = (clickedUserID) => {
 		let newChosenUsers = chosenUsers.filter(
-			(userID) => userID == clickedUserID
+			(userID) => userID != clickedUserID
 		);
-		console.log(newChosenUsers);
+		console.log("Remove", newChosenUsers);
 		onPermissionChange(newChosenUsers);
 	};
 

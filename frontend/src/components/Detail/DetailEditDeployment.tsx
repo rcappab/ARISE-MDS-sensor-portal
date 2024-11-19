@@ -125,7 +125,7 @@ const DetailEditDeployment = ({
 			onSubmit={onSubmit}
 			onCancel={onCancel}
 			onReset={resetDetailData}
-			JSONFields={["project_ID", "extra_data"]}
+			JSONFields={["project_ID", "extra_data", "managers_ID"]}
 		>
 			<>
 				{/* here starts the deployment fields */}
