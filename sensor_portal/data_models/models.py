@@ -51,6 +51,11 @@ class Site(Basemodel):
     def __str__(self):
         return self.name
 
+    def save(self, *args, **kwargs):
+        if self.short_name == "":
+            self.short_name = self.name[0:10]
+        return super().save(*args, **kwargs)
+
 
 class DataType(Basemodel):
     name = models.CharField(max_length=50)

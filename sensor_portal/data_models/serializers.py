@@ -49,7 +49,7 @@ class OwnerMangerMixIn(serializers.ModelSerializer):
                                             required=False,
                                             read_only=False)
 
-    managers_ID = serializers.PrimaryKeyRelatedField(source="managers", many=True, queryset=User.objects.all().values_list('pk', flat=True),
+    managers_ID = serializers.PrimaryKeyRelatedField(source="managers", many=True, queryset=User.objects.all(),
                                                      required=False)
 
     annotators = serializers.SlugRelatedField(many=True,
@@ -59,7 +59,7 @@ class OwnerMangerMixIn(serializers.ModelSerializer):
                                               required=False,
                                               read_only=False)
 
-    annotators_ID = serializers.PrimaryKeyRelatedField(source="annotators", many=True, queryset=User.objects.all().values_list('pk', flat=True),
+    annotators_ID = serializers.PrimaryKeyRelatedField(source="annotators", many=True, queryset=User.objects.all(),
                                                        required=False)
 
     viewers = serializers.SlugRelatedField(many=True,
@@ -69,7 +69,7 @@ class OwnerMangerMixIn(serializers.ModelSerializer):
                                            required=False,
                                            read_only=False)
 
-    viewers_ID = serializers.PrimaryKeyRelatedField(source="viewers", many=True, queryset=User.objects.all().values_list('pk', flat=True),
+    viewers_ID = serializers.PrimaryKeyRelatedField(source="viewers", many=True, queryset=User.objects.all(),
                                                     required=False)
 
     # viewers = UserGroupMemberSerializer(
@@ -127,11 +127,11 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedM
                             serializers.ModelSerializer):
     device_type = serializers.SlugRelatedField(
         slug_field='name', queryset=DataType.objects.all(), required=False)
-    device_type_ID = serializers.PrimaryKeyRelatedField(source="device_type", queryset=DataType.objects.all().values_list('pk', flat=True),
+    device_type_ID = serializers.PrimaryKeyRelatedField(source="device_type", queryset=DataType.objects.all(),
                                                         required=False)
     device = serializers.SlugRelatedField(
         slug_field='device_ID', queryset=Device.objects.all(), required=False)
-    device_ID = serializers.PrimaryKeyRelatedField(source="device", queryset=Device.objects.all().values_list('pk', flat=True),
+    device_ID = serializers.PrimaryKeyRelatedField(source="device", queryset=Device.objects.all(),
                                                    required=False)
     project = serializers.SlugRelatedField(many=True,
                                            slug_field='project_ID',
@@ -140,13 +140,13 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedM
                                            required=False)
     project_ID = serializers.PrimaryKeyRelatedField(source="project",
                                                     many=True,
-                                                    queryset=Project.objects.all().values_list('pk', flat=True),
+                                                    queryset=Project.objects.all(),
                                                     required=False,
                                                     allow_null=True)
     site = SlugRelatedGetOrCreateField(slug_field='short_name',
                                        queryset=Site.objects.all(),
                                        required=False, allow_null=True)
-    site_ID = serializers.PrimaryKeyRelatedField(queryset=Site.objects.all().values_list('pk', flat=True),
+    site_ID = serializers.PrimaryKeyRelatedField(queryset=Site.objects.all(),
                                                  required=False, allow_null=True)
 
     # always return in UTC regardless of server setting
@@ -214,7 +214,7 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedM
             )
             if not result:
                 raise serializers.ValidationError(message)
-
+        print(data)
         result, message = validators.deployment_check_type(self.instance_get('device_type', data),
                                                            self.instance_get('device', data))
         if not result:
@@ -268,11 +268,11 @@ class ProjectSerializer(OwnerMangerMixIn, CreatedModifiedMixIn, serializers.Mode
 class DeviceSerializer(OwnerMangerMixIn, CreatedModifiedMixIn, serializers.ModelSerializer):
     type = serializers.SlugRelatedField(
         slug_field='name', queryset=DataType.objects.all(), required=False)
-    type_ID = serializers.PrimaryKeyRelatedField(source="type", queryset=DataType.objects.all().values_list('pk', flat=True),
+    type_ID = serializers.PrimaryKeyRelatedField(source="type", queryset=DataType.objects.all(),
                                                  required=False)
     model = serializers.SlugRelatedField(
         slug_field='name', queryset=DeviceModel.objects.all(), required=False)
-    model_ID = serializers.PrimaryKeyRelatedField(source="model", queryset=DeviceModel.objects.all().values_list('pk', flat=True),
+    model_ID = serializers.PrimaryKeyRelatedField(source="model", queryset=DeviceModel.objects.all(),
                                                   required=False)
 
     username = serializers.CharField()
