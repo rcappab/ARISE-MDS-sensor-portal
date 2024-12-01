@@ -58,7 +58,7 @@ def deployment_check_overlap(start_dt, end_dt, device, deployment_pk):
     if len(overlapping_deployments) == 0:
         return True, ""
     error_message = {
-        "deployment_start": f"this deployment of {device.deviceID} "
+        "deployment_start": f"this deployment of {device.device_ID} "
         f"would overlap with {','.join(overlapping_deployments)}"
     }
     return False, error_message
@@ -79,6 +79,25 @@ def deployment_check_type(device_type, device):
         return True, ""
     error_message = {
         'device': f"{device.deviceID} is not a {device_type.name} device"}
+    return False, error_message
+
+
+def device_check_type(device_type, device_model):
+    """_summary_
+
+    Check if a device matches it's device model type.
+
+    Args:
+        device_type (DataType): New device type.
+        device_model (DeviceModel): DeviceModel of new device.
+
+    Returns:
+            success (boolean), error message (dict where the key is the associated field name)
+    """
+    if device_type is None or device_model.type == device_type:
+        return True, ""
+    error_message = {
+        'device': f"{device_model.name} is not a {device_type.name} device"}
     return False, error_message
 
 

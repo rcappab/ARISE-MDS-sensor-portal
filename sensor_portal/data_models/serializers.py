@@ -87,6 +87,7 @@ class OwnerMangerMixIn(serializers.ModelSerializer):
         ]
         initial_rep['user_is_manager'] = self.context['request'].user.has_perm(
             self.management_perm, obj=instance)
+        initial_rep["user_is_owner"] = instance.owner == self.context['request'].user
 
         if not initial_rep['user_is_manager']:
             [initial_rep.pop(field, '') for field in fields_to_pop]
@@ -146,7 +147,7 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedM
     site = SlugRelatedGetOrCreateField(slug_field='short_name',
                                        queryset=Site.objects.all(),
                                        required=False, allow_null=True)
-    site_ID = serializers.PrimaryKeyRelatedField(queryset=Site.objects.all(),
+    site_ID = serializers.PrimaryKeyRelatedField(source="site", queryset=Site.objects.all(),
                                                  required=False, allow_null=True)
 
     # always return in UTC regardless of server setting

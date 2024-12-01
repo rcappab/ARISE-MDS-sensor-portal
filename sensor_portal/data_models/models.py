@@ -1,6 +1,7 @@
 import os
 import traceback
 from datetime import datetime, time, timedelta, timezone
+from unittest import TextTestRunner
 
 from bridgekeeper import perms
 from django.conf import settings
@@ -43,6 +44,10 @@ class Basemodel(models.Model):
     def model_name(self):
         return self._meta.model_name
 
+    def save(self, *args, **kwargs):
+        self.clean()
+        return super().save(*args, **kwargs)
+
 
 class Site(Basemodel):
     name = models.CharField(max_length=50)
@@ -66,7 +71,7 @@ class DataType(Basemodel):
 
 class Project(Basemodel):
     # Metadata
-    project_ID = models.CharField(max_length=10, unique=True)
+    project_ID = models.CharField(max_length=10, unique=True, blank=True)
     name = models.CharField(max_length=50)
     objectives = models.CharField(max_length=500, blank=True)
     principal_investigator = models.CharField(max_length=50, blank=True)
@@ -98,6 +103,10 @@ class Project(Basemodel):
     def get_absolute_url(self):
         return reverse('project-detail', kwargs={'pk': self.pk})
 
+    def save(self, *args, **kwargs):
+        if self.project_ID == "":
+            self.project_ID = self.name[0:10]
+        return super().save(*args, **kwargs)
 
 # @receiver(post_save, sender=Project)
 # def post_save_project(sender, instance, created, **kwargs):
@@ -137,7 +146,8 @@ class Device(Basemodel):
     model = models.ForeignKey(
         DeviceModel, models.PROTECT, related_name="registered_devices")
 
-    type = models.ForeignKey(DataType, models.PROTECT, related_name="devices")
+    type = models.ForeignKey(DataType, models.PROTECT,
+                             related_name="devices", null=True)
 
     # User ownership
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, related_name="owned_devices",
@@ -166,9 +176,22 @@ class Device(Basemodel):
     def get_absolute_url(self):
         return f"/api/device/{self.pk}"
 
+    def save(self, *args, **kwargs):
+        if not self.type:
+            self.type = self.model.type
+        super().save(*args, **kwargs)
+
+    def clean(self):
+        result, message = validators.device_check_type(
+            self.type, self.model)
+        print(result, message)
+        if not result:
+            raise ValidationError(message)
+        super(Device, self).clean()
+
     def deployment_from_date(self, dt, user=None):
         dt = check_dt(dt)
-
+        print(dt)
         all_deploys = self.deployments.all()
         if user is not None:
             all_deploys = perms['data_models.change_deployment'].filter(
@@ -324,6 +347,7 @@ class Deployment(Basemodel):
 
     def save(self, *args, **kwargs):
         self.deployment_device_ID = f"{self.deployment_ID}_{self.device.type.name}_{self.device_n}"
+
         self.is_active = self.check_active()
 
         if not self.device_type:
@@ -340,6 +364,9 @@ class Deployment(Basemodel):
         else:
             self.point = None
 
+        if self.id:
+            self.combo_project = self.get_combo_project()
+
         super().save(*args, **kwargs)
 
     def get_combo_project(self):
@@ -352,6 +379,9 @@ class Deployment(Basemodel):
             return ""
 
     def check_active(self):
+        self.deployment_start = check_dt(self.deployment_start)
+        if self.deployment_end:
+            self.deployment_end = check_dt(self.deployment_end)
         if self.deployment_start <= djtimezone.now():
             if self.deployment_end is None or self.deployment_end >= djtimezone.now():
                 return True
@@ -425,6 +455,7 @@ def post_save_deploy(sender, instance, created, **kwargs):
 
 @receiver(m2m_changed, sender=Deployment.project.through)
 def update_project(sender, instance, action, reverse, *args, **kwargs):
+
     if (action == 'post_add' or action == 'post_remove') and not reverse:
         print(f"project {action}")
         combo_project = instance.get_combo_project()

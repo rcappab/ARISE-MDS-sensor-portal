@@ -28,7 +28,7 @@ FILE_STORAGE_URL = 'storage/'
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-c-=p42@cm%8sy6-49_32*1g31eh*_w^nj)is51-%$m49zwkvm7'
 
-if os.environ.get('DEV') is not None or platform.system() == "Windows":
+if os.environ.get('DEV') is not None:
     print("Running in dev mode")
     DEBUG = True
     STATIC_URL = 'static/'
