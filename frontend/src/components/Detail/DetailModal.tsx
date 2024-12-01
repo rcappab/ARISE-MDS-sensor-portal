@@ -46,16 +46,23 @@ const DetailModal = ({
 	let maxPage;
 	let maxData;
 
-	if (detailNum !== null) {
+	let canEdit = true;
+	let canDelete = false;
+
+	if (detailNum !== null && detailNum >= 0) {
 		selectedData = data.results[detailNum];
 		maxPage = Math.ceil(data.count / Number(searchParams.get("page_size")));
 		maxData = data.results.length;
+		canEdit = selectedData["user_is_manager"];
+		canDelete = selectedData["user_is_owner"];
 	} else {
 		selectedData = null;
 		maxPage = null;
 		maxData = null;
 	}
-	let editMode = searchParams.get("edit") ? true : false;
+
+	let editMode = searchParams.get("edit") && canEdit ? true : false;
+
 	return (
 		<BasicModal
 			modalShow={modalShow}
@@ -70,8 +77,8 @@ const DetailModal = ({
 					handlePageChange={changePage}
 					isLoading={isLoading}
 					editMode={editMode}
-					canEdit={selectedData ? true : false}
-					canDelete={selectedData ? true : false}
+					canEdit={canEdit}
+					canDelete={canDelete}
 					handleEdit={setEdit}
 					handleDelete={
 						selectedData

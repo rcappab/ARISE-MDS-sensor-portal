@@ -71,10 +71,6 @@ const DetailEditDeployment = ({
 		selectedData ? selectedData["extra_data"] : {}
 	);
 
-	const [managers_ID, setManagers_ID] = useState(
-		selectedData ? selectedData["managers_ID"] : {}
-	);
-
 	const setLatLong = function (latlong) {
 		if (latlong) {
 			setLatitude(Number(String(latlong.lat).substring(0, 7)));
@@ -125,7 +121,7 @@ const DetailEditDeployment = ({
 			onSubmit={onSubmit}
 			onCancel={onCancel}
 			onReset={resetDetailData}
-			JSONFields={["project_ID", "extra_data", "managers_ID"]}
+			JSONFields={["project_ID", "extra_data"]}
 		>
 			<>
 				{/* here starts the deployment fields */}
@@ -407,20 +403,7 @@ const DetailEditDeployment = ({
 						errorDict={errorDict["extra_data"] ? errorDict["extra_data"] : {}}
 					/>
 				</div>
-				<div className="row px-3 py-1 mb-3 border rounded">
-					<PermissionEditor
-						permissions={[
-							{
-								permissionName: "Managers",
-								permissionUsers: managers_ID,
-								onPermissionChange: (newSelection) => {
-									console.log(newSelection);
-									setManagers_ID(newSelection);
-								},
-							},
-						]}
-					/>
-				</div>
+
 				{/* here ends the deployment fields */}
 			</>
 		</DetailEditForm>

@@ -5,6 +5,7 @@ import { useMutation } from "@tanstack/react-query";
 import AuthContext from "../../context/AuthContext.jsx";
 import { patchData, postData } from "../../utils/FetchFunctions.js";
 import toast from "react-hot-toast";
+import PermissionEditor from "../PermissionEditor.tsx";
 
 interface Props {
 	children?: ReactElement;
@@ -35,6 +36,31 @@ const DetailEditForm = ({
 
 	const formRef = useRef<HTMLFormElement>(null);
 	const [stopEdit, setStopEdit] = useState(false);
+
+	const [managers_ID, setManagers_ID] = useState(
+		selectedData ? selectedData["managers_ID"] : []
+	);
+
+	const [viewers_ID, setViewers_ID] = useState(
+		selectedData ? selectedData["viewers_ID"] : []
+	);
+
+	const [annotators_ID, setAnnotators_ID] = useState(
+		selectedData ? selectedData["annotators_ID"] : []
+	);
+
+	console.log(!selectedData);
+
+	if (
+		!selectedData ||
+		Object.keys(selectedData as object).includes("managers_ID")
+	) {
+		JSONFields = JSONFields.concat([
+			"managers_ID",
+			"viewers_ID",
+			"annotators_ID",
+		]);
+	}
 
 	const doValidation = useCallback(
 		function (responseData = null) {
@@ -157,10 +183,17 @@ const DetailEditForm = ({
 		if (stopEdit) {
 			onSubmit(e, addNew, response);
 		} else if (addNew) {
-			onReset();
+			handleReset();
 		} else if (!addNew) {
 			selectedData = response;
 		}
+	};
+
+	const handleReset = () => {
+		setManagers_ID([]);
+		setAnnotators_ID([]);
+		setViewers_ID([]);
+		onReset();
 	};
 
 	const newPATCH = async function (x: { apiURL: string; newData: object }) {
@@ -185,6 +218,42 @@ const DetailEditForm = ({
 			newPOST(inputValue),
 	});
 
+	const permissionEditor = () => {
+		if (
+			!selectedData ||
+			Object.keys(selectedData as object).includes("managers_ID")
+		) {
+			return (
+				<div className="px-3 py-1 mb-3 border rounded">
+					<div className="mb-1">Manage permissions</div>
+					<div className="row gy-1 mb-2">
+						<div className="col-md-4">
+							<PermissionEditor
+								permissionName="Managers"
+								permissionUsers={managers_ID}
+								onPermissionChange={setManagers_ID}
+							/>
+						</div>
+						<div className="col-md-4">
+							<PermissionEditor
+								permissionName="Annotators"
+								permissionUsers={annotators_ID}
+								onPermissionChange={setAnnotators_ID}
+							/>
+						</div>
+						<div className="col-md-4">
+							<PermissionEditor
+								permissionName="Viewers"
+								permissionUsers={viewers_ID}
+								onPermissionChange={setViewers_ID}
+							/>
+						</div>
+					</div>
+				</div>
+			);
+		}
+	};
+
 	return (
 		<div>
 			<Form
@@ -204,6 +273,8 @@ const DetailEditForm = ({
 				/>
 
 				{children}
+
+				{permissionEditor()}
 
 				<div className="row gy-1 mb-2">
 					<div className="col-md-4">

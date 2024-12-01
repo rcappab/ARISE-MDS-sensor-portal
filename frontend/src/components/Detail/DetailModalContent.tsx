@@ -30,6 +30,12 @@ const DetailModalContent = ({
 	],
 	jsonKeys = ["extra_data"],
 }: Props) => {
+	if (selectedData) {
+		if (!selectedData["user_is_manager"]) {
+			editMode = false;
+		}
+	}
+
 	return editMode ? (
 		<DetailEdit
 			objectType={objectType}
@@ -41,7 +47,7 @@ const DetailModalContent = ({
 		<div>
 			<DetailDisplayRelated
 				objectType={objectType}
-				selectedDataID={selectedData["id"] as number}
+				selectedDataID={(selectedData as object)["id"] as number}
 			/>
 			<DetailDisplayTable
 				selectedData={selectedData}

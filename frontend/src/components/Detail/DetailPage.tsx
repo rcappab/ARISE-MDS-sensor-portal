@@ -58,10 +58,12 @@ const DetailPage = () => {
 		return <Loading />;
 	}
 
-	return (
-		<>
-			<div className="row">
-				<h1 className="col-auto">{data[nameKey]}</h1>
+	const canEdit = data["user_is_manager"];
+	const canDelete = data["user_is_owner"];
+
+	const editButton = () => {
+		if (canEdit) {
+			return (
 				<div className={`form-check form-switch col-auto pt-3`}>
 					<label htmlFor="post-autoupdate">Edit</label>
 					<input
@@ -76,6 +78,13 @@ const DetailPage = () => {
 						}}
 					/>
 				</div>
+			);
+		}
+	};
+
+	const deleteButton = () => {
+		if (canDelete) {
+			return (
 				<div className="col-auto">
 					<button
 						type="button"
@@ -87,6 +96,16 @@ const DetailPage = () => {
 						Delete
 					</button>
 				</div>
+			);
+		}
+	};
+
+	return (
+		<>
+			<div className="row">
+				<h1 className="col-auto">{data[nameKey]}</h1>
+				{editButton()}
+				{deleteButton()}
 			</div>
 			<DetailModalContent
 				objectType={objectType}

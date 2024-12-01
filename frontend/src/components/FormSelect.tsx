@@ -108,7 +108,7 @@ const FormSelect = ({
 		console.log(newInput);
 		let newOption = await handleCreate(newInput);
 		console.log(newOption);
-		setSelectedValue(newOption);
+		handleChange(newOption["value"]);
 	};
 
 	const handleSelectionChange = function (newValue) {

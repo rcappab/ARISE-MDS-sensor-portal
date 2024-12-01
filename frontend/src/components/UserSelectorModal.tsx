@@ -18,7 +18,7 @@ const UserSelectorModal = ({
 	return (
 		<>
 			<button
-				className={`btn btn-secondary ${modalOpen ? "disabled" : ""}`}
+				className={`w-100 btn btn-secondary ${modalOpen ? "disabled" : ""}`}
 				disabled={modalOpen}
 				onClick={
 					modalOpen

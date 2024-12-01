@@ -27,7 +27,11 @@ const UserSelector = ({
 		isPending: chosenDataPending,
 	} = useQuery({
 		queryKey: ["chosenData", chosenUsers],
-		queryFn: () => getDataFunc(`user/?id__in=${chosenUsers}&page_size=100`),
+		queryFn: () =>
+			getDataFunc(
+				`user/?id__in=${chosenUsers.length ? chosenUsers : -1}&page_size=100`
+			),
+		placeholderData: keepPreviousData,
 	});
 
 	const {
@@ -35,12 +39,15 @@ const UserSelector = ({
 		isLoading: searchDataLoading,
 		isPending: searchDataPending,
 	} = useQuery({
-		queryKey: ["searchData_" + searchString],
+		queryKey: ["searchData_" + searchString + chosenUsers],
 		queryFn: () =>
 			getDataFunc(
-				`user/?id__not_in=${chosenUsers}&search=${searchString}&page_size=10`
+				`user/?id__not_in=${
+					chosenUsers.length ? chosenUsers : -1
+				}&search=${searchString}&page_size=10`
 			),
 		enabled: searchString !== "",
+		placeholderData: keepPreviousData,
 	});
 
 	const getDataFunc = async (apiURL) => {
