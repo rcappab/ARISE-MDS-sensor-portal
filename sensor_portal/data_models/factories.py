@@ -61,7 +61,7 @@ class DeploymentFactory(factory.django.DjangoModelFactory):
             "deployment_ID", "device_type", "device_n")
 
     deployment_ID = factory.Faker('word')
-    device_type = factory.SubFactory(DataTypeFactory)
+    device_type = None
     device_n = factory.Faker('random_int', min=0, max=100)
 
     deployment_start = factory.Faker('date_time_between_dates',
@@ -87,6 +87,6 @@ class DeploymentFactory(factory.django.DjangoModelFactory):
         if not create:
             # Simple build do nothing.
             return
-
-        for _ in range(sample(range(3), 1)[0]):
-            self.project.add(ProjectFactory())
+        if extracted is None:
+            for i in range(sample(range(3), 1)[0]):
+                self.project.add(ProjectFactory())

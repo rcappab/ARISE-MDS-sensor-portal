@@ -57,7 +57,10 @@ class DeploymentViewSet(AddOwnerViewSet, CheckFormViewSet, OptionalPaginationVie
         project_objects = serializer.validated_data.get('project')
         if project_objects is not None:
             for project_object in project_objects:
-                if not self.request.user.has_perm('data_models.change_project', project_object):
+                if (not self.request.user.has_perm('data_models.change_project', project_object)) and\
+                        (project_object.pk != Project.objects.get(name=settings.GLOBAL_PROJECT_ID).pk):
+                    print(project_object.pk, Project.objects.get(
+                        name=settings.GLOBAL_PROJECT_ID))
                     raise PermissionDenied(
                         f"You don't have permission to add a deployment to {project_object.project_ID}")
         device_object = serializer.validated_data.get('device')

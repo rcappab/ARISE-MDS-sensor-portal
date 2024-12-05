@@ -337,12 +337,12 @@ const DetailEditDeployment = ({
 					<label htmlFor="post-latitude">Location</label>
 					<div className="col-6">
 						<input
-							name="Latitude"
+							name="latitude"
 							id="post-latitude"
 							type="number"
 							className={`form-control ${
 								wasValidated
-									? errorDict["Latitude"]
+									? errorDict["latitude"]
 										? "is-invalid"
 										: "is-valid"
 									: ""
@@ -357,17 +357,17 @@ const DetailEditDeployment = ({
 						/>
 						<div className="form-text mb-1">
 							Latitude.
-							<div className="invalid-feedback">{errorDict["Latitude"]}</div>
+							<div className="invalid-feedback">{errorDict["latitude"]}</div>
 						</div>
 					</div>
 					<div className="col-6">
 						<input
-							name="Longitude"
+							name="longitude"
 							id="post-longitude"
 							type="number"
 							className={`form-control ${
 								wasValidated
-									? errorDict["Longitude"]
+									? errorDict["longitude"]
 										? "is-invalid"
 										: "is-valid"
 									: ""
@@ -382,7 +382,7 @@ const DetailEditDeployment = ({
 						/>
 						<div className="form-text mb-1">
 							Longitude.
-							<div className="invalid-feedback">{errorDict["Longitude"]}</div>
+							<div className="invalid-feedback">{errorDict["longitude"]}</div>
 						</div>
 					</div>
 

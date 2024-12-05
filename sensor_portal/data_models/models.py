@@ -29,7 +29,7 @@ from django.dispatch import receiver
 from django.urls import reverse
 from django.utils import timezone as djtimezone
 from sizefield.models import FileSizeField
-from utils.general import check_dt, get_global_project
+from utils.general import check_dt
 
 from . import validators
 
@@ -81,7 +81,10 @@ class Project(Basemodel):
     organisation = models.CharField(max_length=100, blank=True)
 
     def is_active(self):
-        return self.deployments.filter(is_active=True).exists()
+        if self.id:
+            return self.deployments.filter(is_active=True).exists()
+        else:
+            return False
 
     # User ownership
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, related_name="owned_projects",
@@ -104,7 +107,7 @@ class Project(Basemodel):
         return reverse('project-detail', kwargs={'pk': self.pk})
 
     def save(self, *args, **kwargs):
-        if self.project_ID == "":
+        if self.project_ID == "" or self.project_ID is None:
             self.project_ID = self.name[0:10]
         return super().save(*args, **kwargs)
 
@@ -168,7 +171,10 @@ class Device(Basemodel):
     extra_data = models.JSONField(default=dict, blank=True)
 
     def is_active(self):
-        return self.deployments.filter(is_active=True).exists()
+        if self.id:
+            return self.deployments.filter(is_active=True).exists()
+        else:
+            return False
 
     def __str__(self):
         return self.device_ID
@@ -292,9 +298,9 @@ class Deployment(Basemodel):
     project = models.ManyToManyField(
         Project, related_name="deployments", blank=True)
 
-    Latitude = models.DecimalField(
+    latitude = models.DecimalField(
         max_digits=8, decimal_places=6, blank=True, null=True)
-    Longitude = models.DecimalField(
+    longitude = models.DecimalField(
         max_digits=8, decimal_places=6, blank=True, null=True)
     point = gis_models.PointField(
         blank=True,
@@ -353,14 +359,14 @@ class Deployment(Basemodel):
         if not self.device_type:
             self.device_type = self.device.type
 
-        if self.Longitude and self.Latitude:
+        if self.longitude and self.latitude:
             self.point = Point(
-                float(self.Longitude),
-                float(self.Latitude),
+                float(self.longitude),
+                float(self.latitude),
                 srid=4326
             )
-        elif (not self.Longitude and not self.Latitude) and self.point:
-            self.Longitude, self.Latitude = self.point.coords
+        elif (not self.longitude and not self.latitude) and self.point:
+            self.longitude, self.latitude = self.point.coords
         else:
             self.point = None
 
@@ -442,7 +448,8 @@ def post_save_deploy(sender, instance, created, **kwargs):
     #     annotator_usergroup_profile.project.add(instance)
     #     annotator_usergroup_profile.save()
 
-    global_project = get_global_project()
+    global_project, added = Project.objects.get_or_create(
+        name=settings.GLOBAL_PROJECT_ID)
     print(global_project)
     print(instance.project.all())
     if global_project not in instance.project.all():
@@ -457,10 +464,7 @@ def post_save_deploy(sender, instance, created, **kwargs):
 def update_project(sender, instance, action, reverse, *args, **kwargs):
 
     if (action == 'post_add' or action == 'post_remove') and not reverse:
-        print(f"project {action}")
-        combo_project = instance.get_combo_project()
-        Deployment.objects.filter(pk=instance.pk).update(
-            combo_project=combo_project)
+        instance.save()
 
 
 # @receiver(post_delete, sender=Device)

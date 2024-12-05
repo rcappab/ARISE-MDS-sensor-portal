@@ -85,9 +85,13 @@ class OwnerMangerMixIn(serializers.ModelSerializer):
             'annotators'
             'viewers',
         ]
-        initial_rep['user_is_manager'] = self.context['request'].user.has_perm(
-            self.management_perm, obj=instance)
-        initial_rep["user_is_owner"] = instance.owner == self.context['request'].user
+        if self.context.get('request'):
+            initial_rep['user_is_manager'] = self.context['request'].user.has_perm(
+                self.management_perm, obj=instance)
+            initial_rep["user_is_owner"] = instance.owner == self.context['request'].user
+        else:
+            initial_rep['user_is_manager'] = False
+            initial_rep["user_is_owner"] = False
 
         if not initial_rep['user_is_manager']:
             [initial_rep.pop(field, '') for field in fields_to_pop]
@@ -101,8 +105,8 @@ class OwnerMangerMixIn(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance = super(OwnerMangerMixIn, self).update(
             instance, validated_data)
-        user_is_manager = self.context['request'].user.has_perm(
-            self.management_perm, obj=instance)
+        # user_is_manager = self.context['request'].user.has_perm(
+        #     self.management_perm, obj=instance)
 
         # if user_is_manager:
 
@@ -154,7 +158,7 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedM
     deployment_start = serializers.DateTimeField(
         default=djtimezone.now(), default_timezone=djtimezone.utc)
     deployment_end = serializers.DateTimeField(
-        default_timezone=djtimezone.utc, required=False)
+        default_timezone=djtimezone.utc, required=False, allow_null=True)
 
     # check project permissions here or in viewpoint
 
@@ -276,8 +280,8 @@ class DeviceSerializer(OwnerMangerMixIn, CreatedModifiedMixIn, serializers.Model
     model_ID = serializers.PrimaryKeyRelatedField(source="model", queryset=DeviceModel.objects.all(),
                                                   required=False)
 
-    username = serializers.CharField()
-    authentication = serializers.CharField()
+    username = serializers.CharField(required=False)
+    authentication = serializers.CharField(required=False)
     is_active = serializers.BooleanField(
         read_only=True)
 
@@ -295,8 +299,11 @@ class DeviceSerializer(OwnerMangerMixIn, CreatedModifiedMixIn, serializers.Model
             "username",
             "authentication",
         ]
-        user_is_manager = self.context['request'].user.has_perm(
-            self.management_perm, obj=instance)
+        if self.context.get('request'):
+            user_is_manager = self.context['request'].user.has_perm(
+                self.management_perm, obj=instance)
+        else:
+            user_is_manager = False
         if not user_is_manager:
             [initial_rep.pop(field, '') for field in fields_to_pop]
         return initial_rep

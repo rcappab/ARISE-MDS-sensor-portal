@@ -34,7 +34,7 @@ class IsOwner(R):
         if initial_bool is not None:
             return initial_bool
         else:
-            return user == instance.owner()
+            return user == instance.owner
 
     def query(self, user):
         accumulated_q = query_super(user)
