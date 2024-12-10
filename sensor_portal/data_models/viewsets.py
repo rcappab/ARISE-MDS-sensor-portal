@@ -1,3 +1,5 @@
+import os
+
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import status, viewsets
@@ -8,10 +10,8 @@ from utils.general import get_new_name, handle_uploaded_file
 from utils.viewsets import OptionalPaginationViewSet
 
 from .filtersets import *
-from .models import Deployment, Device, DataFile, Site, DataType, Project
+from .models import DataFile, DataType, Deployment, Device, Project, Site
 from .serializers import *
-
-import os
 
 
 class AddOwnerViewSet(viewsets.ModelViewSet):
@@ -33,7 +33,7 @@ class DeploymentViewSet(AddOwnerViewSet, CheckFormViewSet, OptionalPaginationVie
                      'device__name', 'device__device_ID']
     ordering = ['deployment_device_ID', 'created_on']
     ordering_fields = ordering = ['deployment_device_ID', 'created_on']
-    queryset = Deployment.objects.all()
+    queryset = Deployment.objects.all().distinct()
     filterset_class = DeploymentFilter
     filter_backends = viewsets.ModelViewSet.filter_backends + \
         [filters_gis.InBBoxFilter]
@@ -58,9 +58,7 @@ class DeploymentViewSet(AddOwnerViewSet, CheckFormViewSet, OptionalPaginationVie
         if project_objects is not None:
             for project_object in project_objects:
                 if (not self.request.user.has_perm('data_models.change_project', project_object)) and\
-                        (project_object.pk != Project.objects.get(name=settings.GLOBAL_PROJECT_ID).pk):
-                    print(project_object.pk, Project.objects.get(
-                        name=settings.GLOBAL_PROJECT_ID))
+                        (project_object.name != settings.GLOBAL_PROJECT_ID):
                     raise PermissionDenied(
                         f"You don't have permission to add a deployment to {project_object.project_ID}")
         device_object = serializer.validated_data.get('device')
@@ -72,21 +70,21 @@ class DeploymentViewSet(AddOwnerViewSet, CheckFormViewSet, OptionalPaginationVie
 
 class ProjectViewSet(AddOwnerViewSet, OptionalPaginationViewSet):
     serializer_class = ProjectSerializer
-    queryset = Project.objects.all()
+    queryset = Project.objects.all().distinct()
     filterset_class = ProjectFilter
     search_fields = ['project_ID', 'name', 'organization']
 
 
 class DeviceViewSet(AddOwnerViewSet, OptionalPaginationViewSet):
     serializer_class = DeviceSerializer
-    queryset = Device.objects.all()
+    queryset = Device.objects.all().distinct()
     filterset_class = DeviceFilter
     search_fields = ['device_ID', 'name', 'model__name']
 
 
 class DataFileViewSet(OptionalPaginationViewSet):
     serializer_class = DataFileSerializer
-    queryset = DataFile.objects.all()
+    queryset = DataFile.objects.all().distinct()
     filterset_class = DataFileFilter
     search_fields = ['file_name',
                      'deployment__deployment_device_ID',
@@ -269,11 +267,11 @@ class DataFileViewSet(OptionalPaginationViewSet):
 
 class SiteViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSet):
     serializer_class = SiteSerializer
-    queryset = Site.objects.all()
+    queryset = Site.objects.all().distinct()
     search_fields = ['name', 'short_name']
 
 
 class DataTypeViewset(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSet):
     serializer_class = DataTypeSerializer
-    queryset = DataType.objects.all()
+    queryset = DataType.objects.all().distinct()
     search_fields = ['name']

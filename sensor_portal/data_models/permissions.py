@@ -1,8 +1,21 @@
 from bridgekeeper import perms
-from bridgekeeper.rules import is_staff, is_active, is_authenticated
-from .rules import IsOwner, IsManager, IsViewer, CanViewProjectContainingDevice, CanManageProjectContainingDeployment, \
-    CanViewProjectContainingDeployment, CanViewDeployedDevice, CanManageProjectContainingDataFile, CanManageDeploymentContainingDataFile, \
-    CanManageDeviceContainingDataFile, CanViewProjectContainingDataFile, CanViewDeploymentContainingDataFile, CanViewDeviceContainingDataFile
+from bridgekeeper.rules import is_active, is_authenticated, is_staff
+
+from .rules import (
+    CanManageDeploymentContainingDataFile,
+    CanManageDeviceContainingDataFile,
+    CanManageProjectContainingDataFile,
+    CanManageProjectContainingDeployment,
+    CanViewDeployedDevice,
+    CanViewDeploymentContainingDataFile,
+    CanViewDeviceContainingDataFile,
+    CanViewProjectContainingDataFile,
+    CanViewProjectContainingDeployment,
+    CanViewProjectContainingDevice,
+    IsManager,
+    IsOwner,
+    IsViewer,
+)
 
 # PROJECT
 perms['data_models.add_project'] = is_authenticated & is_active
@@ -36,7 +49,7 @@ perms['data_models.add_deployment'] = is_authenticated & is_active
 perms['data_models.change_deployment'] = is_authenticated & (is_staff
                                                              | IsOwner()
                                                              | IsManager()
-                                                             | IsViewer()) & is_active  # must be device owner OR manager
+                                                             ) & is_active  # must be device owner OR manager
 perms['data_models.delete_deployment'] = is_authenticated & (is_staff
                                                              | IsOwner()
                                                              | CanManageProjectContainingDeployment()) & is_active  # must be device owner OR manager
@@ -46,7 +59,8 @@ perms['data_models.view_deployment'] = is_authenticated & (is_staff
                                                            | IsViewer()
                                                            | CanManageProjectContainingDeployment()
                                                            | CanViewProjectContainingDeployment()
-                                                           | CanViewDeployedDevice()) & is_active
+                                                           | CanViewDeployedDevice()
+                                                           ) & is_active
 
 # DATAFILES
 perms['data_models.add_datafile'] = is_authenticated & is_active

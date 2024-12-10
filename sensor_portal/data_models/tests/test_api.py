@@ -1,8 +1,10 @@
 import pytest
-from data_models.factories import ProjectFactory, DeploymentFactory, DeviceFactory, DataTypeFactory, DeviceModelFactory
-from data_models.serializers import ProjectSerializer, DeploymentSerializer, DeviceSerializer
-from data_models.models import Project
-from django.contrib import auth
+from data_models.factories import DeploymentFactory, DeviceFactory, ProjectFactory
+from data_models.serializers import (
+    DeploymentSerializer,
+    DeviceSerializer,
+    ProjectSerializer,
+)
 
 
 def api_check_post(api_client, api_url, payload, check_key):
@@ -78,7 +80,7 @@ def api_check_delete(api_client, api_url):
 @pytest.mark.django_db
 def test_create_project(api_client_with_credentials):
     """
-        Test: Can project be created and retrieved through the API.
+    Test: Can project be created and retrieved through the API.
     """
     check_key = 'name'
     serializer = ProjectSerializer
@@ -94,7 +96,7 @@ def test_create_project(api_client_with_credentials):
 @pytest.mark.django_db
 def test_update_project(api_client_with_credentials):
     """
-        Test: Can project be updated and retrieved through the API.
+    Test: Can project be updated and retrieved through the API.
     """
     user = api_client_with_credentials.handler._force_user
     check_key = 'project_ID'
@@ -112,7 +114,7 @@ def test_update_project(api_client_with_credentials):
 @pytest.mark.django_db
 def test_delete_project(api_client_with_credentials):
     """
-        Test: Can project be deleted through the API.
+    Test: Can project be deleted through the API.
     """
     user = api_client_with_credentials.handler._force_user
     new_item = ProjectFactory(
@@ -128,6 +130,9 @@ def test_delete_project(api_client_with_credentials):
 
 @pytest.mark.django_db
 def test_create_deployment(api_client_with_credentials):
+    """
+    Test: Can deployment be created and retrieved through the API.
+    """
     user = api_client_with_credentials.handler._force_user
     check_key = 'deployment_ID'
     serializer = DeploymentSerializer
@@ -146,6 +151,9 @@ def test_create_deployment(api_client_with_credentials):
 
 @pytest.mark.django_db
 def test_update_deployment(api_client_with_credentials):
+    """
+    Test: Can deployment be updated and retrieved through the API.
+    """
     user = api_client_with_credentials.handler._force_user
     check_key = 'deployment_ID'
     new_item = DeploymentFactory(
@@ -162,6 +170,9 @@ def test_update_deployment(api_client_with_credentials):
 
 @pytest.mark.django_db
 def test_delete_deployment(api_client_with_credentials):
+    """
+    Test: Can deployment be deleted through the API.
+    """
     user = api_client_with_credentials.handler._force_user
     new_item = DeploymentFactory(
         deployment_ID='test_ID',
@@ -176,13 +187,47 @@ def test_delete_deployment(api_client_with_credentials):
 
 
 # device tests
+@pytest.mark.django_db
+def test_create_device(api_client_with_credentials):
+    """
+    Test: Can device be created and retrieved through the API.
+    """
+    check_key = 'name'
+    serializer = DeviceSerializer
+    new_item = DeviceFactory()
+    api_url = '/api/device/'
+    payload = serializer(instance=new_item).data
+    payload["managers_ID"] = []
+    print(payload)
+    new_item.delete()
+    api_check_post(api_client_with_credentials, api_url,
+                   payload, check_key)
 
-# file tests at some point
 
-# permissions
-# can't deploy a non-managed device, creation and update
-# can't deploy to a non-managed project, creation and update
-# can't delete non-owned objects
-# can't update non-managed objects
-# non logged in users shouldn't do anything
-# unactivated users shouldn't be able to do anything
+@pytest.mark.django_db
+def test_update_device(api_client_with_credentials):
+    """
+    Test: Can device be updated and retrieved through the API.
+    """
+    user = api_client_with_credentials.handler._force_user
+    check_key = 'name'
+    new_item = DeviceFactory(owner=user)
+    api_url = f'/api/device/{new_item.pk}/'
+    new_value = 'new_device_name'
+
+    api_check_update(api_client_with_credentials,
+                     api_url, new_value, check_key)
+
+
+@pytest.mark.django_db
+def test_delete_device(api_client_with_credentials):
+    """
+    Test: Can device be udeleted through the API.
+    """
+    user = api_client_with_credentials.handler._force_user
+    new_item = DeviceFactory(owner=user)
+    api_url = f'/api/device/{new_item.pk}/'
+    api_check_delete(api_client_with_credentials,
+                     api_url)
+
+    # file tests at some point

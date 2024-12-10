@@ -2,12 +2,11 @@ from bridgekeeper.rules import R
 from django.db.models import Q
 
 
-# Some utility functions
 def final_query(accumulated_q):
     if len(accumulated_q) == 0:
         return Q(id=-1)
     else:
-        return accumulated_q
+        return Q(accumulated_q)
 
 
 def query_super(user):
@@ -47,6 +46,7 @@ class IsOwner(R):
 
 
 class IsManager(R):
+
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
@@ -200,7 +200,6 @@ class CanManageProjectContainingDeployment(R):
             is_manager = user.pk in instance.values_list(
                 "project__managers__pk")
             is_owner = user.pk in instance.values_list("project__owner__pk")
-
             return any([is_manager, is_owner])
 
     def query(self, user):
@@ -209,11 +208,14 @@ class CanManageProjectContainingDeployment(R):
         if accumulated_q is not None:
             return accumulated_q
         else:
+            print(self)
             # can manage/own a deployment within project
             # manage
             accumulated_q = Q(project__managers=user)
+            print(accumulated_q)
             # own
             accumulated_q = accumulated_q | Q(project__owner=user)
+            print(accumulated_q)
 
         return final_query(accumulated_q)
 
