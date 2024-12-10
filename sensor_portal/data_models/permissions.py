@@ -2,6 +2,7 @@ from bridgekeeper import perms
 from bridgekeeper.rules import is_active, is_authenticated, is_staff
 
 from .rules import (
+    CanManageDeployedDevice,
     CanManageDeploymentContainingDataFile,
     CanManageDeviceContainingDataFile,
     CanManageProjectContainingDataFile,
@@ -49,16 +50,21 @@ perms['data_models.add_deployment'] = is_authenticated & is_active
 perms['data_models.change_deployment'] = is_authenticated & (is_staff
                                                              | IsOwner()
                                                              | IsManager()
+                                                             | CanManageDeployedDevice()
+                                                             | CanManageProjectContainingDeployment()
                                                              ) & is_active  # must be device owner OR manager
 perms['data_models.delete_deployment'] = is_authenticated & (is_staff
                                                              | IsOwner()
-                                                             | CanManageProjectContainingDeployment()) & is_active  # must be device owner OR manager
+                                                             | CanManageProjectContainingDeployment()
+                                                             | CanManageDeployedDevice()
+                                                             ) & is_active  # must be device owner OR manager
 perms['data_models.view_deployment'] = is_authenticated & (is_staff
                                                            | IsOwner()
                                                            | IsManager()
                                                            | IsViewer()
                                                            | CanManageProjectContainingDeployment()
                                                            | CanViewProjectContainingDeployment()
+                                                           | CanManageDeployedDevice()
                                                            | CanViewDeployedDevice()
                                                            ) & is_active
 

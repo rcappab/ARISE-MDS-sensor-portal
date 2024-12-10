@@ -16,7 +16,7 @@ from user_management.factories import UserFactory
 @pytest.mark.django_db
 def test_deploy_non_managed_device(api_client_with_credentials):
     """
-    Test: Check user cannot deploy a device they do not own, both at creation and during an update.
+    Test: Check user cannot deploy a device they do not manage, both at creation and during an update.
     """
     user = api_client_with_credentials.handler._force_user
     site = SiteFactory()
@@ -61,6 +61,9 @@ def test_deploy_non_managed_device(api_client_with_credentials):
 
 @pytest.mark.django_db
 def test_deploy_to_non_managed_project(api_client_with_credentials):
+    """
+    Test: Check user cannot deploy to a project they do not manage, both at creation and during an update.
+    """
     user = api_client_with_credentials.handler._force_user
     site = SiteFactory()
     device_owned = DeviceFactory(
@@ -108,3 +111,84 @@ def test_deploy_to_non_managed_project(api_client_with_credentials):
 
     print(response_update_allowed.data)
     assert response_update_allowed.status_code == 200
+
+
+@pytest.mark.django_db
+def test_device_manager_manage_deployment(api_client_with_credentials):
+    """
+    Test: Viewers of a device can see a deployment, managers can change it and delete it.
+
+    """
+    user = api_client_with_credentials.handler._force_user
+    site = SiteFactory()
+    device = DeviceFactory()
+    device_deployment = DeploymentFactory(
+        device=device, site=site, owner=device.owner)
+    device.viewers.add(user)
+
+    api_url = f'/api/deployment/{device_deployment.pk}/'
+    response_get = api_client_with_credentials.get(
+        api_url)
+    print(response_get.data)
+    assert response_get.status_code == 200
+
+    response_delete_not_allowed = api_client_with_credentials.delete(
+        api_url)
+    print(response_delete_not_allowed.data)
+    assert response_delete_not_allowed.status_code == 403
+
+    response_patch_not_allowed = api_client_with_credentials.patch(
+        api_url, {'deployment_ID': 'new_id'}, format='json')
+    assert response_patch_not_allowed.status_code == 403
+
+    device.managers.add(user)
+    response_patch_allowed = api_client_with_credentials.patch(
+        api_url, {'deployment_ID': 'new_id'}, format='json')
+    assert response_patch_allowed.status_code == 200
+    assert response_patch_allowed.data['deployment_ID'] == 'new_id'
+
+    response_delete_allowed = api_client_with_credentials.delete(
+        api_url)
+    print(response_delete_allowed.data)
+    assert response_delete_allowed.status_code == 204
+
+
+@pytest.mark.django_db
+def test_project_manager_manage_deployment(api_client_with_credentials):
+    """
+    Test: Viewers of a project can see a deployment, managers can change it and delete it.
+
+    """
+    user = api_client_with_credentials.handler._force_user
+    site = SiteFactory()
+    device = DeviceFactory(
+    )
+    project = ProjectFactory(owner=device.owner)
+    device_deployment = DeploymentFactory(
+        device=device, site=site, owner=project.owner, project=[])
+    device_deployment.project.add(project)
+    project.viewers.add(user)
+
+    api_url = f'/api/deployment/{device_deployment.pk}/'
+    response_get = api_client_with_credentials.get(
+        api_url)
+    print(response_get.data)
+    assert response_get.status_code == 200
+
+    response_delete_not_allowed = api_client_with_credentials.delete(
+        api_url)
+    print(response_delete_not_allowed.data)
+    assert response_delete_not_allowed.status_code == 403
+
+    project.managers.add(user)
+
+    response_patch_allowed = api_client_with_credentials.patch(
+        api_url, {'deployment_ID': 'new_id'}, format='json')
+    print(response_patch_allowed.data)
+    assert response_patch_allowed.status_code == 200
+    assert response_patch_allowed.data['deployment_ID'] == 'new_id'
+
+    response_delete_allowed = api_client_with_credentials.delete(
+        api_url)
+    print(response_delete_allowed.data)
+    assert response_delete_allowed.status_code == 204
