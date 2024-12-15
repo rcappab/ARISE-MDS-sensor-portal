@@ -3,10 +3,10 @@ import { useMap } from "react-leaflet";
 import { DomEvent } from "leaflet";
 
 interface Props {
-	handleChangeLatLong: (e) => void;
+	handleChangeLatLong: () => void;
 }
 
-const ResetLocation = ({ handleChangeLatLong = (e) => {} }: Props) => {
+const ResetLocation = ({ handleChangeLatLong = () => {} }: Props) => {
 	const ref = useRef(null);
 
 	useEffect(() => {
@@ -18,8 +18,8 @@ const ResetLocation = ({ handleChangeLatLong = (e) => {} }: Props) => {
 	const map = useMap();
 
 	const resetLocation = function (e) {
-		handleChangeLatLong(e.latlng);
 		map.locate();
+		handleChangeLatLong();
 	};
 
 	return (
