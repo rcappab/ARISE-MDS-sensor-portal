@@ -1,4 +1,5 @@
 from data_models.models import Deployment, Device, Project
+from data_models.serializers import DeploymentSerializer, DeviceSerializer, ProjectSerializer
 from django.contrib.auth.models import Group
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
@@ -35,41 +36,18 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
 
-    qs = User.objects.prefetch_related('owned_projects__projectID',
-                                       'managed_projects__projectID',
-                                       'owned_devices__deviceID',
-                                       'managed_devices__deviceID',
-                                       'owned_deployments__deployment_deviceID',
-                                       'managed_deployments__deployment_deviceID'
-                                       )
-
     owned_projects = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field='projectID')
+        many=True, read_only=True, slug_field='project_ID')
     managed_projects = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field='projectID')
-    owned_devices = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field='deviceID')
-    managed_devices = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field='deviceID')
+        many=True, read_only=True, slug_field='project_ID')
+    owned_devices = DeviceSerializer(
+        many=True, read_only=True)
+    managed_devices = DeviceSerializer(
+        many=True, read_only=True)
     owned_deployments = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field='deployment_deviceID')
+        many=True, read_only=True, slug_field='deployment_device_ID')
     managed_deployments = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field='deployment_deviceID')
-
-    owned_projects_ID = serializers.PrimaryKeyRelatedField(source="owned_projects", queryset=Project.objects.all().values_list('pk', flat=True),
-                                                           required=False)
-    managed_projects_ID = serializers.PrimaryKeyRelatedField(source="managed_projects", queryset=Project.objects.all().values_list('pk', flat=True),
-                                                             required=False)
-
-    owned_devices_ID = serializers.PrimaryKeyRelatedField(source="owned_devices", queryset=Device.objects.all().values_list('pk', flat=True),
-                                                          required=False)
-    managed_devices_ID = serializers.PrimaryKeyRelatedField(source="managed_devices", queryset=Device.objects.all().values_list('pk', flat=True),
-                                                            required=False)
-
-    owned_deployments_ID = serializers.PrimaryKeyRelatedField(source="owned_deployments", queryset=Deployment.objects.all().values_list('pk', flat=True),
-                                                              required=False)
-    managed_deployments_ID = serializers.PrimaryKeyRelatedField(source="managed_deployments", queryset=Deployment.objects.all().values_list('pk', flat=True),
-                                                                required=False)
+        many=True, read_only=True, slug_field='deployment_device_ID')
 
     class Meta:
         model = User
@@ -78,9 +56,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
                   'owned_projects', 'managed_projects',
                   'owned_devices', 'managed_devices',
                   'owned_deployments', 'managed_deployments',
-                  'owned_projects_ID', 'managed_projects_ID',
-                  'owned_devices_ID', 'managed_devices_ID',
-                  'owned_deployments_ID', 'managed_deployments_ID'
                   )
 
 
