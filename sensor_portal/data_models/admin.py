@@ -1,5 +1,7 @@
+from django.conf import settings
 from django.contrib import admin
-from .models import DataType, Site, Device, Deployment, DataFile, Project, DeviceModel
+
+from .models import DataFile, DataType, Deployment, Device, DeviceModel, Project, Site
 
 # Register your models here.
 
@@ -59,7 +61,7 @@ class DeployAdmin(AddOwnerAdmin):
     def save_related(self, request, form, formsets, change):
         super(AddOwnerAdmin, self).save_related(
             request, form, formsets, change)
-        global_project = Project.objects.get_or_create(
+        global_project, exists = Project.objects.get_or_create(
             name=settings.GLOBAL_PROJECT_ID)
         if global_project not in form.instance.project.all():
             form.instance.project.add(global_project)

@@ -2,12 +2,11 @@ from bridgekeeper.rules import R
 from django.db.models import Q
 
 
-# Some utility functions
 def final_query(accumulated_q):
     if len(accumulated_q) == 0:
         return Q(id=-1)
     else:
-        return accumulated_q
+        return Q(accumulated_q)
 
 
 def query_super(user):
@@ -47,6 +46,7 @@ class IsOwner(R):
 
 
 class IsManager(R):
+
     def check(self, user, instance=None):
         initial_bool = check_super(user)
 
@@ -197,10 +197,8 @@ class CanManageProjectContainingDeployment(R):
         if initial_bool is not None:
             return initial_bool
         else:
-            is_manager = user.pk in instance.values_list(
-                "project__managers__pk")
-            is_owner = user.pk in instance.values_list("project__owner__pk")
-
+            is_manager = user.pk in instance.project.all().values_list('managers__pk', flat=True)
+            is_owner = user.pk in instance.project.all().values_list('owner__pk', flat=True)
             return any([is_manager, is_owner])
 
     def query(self, user):
@@ -209,6 +207,7 @@ class CanManageProjectContainingDeployment(R):
         if accumulated_q is not None:
             return accumulated_q
         else:
+            print(self)
             # can manage/own a deployment within project
             # manage
             accumulated_q = Q(project__managers=user)
@@ -225,7 +224,7 @@ class CanViewProjectContainingDeployment(R):
         if initial_bool is not None:
             return initial_bool
         else:
-            return user.pk in instance.values_list("project__viewers__pk")
+            return user.pk in instance.project.all().values_list("viewers__pk", flat=True)
 
     def query(self, user):
         accumulated_q = query_super(user)
@@ -240,6 +239,30 @@ class CanViewProjectContainingDeployment(R):
         return final_query(accumulated_q)
 
 
+class CanManageDeployedDevice(R):
+    def check(self, user, instance=None):
+        initial_bool = check_super(user)
+        if initial_bool is not None:
+            return initial_bool
+        else:
+            is_manager = user in instance.device.managers.all()
+            is_owner = user.pk == instance.device.owner
+
+            return any([is_manager, is_owner])
+
+    def query(self, user):
+        accumulated_q = query_super(user)
+
+        if accumulated_q is not None:
+            return accumulated_q
+        else:
+            # manage
+            accumulated_q = Q(device__managers=user)
+            # own
+            accumulated_q = accumulated_q | Q(device__owner=user)
+        return final_query(accumulated_q)
+
+
 class CanViewDeployedDevice(R):
     def check(self, user, instance=None):
         initial_bool = check_super(user)
@@ -247,12 +270,9 @@ class CanViewDeployedDevice(R):
         if initial_bool is not None:
             return initial_bool
         else:
-            is_viewer = user.pk in instance.values_list("device__viewers__pk")
-            is_manager = user.pk in instance.values_list(
-                "device__managers__pk")
-            is_owner = user.pk in instance.values_list("device__owner__pk")
+            is_viewer = user in instance.device.viewers.all()
 
-            return any([is_viewer, is_manager, is_owner])
+            return any([is_viewer])
 
     def query(self, user):
         accumulated_q = query_super(user)
@@ -263,10 +283,6 @@ class CanViewDeployedDevice(R):
             # can view/manage/own a deployment within project
             # view
             accumulated_q = Q(device__viewers=user)
-            # manage
-            accumulated_q = accumulated_q | Q(device__managers=user)
-            # own
-            accumulated_q = accumulated_q | Q(device__owner=user)
 
         return final_query(accumulated_q)
 

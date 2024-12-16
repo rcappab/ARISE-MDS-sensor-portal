@@ -21,7 +21,7 @@ const FormMap = ({
 		<div>
 			<MapContainer
 				center={[0, 0]}
-				zoom={1}
+				zoom={10}
 				scrollWheelZoom={false}
 				style={{ height: "75vh", width: "100%" }}
 			>
@@ -35,7 +35,7 @@ const FormMap = ({
 					handleChangeLatLong={handleChangeLatLong}
 				/>
 				<ResetLocation
-					handleChangeLatLong={(e) => {
+					handleChangeLatLong={() => {
 						handleChangeLatLong(null);
 					}}
 				/>

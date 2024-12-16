@@ -31,7 +31,7 @@ const FormMapMarker = ({
 
 	useEffect(() => {
 		if (mapLocation !== null) {
-			map.setView(mapLocation as LatLngExpression, 10);
+			map.setView(mapLocation as LatLngExpression);
 		}
 	}, [map, mapLocation]);
 
@@ -39,7 +39,7 @@ const FormMapMarker = ({
 		if (mapLocation == null) {
 			mapLocation = e.latlng;
 			handleChangeLatLong(e.latlng);
-			map.setView(e.latlng, 10);
+			map.setView(e.latlng);
 		}
 	});
 

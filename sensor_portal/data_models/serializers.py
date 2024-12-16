@@ -131,9 +131,9 @@ class OwnerMangerMixIn(serializers.ModelSerializer):
 class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedMixIn, CheckFormMixIn,
                             serializers.ModelSerializer):
     device_type = serializers.SlugRelatedField(
-        slug_field='name', queryset=DataType.objects.all(), required=False)
+        slug_field='name', queryset=DataType.objects.all(), required=False, allow_null=True)
     device_type_ID = serializers.PrimaryKeyRelatedField(source="device_type", queryset=DataType.objects.all(),
-                                                        required=False)
+                                                        required=False, allow_null=True)
     device = serializers.SlugRelatedField(
         slug_field='device_ID', queryset=Device.objects.all(), required=False)
     device_ID = serializers.PrimaryKeyRelatedField(source="device", queryset=Device.objects.all(),
@@ -270,7 +270,7 @@ class ProjectSerializer(OwnerMangerMixIn, CreatedModifiedMixIn, serializers.Mode
         super(ProjectSerializer, self).__init__(*args, **kwargs)
 
 
-class DeviceSerializer(OwnerMangerMixIn, CreatedModifiedMixIn, serializers.ModelSerializer):
+class DeviceSerializer(OwnerMangerMixIn, CreatedModifiedMixIn, CheckFormMixIn, serializers.ModelSerializer):
     type = serializers.SlugRelatedField(
         slug_field='name', queryset=DataType.objects.all(), required=False)
     type_ID = serializers.PrimaryKeyRelatedField(source="type", queryset=DataType.objects.all(),
@@ -312,10 +312,10 @@ class DeviceSerializer(OwnerMangerMixIn, CreatedModifiedMixIn, serializers.Model
         data = super().validate(data)
 
         if not self.partial:
-            # check if a device has been attached (via either method)
+            # check if a model has been attached (via either method)
             result, message, data = validators.check_two_keys(
-                'device_type',
-                'device_type_ID',
+                'model',
+                'model_ID',
                 data,
                 Device,
                 self.form_submission
