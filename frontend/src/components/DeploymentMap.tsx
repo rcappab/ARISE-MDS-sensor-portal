@@ -3,17 +3,69 @@ import {
 	FeatureGroup,
 	LayerGroup,
 	MapContainer,
-	Marker,
 	Popup,
 	TileLayer,
+	Marker,
 } from "react-leaflet";
 import UserLocationMarker from "./MapUserLocationMarker.tsx";
 import ResetLocation from "./MapControlResetLocation.tsx";
+
 import { Icon } from "leaflet";
+import { Marker as CompMarker } from "@adamscybot/react-leaflet-component-marker";
+import "../BeautifyMarker/leaflet-beautify-marker-icon.css";
+
+import logo from "../snyper4g.png";
 
 interface Props {
 	deployments: [{ latitude; longitude; deployment_device_ID }];
 }
+
+interface IconProps {
+	borderColor?: string;
+	borderStyle?: string;
+	backgroundColor?: string;
+	borderWidth?: number;
+	iconSize?: [number, number];
+}
+
+const DeploymentIcon = ({
+	borderColor = "#1EB300",
+	borderStyle = "solid",
+	backgroundColor = "white",
+	borderWidth = 2,
+	iconSize = [28, 28],
+}: IconProps) => {
+	return (
+		<div className={"beautify-marker"}>
+			<div
+				className={"beautify-marker marker"}
+				style={{
+					borderColor: borderColor,
+					borderStyle: borderStyle,
+					backgroundColor: backgroundColor,
+					borderWidth: borderWidth,
+					marginLeft: -iconSize[0] / 2,
+					marginTop: -(iconSize[0] / 4 + 1 + iconSize[0]),
+					width: iconSize[0],
+					height: iconSize[1],
+				}}
+			>
+				<div
+					style={{
+						height: "100%",
+						width: "100%",
+					}}
+				>
+					<img
+						style={{ height: "100%", objectFit: "cover" }}
+						src={logo}
+						alt="Logo"
+					/>
+				</div>
+			</div>
+		</div>
+	);
+};
 
 const DeploymentMap = ({ deployments }: Props) => {
 	const defaultIcon = new Icon({
@@ -59,12 +111,14 @@ const DeploymentMap = ({ deployments }: Props) => {
 							lng: deploymentData.longitude,
 						};
 						return (
-							<Marker
-								position={latLng}
-								icon={defaultIcon}
-							>
-								<Popup>{deploymentData.deployment_device_ID}</Popup>
-							</Marker>
+							<>
+								<CompMarker
+									position={latLng}
+									icon={<DeploymentIcon borderColor="blue" />}
+								>
+									<Popup>{deploymentData.deployment_device_ID}</Popup>
+								</CompMarker>
+							</>
 						);
 					})}
 				</FeatureGroup>

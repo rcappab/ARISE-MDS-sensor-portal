@@ -31,8 +31,8 @@ class CheckFormViewSet(viewsets.ModelViewSet):
 class DeploymentViewSet(AddOwnerViewSet, CheckFormViewSet, OptionalPaginationViewSet):
     search_fields = ['deployment_device_ID',
                      'device__name', 'device__device_ID']
-    ordering = ['deployment_device_ID', 'created_on']
-    ordering_fields = ordering = ['deployment_device_ID', 'created_on']
+    ordering_fields = ordering = [
+        'deployment_device_ID', 'created_on', 'device_type']
     queryset = Deployment.objects.all().distinct()
     filterset_class = DeploymentFilter
     filter_backends = viewsets.ModelViewSet.filter_backends + \
