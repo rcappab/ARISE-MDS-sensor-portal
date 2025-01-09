@@ -13,6 +13,7 @@ import ResetLocation from "./MapControlResetLocation.tsx";
 import { Icon } from "leaflet";
 import { Marker as CompMarker } from "@adamscybot/react-leaflet-component-marker";
 import "../BeautifyMarker/leaflet-beautify-marker-icon.css";
+import { IconPickerItem } from "react-icons-picker";
 
 import logo from "../snyper4g.png";
 
@@ -24,16 +25,22 @@ interface IconProps {
 	borderColor?: string;
 	borderStyle?: string;
 	backgroundColor?: string;
+	textColor?: string;
 	borderWidth?: number;
 	iconSize?: [number, number];
+	symbolSize?: number;
+	symbol?: string;
 }
 
 const DeploymentIcon = ({
 	borderColor = "#1EB300",
 	borderStyle = "solid",
 	backgroundColor = "white",
+	textColor = "#000",
 	borderWidth = 2,
 	iconSize = [28, 28],
+	symbolSize = 16,
+	symbol = "FaCamera",
 }: IconProps) => {
 	return (
 		<div className={"beautify-marker"}>
@@ -56,11 +63,17 @@ const DeploymentIcon = ({
 						width: "100%",
 					}}
 				>
-					<img
+					<IconPickerItem
+						value={symbol}
+						size={symbolSize}
+						color={textColor}
+					/>
+
+					{/* <img
 						style={{ height: "100%", objectFit: "cover" }}
 						src={logo}
 						alt="Logo"
-					/>
+					/> */}
 				</div>
 			</div>
 		</div>
@@ -96,7 +109,7 @@ const DeploymentMap = ({ deployments }: Props) => {
 			<MapContainer
 				center={[0, 0]}
 				zoom={1}
-				scrollWheelZoom={false}
+				scrollWheelZoom={true}
 				style={{ height: "75vh", width: "100%" }}
 				whenReady={(e) => setMap(e.target)}
 			>
@@ -114,7 +127,12 @@ const DeploymentMap = ({ deployments }: Props) => {
 							<>
 								<CompMarker
 									position={latLng}
-									icon={<DeploymentIcon borderColor="blue" />}
+									icon={
+										<DeploymentIcon
+											borderColor="blue"
+											textColor="blue"
+										/>
+									}
 								>
 									<Popup>{deploymentData.deployment_device_ID}</Popup>
 								</CompMarker>
