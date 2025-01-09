@@ -24,6 +24,7 @@ from django.db.models import (
     Sum,
     When,
 )
+
 from django.db.models.signals import m2m_changed, post_delete, post_save, pre_delete
 from django.dispatch import receiver
 from django.urls import reverse
@@ -195,13 +196,10 @@ class Device(Basemodel):
             raise ValidationError(message)
         super(Device, self).clean()
 
-    def deployment_from_date(self, dt, user=None):
+    def deployment_from_date(self, dt):
         dt = check_dt(dt)
         print(dt)
         all_deploys = self.deployments.all()
-        if user is not None:
-            all_deploys = perms['data_models.change_deployment'].filter(
-                user, all_deploys)
 
         # For deployments that have not ended - end date is shifted 100 years
 
@@ -401,8 +399,8 @@ class Deployment(Basemodel):
         for dt in dt_list:
             dt = check_dt(dt)
 
-            result_list.append(dt >= self.deployment_start & (
-                dt <= self.deployment_end | self.deployment_end is None))
+            result_list.append((dt >= self.deployment_start) & (
+                (dt <= self.deployment_end) | (self.deployment_end is None)))
 
         return result_list
 
@@ -488,11 +486,11 @@ class DataFile(Basemodel):
 
     file_type = models.ForeignKey(
         DataType, models.PROTECT, related_name="files")
-    file_name = models.CharField(max_length=100)
+    file_name = models.CharField(max_length=50)
     file_size = FileSizeField()
-    file_format = models.CharField(max_length=100)
+    file_format = models.CharField(max_length=10)
 
-    upload_date = models.DateField(auto_now_add=True)
+    upload_dt = models.DateTimeField(default=djtimezone.now)
     recording_dt = models.DateTimeField(null=True, db_index=True)
     path = models.CharField(max_length=500)
     local_path = models.CharField(max_length=500, blank=True)
@@ -516,7 +514,7 @@ class DataFile(Basemodel):
         return f"{self.file_name}{self.file_format}"
 
     def get_absolute_url(self):
-        return reverse('file-detail', kwargs={'pk': self.pk})
+        return reverse('datafile-detail', kwargs={'pk': self.pk})
 
     def add_favourite(self, user):
         self.favourite_of.add(user)
@@ -530,7 +528,7 @@ class DataFile(Basemodel):
         return os.path.join(self.local_path, self.path, f"{self.file_name}{self.file_format}")
 
     def set_file_url(self):
-        if self.localstorage:
+        if self.local_storage:
 
             self.file_url = os.path.normpath(
                 os.path.join(settings.FILE_STORAGE_URL,

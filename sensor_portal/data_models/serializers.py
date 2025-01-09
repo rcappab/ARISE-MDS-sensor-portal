@@ -1,5 +1,5 @@
 from datetime import datetime as dt
-
+from django.core.exceptions import ObjectDoesNotExist
 import magic
 from django.utils import timezone as djtimezone
 from PIL import ExifTags, Image
@@ -7,7 +7,7 @@ from rest_framework import serializers
 from rest_framework_gis import serializers as geoserializers
 from user_management.models import User
 from utils.serializers import SlugRelatedGetOrCreateField
-
+from django.db.models import Q
 from . import validators
 from .models import DataFile, DataType, Deployment, Device, DeviceModel, Project, Site
 
@@ -347,11 +347,16 @@ class DataFileSerializer(CreatedModifiedMixIn, serializers.ModelSerializer):
 
 
 class DataFileUploadSerializer(serializers.Serializer):
-    deployment = serializers.CharField(required=False)
     device = serializers.CharField(required=False)
+    device_ID = serializers.IntegerField(required=False)
+    deployment = serializers.CharField(required=False)
+    deployment_ID = serializers.IntegerField(required=False)
+
     files = serializers.ListField(child=serializers.FileField(
-        allow_empty_file=False, max_length=None))
-    extra_info = serializers.JSONField(required=False)
+        allow_empty_file=False, max_length=None), required=False)
+    file_names = serializers.ListField(child=serializers.CharField(
+    ), required=False)
+    extra_data = serializers.JSONField(required=False)
     recording_dt = serializers.ListField(
         child=serializers.DateTimeField(), required=False)
     autoupdate = serializers.BooleanField(default=False)
@@ -368,29 +373,55 @@ class DataFileUploadSerializer(serializers.Serializer):
 
     def validate(self, data):
         data = super().validate(data)
+        deployment = data.get('deployment')
+        deployment_ID = data.get('deployment_ID')
+        device = data.get('device')
+        device_ID = data.get('device_ID')
 
         #  Check a deployment or device is supplied
-        if data.get('deployment') is None and data.get('device') is None:
+        if deployment is None and deployment_ID is None and device is None and device_ID is None:
             raise serializers.ValidationError(
                 "A deployment or a device must be supplied")
 
+        # Check if deployment or device exists
+        if deployment or deployment_ID:
+            try:
+                deployment_object = Deployment.objects.get(Q(Q(deployment_device_ID=deployment) |
+                                                             Q(pk=deployment_ID)))
+            except ObjectDoesNotExist:
+                raise serializers.ValidationError({"deployment":
+                                                   f"Deployment {deployment} does not exist",
+                                                   "deployment_ID": f"Deployment ID {deployment_ID} does not exist"})
+            data['deployment_object'] = deployment_object
+        elif device or device_ID:
+            try:
+                device_object = Device.objects.get(
+                    Q(Q(device_ID=device) | Q(pk=device_ID)))
+            except ObjectDoesNotExist:
+                raise serializers.ValidationError({"device":
+                                                   f"Device {device} does not exist",
+                                                   "device_ID": f"Device ID {device_ID} does not exist"})
+            data['device_object'] = device_object
+
         #  if not an image, user must supply the recording date time
         files = data.get("files")
-        is_not_image = ["image" not in magic.from_buffer(
-            x.read(), mime=True) for x in files]
-        if any(is_not_image):
-            raise serializers.ValidationError("Recording date times can only be extracted from images, "
-                                              "please provide 'recording_dt' or upload only images")
+        if files:
+            is_not_image = ["image" not in magic.from_buffer(
+                x.read(), mime=True) for x in files]
+            if any(is_not_image):
+                raise serializers.ValidationError(
+                    {"recording_dt": "Recording date times can only be extracted from images, please provide 'recording_dt' or upload only images"})
 
-        #  check recording_dt and number of files match
-        if data.get('recording_dt') is not None:
-            recording_dt = data.get('recording_dt')
-            if len(recording_dt) > 1 and len(recording_dt) != len(data.get('files')):
-                raise serializers.ValidationError("More than one recording_dt was supplied, "
-                                                  "but the number does not match the number of files")
+            #  check recording_dt and number of files match
+            if data.get('recording_dt') is not None:
+                recording_dt = data.get('recording_dt')
+                if len(recording_dt) > 1 and len(recording_dt) != len(data.get('files')):
+                    raise serializers.ValidationError(
+                        {"recording_dt": "More than one recording_dt was supplied, but the number does not match the number of files"})
 
-        if data.get('recording_dt') is None:
-            data['recording_dt'] = [get_image_recording_dt(x) for x in files]
+            if data.get('recording_dt') is None:
+                data['recording_dt'] = [
+                    get_image_recording_dt(x) for x in files]
 
         return data
 

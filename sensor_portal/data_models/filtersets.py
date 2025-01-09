@@ -101,7 +101,7 @@ class DataFileFilter(GenericFilter, ExtraDataFilterMixIn):
             'file_name': ['exact', 'icontains', 'in'],
             'file_size': ['lte', 'gte'],
             'file_format': ['exact', 'icontains', 'in'],
-            'upload_date': ['exact', 'gte', 'lte'],
+            'upload_dt': ['exact', 'gte', 'lte'],
             'recording_dt': ['exact', 'date__exact', 'gte', 'lte', 'date__gte', 'date__lte', 'time__gte', 'time__lte'],
             'local_storage': ['exact'],
             'archived': ['exact'],
