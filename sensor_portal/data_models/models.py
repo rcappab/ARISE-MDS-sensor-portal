@@ -1,6 +1,7 @@
 import os
 import traceback
 from datetime import datetime, time, timedelta, timezone
+from threading import local
 from unittest import TextTestRunner
 
 from bridgekeeper import perms
@@ -20,11 +21,12 @@ from django.db.models import (
     DateTimeField,
     ExpressionWrapper,
     F,
+    JSONField,
     Q,
     Sum,
+    Value,
     When,
 )
-
 from django.db.models.signals import m2m_changed, post_delete, post_save, pre_delete
 from django.dispatch import receiver
 from django.urls import reverse
@@ -197,9 +199,21 @@ class Device(Basemodel):
         super(Device, self).clean()
 
     def deployment_from_date(self, dt):
-        dt = check_dt(dt)
-        print(dt)
+
+        # print(dt)
         all_deploys = self.deployments.all()
+
+        all_tz = all_deploys.values('time_zone', 'pk')
+
+        all_tz = [{'time_zone': x.get(
+            'time_zone', settings.TIME_ZONE), 'pk': x['pk']} for x in all_tz]
+
+        all_dt = {x['pk']: check_dt(dt, x['time_zone']) for x in all_tz}
+
+        whens = [When(pk=k, then=Value(v)) for k, v in all_dt.items()]
+
+        all_deploys = all_deploys.annotate(
+            dt=Case(*whens, output_field=DateTimeField(), default=Value(None)))
 
         # For deployments that have not ended - end date is shifted 100 years
 
@@ -217,7 +231,8 @@ class Device(Basemodel):
         # Annotate by whether the datetime lies in the deployment range
 
         all_deploys = all_deploys.annotate(in_deployment=ExpressionWrapper(
-            Q(Q(deployment_start__lte=dt) & Q(deployment_end_indefinite__gte=dt)),
+            Q(Q(deployment_start__lte=F('dt')) & Q(
+                deployment_end_indefinite__gte=F('dt'))),
             output_field=BooleanField()
         )
         )
@@ -397,7 +412,8 @@ class Deployment(Basemodel):
         result_list = []
 
         for dt in dt_list:
-            dt = check_dt(dt)
+            # if no TZ, localise to the device's timezone
+            dt = check_dt(dt, None)
 
             result_list.append((dt >= self.deployment_start) & (
                 (dt <= self.deployment_end) | (self.deployment_end is None)))

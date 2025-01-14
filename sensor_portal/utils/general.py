@@ -1,20 +1,24 @@
-from django.conf import settings
-import pytz
-import dateutil.parser
-import os
 import datetime
+import os
+from datetime import datetime as dt
+
+import dateutil.parser
+import pytz
+from django.conf import settings
+from PIL import ExifTags, Image
 
 
-def check_dt(dt, device_timezone=None):
+def check_dt(dt, device_timezone=None, localise=True):
     if dt is None:
         return dt
 
     if device_timezone is None:
         device_timezone = settings.TIME_ZONE
-    if type(dt) is str:
-        dt = dateutil.parser.parse(dt)
 
-    if dt.tzinfo is None:
+    if type(dt) is str:
+        dt = dateutil.parser.parse(dt, dayfirst=False, yearfirst=True)
+
+    if dt.tzinfo is None and localise:
         mytz = pytz.timezone(device_timezone)
         dt = mytz.localize(dt)
 
@@ -58,3 +62,17 @@ def clear_uploaded_file(filepath):
         os.remove(filepath)
     except OSError:
         pass
+
+
+def get_image_recording_dt(uploaded_file):
+    si = uploaded_file.file
+    image = Image.open(si)
+    exif = image.getexif()
+    exif_tags = {ExifTags.TAGS[k]: v for k,
+                 v in exif.items() if k in ExifTags.TAGS}
+    recording_dt = exif_tags.get('DateTimeOriginal')
+    if recording_dt is None:
+        recording_dt = exif_tags.get('DateTime')
+    if recording_dt is None:
+        return None
+    return dt.strptime(recording_dt, '%Y:%m:%d %H:%M:%S')
