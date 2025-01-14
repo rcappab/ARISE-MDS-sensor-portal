@@ -138,6 +138,9 @@ class DataFileViewSet(OptionalPaginationViewSet):
         if extra_data is None:
             extra_data = [{}]
 
+        if recording_dt is None:
+            recording_dt = [get_image_recording_dt(x) for x in files]
+
         invalid_files = []
         existing_files = []
         uploaded_files = []
@@ -215,7 +218,8 @@ class DataFileViewSet(OptionalPaginationViewSet):
             else:
                 file_recording_dt = recording_dt[0]
 
-            # localise recording_dt to deployment tz or server tz?
+            # localise recording_dt to deployment tz or server tz
+            file_recording_dt = check_dt(file_recording_dt, None)
 
             if len(extra_info) > 1:
                 file_extra_data = extra_data[i]
@@ -241,10 +245,12 @@ class DataFileViewSet(OptionalPaginationViewSet):
                                          file_local_path,
                                          file_path
                                          )
+
             file_size = os.fstat(file.fileno()).st_size
+
             file_fullpath = os.path.join(
                 file_local_path, file_path, f"{new_file_name}{file_extension}")
-            handle_uploaded_file(file, file_fullpath)
+
             new_datafile_obj = DataFile(
                 deployment=file_deployment,
                 file_type=file_data_type,
@@ -258,6 +264,9 @@ class DataFileViewSet(OptionalPaginationViewSet):
                 file_size=file_size,
                 extra_data=file_extra_data
             )
+
+            handle_uploaded_file(file, file_fullpath)
+
             new_datafile_obj.set_file_url()
             all_new_objects.append(new_datafile_obj)
 

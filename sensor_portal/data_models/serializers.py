@@ -1,13 +1,14 @@
-from datetime import datetime as dt
-from django.core.exceptions import ObjectDoesNotExist
+
+
 import magic
+from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Q
 from django.utils import timezone as djtimezone
-from PIL import ExifTags, Image
 from rest_framework import serializers
 from rest_framework_gis import serializers as geoserializers
 from user_management.models import User
 from utils.serializers import SlugRelatedGetOrCreateField
-from django.db.models import Q
+
 from . import validators
 from .models import DataFile, DataType, Deployment, Device, DeviceModel, Project, Site
 
@@ -405,23 +406,20 @@ class DataFileUploadSerializer(serializers.Serializer):
 
         #  if not an image, user must supply the recording date time
         files = data.get("files")
+        recording_dt = data.get('recording_dt')
         if files:
             is_not_image = ["image" not in magic.from_buffer(
                 x.read(), mime=True) for x in files]
-            if any(is_not_image):
+            if any(is_not_image) and recording_dt is None:
                 raise serializers.ValidationError(
                     {"recording_dt": "Recording date times can only be extracted from images, please provide 'recording_dt' or upload only images"})
 
             #  check recording_dt and number of files match
-            if data.get('recording_dt') is not None:
-                recording_dt = data.get('recording_dt')
+            if recording_dt is not None:
+
                 if len(recording_dt) > 1 and len(recording_dt) != len(data.get('files')):
                     raise serializers.ValidationError(
                         {"recording_dt": "More than one recording_dt was supplied, but the number does not match the number of files"})
-
-            if data.get('recording_dt') is None:
-                data['recording_dt'] = [
-                    get_image_recording_dt(x) for x in files]
 
         return data
 
@@ -440,19 +438,3 @@ class DataTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = DataType
         fields = '__all__'
-
-
-def get_image_recording_dt(uploaded_file):
-    si = uploaded_file.file
-    image = Image.open(si)
-    exif = image.getexif()
-    exif_tags = {ExifTags.TAGS[k]: v for k,
-                 v in exif.items() if k in ExifTags.TAGS}
-    recording_dt = exif_tags.get('DateTimeOriginal')
-    if recording_dt is None:
-        recording_dt = exif_tags.get('DateTime')
-    if recording_dt is None:
-        raise serializers.ValidationError(f"Unable to get recording_dt from image {uploaded_file.name}, "
-                                          f"consider supplying recording_dt manually")
-
-    return dt.strptime(recording_dt, '%Y:%m:%d %H:%M:%S')
