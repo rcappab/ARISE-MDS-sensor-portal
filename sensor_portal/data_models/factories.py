@@ -6,7 +6,7 @@ import pytz
 from django.utils import timezone as djtimezone
 from user_management.factories import UserFactory
 
-from .models import DataType, Deployment, Device, DeviceModel, Project, Site
+from .models import DataType, Deployment, Device, DeviceModel, Project, Site, DataFile
 
 
 class DataTypeFactory(factory.django.DjangoModelFactory):
@@ -90,3 +90,25 @@ class DeploymentFactory(factory.django.DjangoModelFactory):
         if extracted is None:
             for i in range(sample(range(3), 1)[0]):
                 self.project.add(ProjectFactory())
+
+
+class FileFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = DataFile
+        django_get_or_create = (
+            "file_name", "file_format")
+
+    file_name = factory.Faker('word')
+    file_type = None
+    file_size = factory.Faker('random_int', min=25, max=100000)
+    file_format = factory.Faker('file_extension')
+    deployment = factory.SubFactory(Deployment)
+
+    recording_dt = factory.Faker('date_time_between_dates',
+                                 datetime_start=factory.SelfAttribute(
+                                     "..deployment_start"),
+                                 datetime_start=factory.SelfAttribute(
+                                     "..deployment_end"),
+                                 tzinfo=djtimezone.utc
+                                 )
+    path = factory.Faker('file_path')

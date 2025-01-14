@@ -354,7 +354,7 @@ class Deployment(Basemodel):
 
         self.is_active = self.check_active()
 
-        if not self.device_type:
+        if self.device_type is None:
             self.device_type = self.device.type
 
         if self.longitude and self.latitude:
@@ -363,7 +363,7 @@ class Deployment(Basemodel):
                 float(self.latitude),
                 srid=4326
             )
-        elif (not self.longitude and not self.latitude) and self.point:
+        elif (self.longitude is None and self.latitude is None) and self.point is not None:
             self.longitude, self.latitude = self.point.coords
         else:
             self.point = None
@@ -577,6 +577,8 @@ class DataFile(Basemodel):
             self.save()
 
     def save(self, *args, **kwargs):
+        if self.data_type is None:
+            self.data_type = self.device.type
         self.set_file_url()
         super().save(*args, **kwargs)
 

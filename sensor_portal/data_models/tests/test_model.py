@@ -11,7 +11,8 @@ from data_models.factories import (
 )
 from django.core.exceptions import ValidationError
 from django.contrib.gis.geos import Point
-
+from django.utils import timezone as djtimezone
+from datetime import timedelta
 # Project
 
 
@@ -216,4 +217,31 @@ def test_point_to_lat_lon():
     new_deployment = DeploymentFactory(point=Point(4.5, 5))
     assert (new_deployment.longitude == 4.5) & (new_deployment.latitude == 5)
 
-# Is a deployment marked as active or not after creation and update?
+
+@pytest.mark.django_db
+def test_deployment_is_active():
+    """
+    Test: Is a deployment flagged as active correctly
+    """
+    # Create active deployment
+    new_deployment = DeploymentFactory(device_type=None,
+                                       deployment_start=djtimezone.now() - timedelta(seconds=60),
+                                       deployment_end=None)
+
+    assert new_deployment.is_active
+    # Edit to make it inactive
+    new_deployment.deployment_end = djtimezone.now() - timedelta(seconds=30)
+    assert new_deployment.is_active is False
+    # Create inactive
+    new_deployment_2 = DeploymentFactory(device_type=None,
+                                         deployment_start=datetime.datetime(
+                                             1066, 1, 1),
+                                         deployment_end=datetime.datetime(
+                                             1067, 1, 1))
+    assert new_deployment_2.is_active is False
+
+# test if file can be created outside of deployment time
+
+# test file cleaning
+# file should be deleted when object is
+# file can be cleaned while retaining object
