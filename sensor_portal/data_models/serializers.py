@@ -6,6 +6,7 @@ from django.db.models import Q
 from django.utils import timezone as djtimezone
 from rest_framework import serializers
 from rest_framework_gis import serializers as geoserializers
+from timezone_field.rest_framework import TimeZoneSerializerField
 from user_management.models import User
 from utils.serializers import SlugRelatedGetOrCreateField
 
@@ -154,6 +155,8 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedM
                                        required=False, allow_null=True)
     site_ID = serializers.PrimaryKeyRelatedField(source="site", queryset=Site.objects.all(),
                                                  required=False, allow_null=True)
+
+    time_zone = TimeZoneSerializerField(use_pytz=True)
 
     # always return in UTC regardless of server setting
     deployment_start = serializers.DateTimeField(

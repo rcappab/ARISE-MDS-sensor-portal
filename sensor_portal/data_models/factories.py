@@ -6,7 +6,7 @@ import pytz
 from django.utils import timezone as djtimezone
 from user_management.factories import UserFactory
 
-from .models import DataType, Deployment, Device, DeviceModel, Project, Site, DataFile
+from .models import DataFile, DataType, Deployment, Device, DeviceModel, Project, Site
 
 
 class DataTypeFactory(factory.django.DjangoModelFactory):
@@ -107,7 +107,7 @@ class FileFactory(factory.django.DjangoModelFactory):
     recording_dt = factory.Faker('date_time_between_dates',
                                  datetime_start=factory.SelfAttribute(
                                      "..deployment_start"),
-                                 datetime_start=factory.SelfAttribute(
+                                 datetime_end=factory.SelfAttribute(
                                      "..deployment_end"),
                                  tzinfo=djtimezone.utc
                                  )

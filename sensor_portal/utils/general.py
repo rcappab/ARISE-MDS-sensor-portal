@@ -13,13 +13,13 @@ def check_dt(dt, device_timezone=None, localise=True):
         return dt
 
     if device_timezone is None:
-        device_timezone = settings.TIME_ZONE
+        device_timezone = pytz.timezone(settings.TIME_ZONE)
 
     if type(dt) is str:
         dt = dateutil.parser.parse(dt, dayfirst=False, yearfirst=True)
 
     if dt.tzinfo is None and localise:
-        mytz = pytz.timezone(device_timezone)
+        mytz = device_timezone
         dt = mytz.localize(dt)
 
     return dt
@@ -28,8 +28,8 @@ def check_dt(dt, device_timezone=None, localise=True):
 def get_new_name(deployment, recording_dt, file_local_path, file_path, file_n=None):
     if file_n is None:
         file_n = get_n_files(os.path.join(file_local_path, file_path)) + 1
-    newname = f"{deployment.deployment_deviceID}_{datetime.strftime(recording_dt, '%Y-%m-%d_%H-%M-%S')}_" \
-              f"({file_n})"
+    newname = f"{deployment.deployment_deviceID}_{datetime.strftime(recording_dt, '%Y-%m-%d_%H-%M-%S')}_"
+    f"({file_n})"
     return newname
 
 

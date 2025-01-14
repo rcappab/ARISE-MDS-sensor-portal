@@ -32,6 +32,7 @@ from django.dispatch import receiver
 from django.urls import reverse
 from django.utils import timezone as djtimezone
 from sizefield.models import FileSizeField
+from timezone_field import TimeZoneField
 from utils.general import check_dt
 
 from . import validators
@@ -323,6 +324,8 @@ class Deployment(Basemodel):
 
     extra_data = models.JSONField(default=dict, blank=True)
     is_active = models.BooleanField(default=True)
+
+    time_zone = TimeZoneField(use_pytz=True, default=settings.TIME_ZONE)
 
     # User ownership
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, related_name="owned_deployments",
