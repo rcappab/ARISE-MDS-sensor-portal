@@ -2,14 +2,14 @@ import os
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Q
+from django.utils import timezone as djtimezone
 from rest_framework import status, viewsets
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework_gis import filters as filters_gis
-from utils.general import get_new_name, handle_uploaded_file
+from utils.general import check_dt, get_new_name, handle_uploaded_file
 from utils.viewsets import OptionalPaginationViewSet
-from django.db.models import Q
-from django.utils import timezone as djtimezone
 
 from .filtersets import *
 from .models import DataFile, DataType, Deployment, Device, Project, Site
@@ -219,7 +219,8 @@ class DataFileViewSet(OptionalPaginationViewSet):
                 file_recording_dt = recording_dt[0]
 
             # localise recording_dt to deployment tz or server tz
-            file_recording_dt = check_dt(file_recording_dt, None)
+            file_recording_dt = check_dt(
+                file_recording_dt, file_deployment.time_zone)
 
             if len(extra_info) > 1:
                 file_extra_data = extra_data[i]
