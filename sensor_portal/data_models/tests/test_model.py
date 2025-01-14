@@ -1,5 +1,6 @@
 import datetime
-from django.conf import settings
+from datetime import timedelta
+
 import pytest
 from data_models.factories import (
     DataTypeFactory,
@@ -9,10 +10,11 @@ from data_models.factories import (
     ProjectFactory,
     SiteFactory,
 )
-from django.core.exceptions import ValidationError
+from django.conf import settings
 from django.contrib.gis.geos import Point
+from django.core.exceptions import ValidationError
 from django.utils import timezone as djtimezone
-from datetime import timedelta
+
 # Project
 
 
@@ -90,6 +92,8 @@ def test_deployment_from_date():
     assert new_device.deployment_from_date("1066-06-06") == deployment_1
     assert new_device.deployment_from_date("1067-06-06") == deployment_2
     assert new_device.deployment_from_date("1068-06-06") == deployment_3
+
+# DO A VERSION OF THIS TEST WITH TIME ZONES
 
 
 @pytest.mark.django_db
@@ -231,6 +235,7 @@ def test_deployment_is_active():
     assert new_deployment.is_active
     # Edit to make it inactive
     new_deployment.deployment_end = djtimezone.now() - timedelta(seconds=30)
+    new_deployment.save()
     assert new_deployment.is_active is False
     # Create inactive
     new_deployment_2 = DeploymentFactory(device_type=None,
