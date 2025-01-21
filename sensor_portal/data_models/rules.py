@@ -323,8 +323,8 @@ class CanViewProjectContainingDataFile(R):
         if initial_bool is not None:
             return initial_bool
         else:
-            return user.pk in instance.values_list(
-                "deployment__project__viewers__pk", flat=True)
+            return user.pk in instance.deployment.project.all().values_list(
+                "viewers__pk", flat=True)
 
     def query(self, user):
         accumulated_q = query_super(user)
@@ -374,8 +374,8 @@ class CanViewDeploymentContainingDataFile(R):
         if initial_bool is not None:
             return initial_bool
         else:
-            return user.pk in instance.values_list(
-                "deployment__viewers__pk", flat=True)
+            return user.pk in instance.deployment.viewers.all().values_list(
+                "pk", flat=True)
 
     def query(self, user):
         accumulated_q = query_super(user)
@@ -397,12 +397,12 @@ class CanManageDeviceContainingDataFile(R):
         if initial_bool is not None:
             return initial_bool
         else:
-            is_manager = user.pk in user.values_list(
-                "deployment__device__managers__pk", flat=True)
-            is_owner = user.pk in user.values_list(
-                "deployment__device__owner__pk", flat=True)
+            is_manager = user.pk in instance.deployment.device.managers.all()\
+                .values_list(
+                "pk", flat=True)
+            is_owner = user == instance.deployment.device.owner
 
-            return any(is_manager, is_owner)
+            return any([is_manager, is_owner])
 
     def query(self, user):
         accumulated_q = query_super(user)
@@ -426,8 +426,8 @@ class CanViewDeviceContainingDataFile(R):
         if initial_bool is not None:
             return initial_bool
         else:
-            return user.pk in user.values_list(
-                "deployment__device__viewers__pk", flat=True)
+            return user.pk in instance.deployment.device.viewers.all().values_list(
+                "pk", flat=True)
 
     def query(self, user):
         accumulated_q = query_super(user)

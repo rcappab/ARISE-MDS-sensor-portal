@@ -1,11 +1,18 @@
+import os
+from copy import copy
+from datetime import datetime as dt
+from io import BytesIO
+
 import pytest
 from data_models.factories import (
+    DataFileFactory,
     DeploymentFactory,
     DeviceFactory,
     ProjectFactory,
     SiteFactory,
 )
-from data_models.models import Deployment
+from data_models.general_functions import create_image
+from data_models.models import DataFile
 from data_models.serializers import DeploymentSerializer
 from user_management.factories import UserFactory
 
@@ -157,7 +164,6 @@ def test_device_manager_manage_deployment(api_client_with_credentials):
 def test_project_manager_manage_deployment(api_client_with_credentials):
     """
     Test: Viewers of a project can see a deployment, managers can change it and delete it.
-
     """
     user = api_client_with_credentials.handler._force_user
     site = SiteFactory()
@@ -192,3 +198,219 @@ def test_project_manager_manage_deployment(api_client_with_credentials):
         api_url)
     print(response_delete_allowed.data)
     assert response_delete_allowed.status_code == 204
+
+
+@pytest.mark.django_db
+def test_deployment_viewer_view_datafiles(api_client_with_credentials):
+    """
+    Test: Viewers of a project can see a deployment, managers can change it and delete it.
+    """
+    user = api_client_with_credentials.handler._force_user
+    data_file_object = DataFileFactory()
+
+    object_url = f'/api/datafile/{data_file_object.pk}/'
+
+    response_get_fail = api_client_with_credentials.get(
+        object_url, format="json")
+    print(f"Response: {response_get_fail.data}")
+    assert response_get_fail.status_code == 404
+
+    data_file_object.deployment.viewers.add(user)
+
+    response_get_success = api_client_with_credentials.get(
+        object_url, format="json")
+    print(f"Response: {response_get_success.data}")
+    assert response_get_success.status_code == 200
+
+    data_file_object.delete()
+
+
+@pytest.mark.django_db
+def test_project_manager_upload_files(api_client_with_credentials):
+    """
+    Test: Viewers of a project can see datafiles, managers can upload and manage.
+    """
+    user = api_client_with_credentials.handler._force_user
+    site = SiteFactory()
+    device = DeviceFactory(
+    )
+    project = ProjectFactory(owner=device.owner)
+    device_deployment = DeploymentFactory(
+        device=device, site=site, owner=project.owner, project=[],
+        deployment_start=dt(1066, 1, 1, 0, 0, 0))
+    device_deployment.project.add(project)
+
+    # Test attempting to upload a file
+    # Generate a file
+    temp = BytesIO()
+    test_image = create_image()
+    test_image.save(temp, format="JPEG")
+    temp.name = "test_file.jpeg"
+    temp.seek(0)
+    files = [temp]
+
+    test_date_time = dt(1066, 1, 2, 0, 0, 0)
+    recording_dt = [test_date_time]
+
+    api_url = '/api/datafile/'
+    payload = {
+        "deployment": device_deployment.deployment_device_ID,
+        "files": files,
+        "recording_dt": recording_dt
+    }
+
+    response_create_fail = api_client_with_credentials.post(
+        api_url, data=payload,  format='multipart')
+    response_create_fail_json = response_create_fail.data
+
+    print(f"Response: {response_create_fail_json}")
+    assert response_create_fail.status_code == 403
+
+    # Test being allowed to upload a file
+    project.managers.add(user)
+
+    temp = BytesIO()
+    test_image = create_image()
+    test_image.save(temp, format="JPEG")
+    temp.name = "test_file.jpeg"
+    temp.seek(0)
+    files = [temp]
+    payload = {
+        "deployment": device_deployment.deployment_device_ID,
+        "files": files,
+        "recording_dt": recording_dt
+    }
+
+    response_create_success = api_client_with_credentials.post(
+        api_url, data=payload,  format='multipart')
+    response_create_success_json = response_create_success.data
+
+    print(f"Response: {response_create_success_json}")
+    assert response_create_success.status_code == 201
+
+    file_object = DataFile.objects.get(
+        file_name=response_create_success_json["uploaded_files"][0]["file_name"])
+
+    object_url = f"{api_url}{file_object.pk}/"
+
+    # Test being able to view the file
+    project.managers.remove(user)
+
+    response_get_fail = api_client_with_credentials.get(
+        object_url, format="json")
+    print(f"Response: {response_get_fail.data}")
+    assert response_get_fail.status_code == 404
+
+    project.viewers.add(user)
+
+    response_get_success = api_client_with_credentials.get(
+        object_url, format="json")
+    print(f"Response: {response_get_success.data}")
+    assert response_get_success.status_code == 200
+
+    # Test attempting to delete
+    response_delete_fail = api_client_with_credentials.delete(
+        object_url, format="json")
+    print(f"Response: {response_delete_fail.data}")
+    assert response_delete_fail.status_code == 403
+
+    project.managers.add(user)
+    # Test being allowed to delete
+    response_delete_success = api_client_with_credentials.delete(
+        object_url, format="json")
+    print(f"Response: {response_delete_success.data}")
+    assert response_delete_success.status_code == 204
+
+
+@pytest.mark.django_db
+def test_device_manager_upload_files(api_client_with_credentials):
+    """
+    Test: Viewers of a device can see datafiles, managers can upload and manage.
+    """
+    user = api_client_with_credentials.handler._force_user
+    site = SiteFactory()
+    device = DeviceFactory(
+    )
+    project = ProjectFactory(owner=device.owner)
+    device_deployment = DeploymentFactory(
+        device=device, site=site, owner=project.owner, project=[],
+        deployment_start=dt(1066, 1, 1, 0, 0, 0))
+    device_deployment.project.add(project)
+    device.viewers.add(user)
+
+    # Generate a file
+    temp = BytesIO()
+    test_image = create_image()
+    test_image.save(temp, format="JPEG")
+    temp.name = "test_file.jpeg"
+    temp.seek(0)
+    files = [temp]
+
+    test_date_time = dt(1066, 1, 2, 0, 0, 0)
+    recording_dt = [test_date_time]
+
+    api_url = '/api/datafile/'
+    payload = {
+        "device": device.device_ID,
+        "files": files,
+        "recording_dt": recording_dt
+    }
+
+    response_create_fail = api_client_with_credentials.post(
+        api_url, data=payload,  format='multipart')
+    response_create_fail_json = response_create_fail.data
+
+    print(f"Response: {response_create_fail_json}")
+    assert response_create_fail.status_code == 403
+
+    device.managers.add(user)
+
+    temp = BytesIO()
+    test_image = create_image()
+    test_image.save(temp, format="JPEG")
+    temp.name = "test_file.jpeg"
+    temp.seek(0)
+    files = [temp]
+    payload = {
+        "device": device.device_ID,
+        "files": files,
+        "recording_dt": recording_dt
+    }
+
+    response_create_success = api_client_with_credentials.post(
+        api_url, data=payload,  format='multipart')
+    response_create_success_json = response_create_success.data
+
+    print(f"Response: {response_create_success_json}")
+    assert response_create_success.status_code == 201
+
+    file_object = DataFile.objects.get(
+        file_name=response_create_success_json["uploaded_files"][0]["file_name"])
+    object_url = f"{api_url}{file_object.pk}/"
+    # Test being able to view the file
+    device.managers.remove(user)
+
+    response_get_fail = api_client_with_credentials.get(
+        object_url, format="json")
+    print(f"Response: {response_get_fail.data}")
+    assert response_get_fail.status_code == 404
+
+    device.viewers.add(user)
+
+    response_get_success = api_client_with_credentials.get(
+        object_url, format="json")
+    print(f"Response: {response_get_success.data}")
+    assert response_get_success.status_code == 200
+
+    # Test trying to remove the file
+    response_delete_fail = api_client_with_credentials.delete(
+        object_url, format="json")
+    print(f"Response: {response_delete_fail.data}")
+    assert response_delete_fail.status_code == 403
+
+    device.managers.add(user)
+    # delete the object and clear the file
+    response_delete_success = api_client_with_credentials.delete(
+        object_url, format="json")
+    print(f"Response: {response_delete_success}")
+    assert response_delete_success.status_code == 204

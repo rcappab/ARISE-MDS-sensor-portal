@@ -1,11 +1,13 @@
+import os
+from datetime import datetime as dt
+
 from data_models.models import DataFile
 from django.conf import settings
-import os
-from .general_functions import check_dt
 from django.utils import timezone as djtimezone
-from rest_framework import status
 from PIL import ExifTags, Image
-from datetime import datetime as dt
+from rest_framework import status
+
+from .general_functions import check_dt
 
 
 def create_file_objects(files, check_filename=False, recording_dt=None, extra_data=None, deployment_object=None,
@@ -22,9 +24,9 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
         recording_dt = [get_image_recording_dt(x) for x in files]
 
     if all([x is None for x in recording_dt]):
-        invalid_files += [{x.name: "Unable to extract recording date time"}
+        invalid_files += [{x.name: {"message": "Unable to extract recording date time", "status": 400}}
                           for x in files]
-        return (uploaded_files, invalid_files, existing_files, status.HTTP_403_FORBIDDEN)
+        return (uploaded_files, invalid_files, existing_files, status.HTTP_400_BAD_REQUEST)
 
     upload_dt = djtimezone.now()
 
@@ -35,7 +37,7 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
             DataFile.objects.filter(original_name__in=filenames).values_list('original_name', flat=True))
         not_duplicated = [x not in db_filenames for x in filenames]
         files = [x for x, y in zip(files, not_duplicated) if y]
-        existing_files += [{x: "Already in database"} for x,
+        existing_files += [{x: {"message": "Already in database", "status": 200}} for x,
                            y in zip(filenames, not_duplicated) if not y]
         if len(files) == 0:
             return (uploaded_files, invalid_files, existing_files, status.HTTP_200_OK)
@@ -55,7 +57,8 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
         if request_user:
             if not request_user.has_perm('data_models.change_deployment', deployment_object):
                 invalid_files += [
-                    {x.filename: f"Not allowed to attach files to {deployment_object.deployment_device_ID}"}
+                    {x.name: {
+                        "message": f"Not allowed to attach files to {deployment_object.deployment_device_ID}", "status": 403}}
                     for x in files]
                 return (uploaded_files, invalid_files, existing_files, status.HTTP_403_FORBIDDEN)
 
@@ -71,7 +74,7 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
             x for x in deployment_objects if x is not None]
 
     #  split off invalid  files
-    invalid_files += [{x.name: f"no suitable deployment of {device_object} found for recording date time {z}"} for x,
+    invalid_files += [{x.name: {"message": f"no suitable deployment of {device_object} found for recording date time {z}"}, "status": 400} for x,
                       y, z in zip(files, file_valid, recording_dt) if not y]
     files = [x for x, y in zip(files, file_valid) if y]
 
@@ -100,7 +103,7 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
         if request_user:
             if not request_user.has_perm('data_models.change_deployment', file_deployment):
                 invalid_files.append(
-                    {filename: f"Not allowed to attach files to {file_deployment.deployment_device_ID}"})
+                    {filename: {"message": f"Not allowed to attach files to {file_deployment.deployment_device_ID}", "status": 403}})
 
                 continue
 
@@ -164,12 +167,18 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
         new_datafile_obj.set_file_url()
         all_new_objects.append(new_datafile_obj)
 
-    # probably shift all this to an async job
-    uploaded_files = DataFile.objects.bulk_create(all_new_objects, update_conflicts=True, update_fields=[
-        "extra_data"], unique_fields=["file_name"])
-    for deployment in deployment_objects:
-        deployment.set_last_file()
-    return (uploaded_files, invalid_files, existing_files, status.HTTP_201_CREATED)
+    final_status = status.HTTP_201_CREATED
+    if len(all_new_objects) > 0:
+        # probably shift all this to an async job
+        uploaded_files = DataFile.objects.bulk_create(all_new_objects, update_conflicts=True, update_fields=[
+            "extra_data"], unique_fields=["file_name"])
+        for deployment in deployment_objects:
+            deployment.set_last_file()
+    else:
+        final_status = status.HTTP_400_BAD_REQUEST
+        if all([[y[x].get('status') for x in y.keys()][0] for y in invalid_files]):
+            final_status = status.HTTP_403_FORBIDDEN
+    return (uploaded_files, invalid_files, existing_files, final_status)
 
 
 def get_image_recording_dt(uploaded_file):

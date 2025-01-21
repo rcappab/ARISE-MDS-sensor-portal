@@ -3,13 +3,13 @@ from datetime import timedelta
 
 import pytest
 from data_models.factories import (
+    DataFileFactory,
     DataTypeFactory,
     DeploymentFactory,
     DeviceFactory,
     DeviceModelFactory,
     ProjectFactory,
     SiteFactory,
-    DataFileFactory
 )
 from django.conf import settings
 from django.contrib.gis.geos import Point
@@ -261,8 +261,3 @@ def test_file_in_deployment():
         DataFileFactory(recording_dt=datetime.datetime(
             1068, 1, 1),
             deployment=new_deployment)
-
-
-# test file cleaning
-# file should be deleted when object is
-# file can be cleaned while retaining object
