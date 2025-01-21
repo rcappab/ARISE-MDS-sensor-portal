@@ -9,6 +9,7 @@ from data_models.factories import (
     DeviceModelFactory,
     ProjectFactory,
     SiteFactory,
+    DataFileFactory
 )
 from django.conf import settings
 from django.contrib.gis.geos import Point
@@ -245,7 +246,22 @@ def test_deployment_is_active():
                                              1067, 1, 1))
     assert new_deployment_2.is_active is False
 
-# test if file can be created outside of deployment time
+
+@pytest.mark.django_db
+def test_file_in_deployment():
+    """
+    Test: Can a file be created outside of the deployment time
+    """
+    new_deployment = DeploymentFactory(device_type=None,
+                                       deployment_start=datetime.datetime(
+                                           1066, 1, 1),
+                                       deployment_end=datetime.datetime(
+                                           1067, 1, 1))
+    with pytest.raises(ValidationError):
+        DataFileFactory(recording_dt=datetime.datetime(
+            1068, 1, 1),
+            deployment=new_deployment)
+
 
 # test file cleaning
 # file should be deleted when object is

@@ -5,6 +5,9 @@ import factory
 import pytz
 from django.utils import timezone as djtimezone
 from user_management.factories import UserFactory
+from .general_functions import create_image
+import os
+from django.conf import settings
 
 from .models import DataFile, DataType, Deployment, Device, DeviceModel, Project, Site
 
@@ -92,23 +95,39 @@ class DeploymentFactory(factory.django.DjangoModelFactory):
                 self.project.add(ProjectFactory())
 
 
-class FileFactory(factory.django.DjangoModelFactory):
+class DataFileFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = DataFile
         django_get_or_create = (
             "file_name", "file_format")
 
     file_name = factory.Faker('word')
-    file_type = None
     file_size = factory.Faker('random_int', min=25, max=100000)
-    file_format = factory.Faker('file_extension')
-    deployment = factory.SubFactory(Deployment)
+    file_format = ".JPG"  # factory.Faker('file_extension')
+    upload_dt = djtimezone.now()
+
+    deployment = factory.SubFactory(DeploymentFactory)
 
     recording_dt = factory.Faker('date_time_between_dates',
                                  datetime_start=factory.SelfAttribute(
-                                     "..deployment_start"),
+                                     "..deployment.deployment_start"),
                                  datetime_end=factory.SelfAttribute(
-                                     "..deployment_end"),
+                                     "..deployment.deployment_end"),
                                  tzinfo=djtimezone.utc
                                  )
-    path = factory.Faker('file_path')
+    local_path = os.path.join(
+        settings.FILE_STORAGE_ROOT, "test")
+
+    path = factory.LazyAttribute(lambda o: os.path.join(
+        o.deployment.deployment_device_ID, str(o.upload_dt.date())))
+
+    @factory.post_generation
+    def make_image(self, create, extracted, **kwargs):
+        if not create:
+            # Simple build do nothing.
+            return
+        else:
+            os.makedirs(os.path.join(self.local_path,
+                        self.path), exist_ok=True)
+            test_image = create_image()
+            test_image.save(self.full_path(), format="JPEG")

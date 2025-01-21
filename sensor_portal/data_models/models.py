@@ -33,7 +33,7 @@ from django.urls import reverse
 from django.utils import timezone as djtimezone
 from sizefield.models import FileSizeField
 from timezone_field import TimeZoneField
-from utils.general import check_dt
+from .general_functions import check_dt
 
 from . import validators
 
@@ -77,6 +77,7 @@ class Project(Basemodel):
     # Metadata
     project_ID = models.CharField(max_length=10, unique=True, blank=True)
     name = models.CharField(max_length=50)
+
     objectives = models.CharField(max_length=500, blank=True)
     principal_investigator = models.CharField(max_length=50, blank=True)
     principal_investigator_email = models.CharField(max_length=100, blank=True)
@@ -416,10 +417,10 @@ class Deployment(Basemodel):
 
         for dt in dt_list:
             # if no TZ, localise to the device's timezone
-            dt = check_dt(dt, None)
-
-            result_list.append((dt >= self.deployment_start) & (
-                (dt <= self.deployment_end) | (self.deployment_end is None)))
+            dt = check_dt(dt, self.time_zone)
+            print(dt)
+            result_list.append((dt >= self.deployment_start) and (
+                (self.deployment_end is None) or (dt <= self.deployment_end)))
 
         return result_list
 
@@ -504,8 +505,8 @@ class DataFile(Basemodel):
         Deployment, on_delete=models.CASCADE, related_name="files")
 
     file_type = models.ForeignKey(
-        DataType, models.PROTECT, related_name="files")
-    file_name = models.CharField(max_length=50)
+        DataType, models.PROTECT, related_name="files", null=True, default=None)
+    file_name = models.CharField(max_length=50, unique=True)
     file_size = FileSizeField()
     file_format = models.CharField(max_length=10)
 
@@ -567,37 +568,42 @@ class DataFile(Basemodel):
         if (
                 self.do_not_remove or self.deployment_last_image.exists or self.deployment_last_file.exists) and not delete_obj:
             return
-        if self.localstorage:
+        if self.local_storage:
             try:
                 os.remove(self.full_path())
+                os.removedirs(os.path.join(self.local_path, self.path))
             except OSError:
                 pass
 
         try:
-            os.remove(self.thumb_path["filepath"])
+            thumb_path = self.thumb_path["filepath"]
+            os.remove(thumb_path)
+            os.removedirs(os.path.split(thumb_path)[0])
         except TypeError:
             pass
         except OSError:
             pass
 
-        for v in self.extra_reps.values():
+        for v in self.extra_versions.values():
             try:
-                os.remove(v["filepath"])
+                extra_version_path = v["filepath"]
+                os.remove(extra_version_path)
+                os.removedirs(extra_version_path)
             except TypeError:
                 pass
             except OSError:
                 pass
 
         if not delete_obj:
-            self.localstorage = False
+            self.local_storage = False
             self.local_path = ""
-            self.extra_reps = {}
+            self.extra_versions = {}
             self.thumb_path = None
             self.save()
 
     def save(self, *args, **kwargs):
-        if self.data_type is None:
-            self.data_type = self.device.type
+        if self.file_type is None:
+            self.file_type = self.deployment.device.type
         self.set_file_url()
         super().save(*args, **kwargs)
 

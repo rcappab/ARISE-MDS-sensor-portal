@@ -1,15 +1,16 @@
+from datetime import datetime as dt
 
-
-import magic
 from django.core.exceptions import ObjectDoesNotExist
+import magic
 from django.db.models import Q
 from django.utils import timezone as djtimezone
+from PIL import ExifTags, Image
 from rest_framework import serializers
 from rest_framework_gis import serializers as geoserializers
 from timezone_field.rest_framework import TimeZoneSerializerField
 from user_management.models import User
 from utils.serializers import SlugRelatedGetOrCreateField
-
+from django.db.models import Q
 from . import validators
 from .models import DataFile, DataType, Deployment, Device, DeviceModel, Project, Site
 
@@ -331,9 +332,10 @@ class DeviceSerializer(OwnerMangerMixIn, CreatedModifiedMixIn, CheckFormMixIn, s
 
 
 class DataFileSerializer(CreatedModifiedMixIn, serializers.ModelSerializer):
-    deployment = serializers.SlugRelatedField(slug_field='deployment_device_ID',
-                                              queryset=Deployment.objects.all())
-    deployment_ID = serializers.PrimaryKeyRelatedField(read_only=True)
+    deployment = serializers.SlugRelatedField(
+        slug_field='deployment_device_ID', queryset=Deployment.objects.all(), required=False)
+    deployment_ID = serializers.PrimaryKeyRelatedField(source="deployment", queryset=Device.objects.all(),
+                                                       required=False)
     file_type = serializers.StringRelatedField()
     recording_dt = serializers.DateTimeField(default_timezone=djtimezone.utc)
 
@@ -343,8 +345,9 @@ class DataFileSerializer(CreatedModifiedMixIn, serializers.ModelSerializer):
 
     def validate(self, data):
         data = super().validate(data)
+
         result, message = validators.data_file_in_deployment(
-            data.get('recording_dt'), data.get('deployment'))
+            data.get('recording_dt', self.instance.recording_dt), data.get('deployment', self.instance.deployment))
         if not result:
             raise serializers.ValidationError(message)
         return data
@@ -357,10 +360,11 @@ class DataFileUploadSerializer(serializers.Serializer):
     deployment_ID = serializers.IntegerField(required=False)
 
     files = serializers.ListField(child=serializers.FileField(
-        allow_empty_file=False, max_length=None), required=False)
+        allow_empty_file=False, max_length=None), required=True)
     file_names = serializers.ListField(child=serializers.CharField(
     ), required=False)
-    extra_data = serializers.JSONField(required=False)
+    extra_data = serializers.ListField(
+        child=serializers.JSONField(), required=False)
     recording_dt = serializers.ListField(
         child=serializers.DateTimeField(), required=False)
     autoupdate = serializers.BooleanField(default=False)
@@ -441,3 +445,19 @@ class DataTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = DataType
         fields = '__all__'
+
+
+def get_image_recording_dt(uploaded_file):
+    si = uploaded_file.file
+    image = Image.open(si)
+    exif = image.getexif()
+    exif_tags = {ExifTags.TAGS[k]: v for k,
+                 v in exif.items() if k in ExifTags.TAGS}
+    recording_dt = exif_tags.get('DateTimeOriginal')
+    if recording_dt is None:
+        recording_dt = exif_tags.get('DateTime')
+    if recording_dt is None:
+        raise serializers.ValidationError(f"Unable to get recording_dt from image {uploaded_file.name}, "
+                                          f"consider supplying recording_dt manually")
+
+    return dt.strptime(recording_dt, '%Y:%m:%d %H:%M:%S')

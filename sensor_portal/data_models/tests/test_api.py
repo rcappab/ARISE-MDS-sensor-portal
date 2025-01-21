@@ -5,6 +5,11 @@ from data_models.serializers import (
     DeviceSerializer,
     ProjectSerializer,
 )
+from data_models.models import DataFile
+from data_models.general_functions import create_image
+from io import BytesIO
+from datetime import datetime as dt
+import os
 
 
 def api_check_post(api_client, api_url, payload, check_key):
@@ -230,4 +235,128 @@ def test_delete_device(api_client_with_credentials):
     api_check_delete(api_client_with_credentials,
                      api_url)
 
-    # file tests at some point
+
+# Test file creation with a single deployment
+@pytest.mark.django_db
+def test_CRUD_datafile(api_client_with_credentials):
+    """
+    Test: Can files be created and retrieved through the API. This tests using a deployment object.
+    This tests all of CRUD in one go as it is neccesary to delete the actual file after testing anyway.
+    """
+
+    user = api_client_with_credentials.handler._force_user
+
+    # Generate a file
+    temp = BytesIO()
+    test_image = create_image()
+    test_image.save(temp, format="JPEG")
+    temp.name = "test_file.jpeg"
+    temp.seek(0)
+    files = [temp]
+
+    test_date_time = dt(1066, 1, 2, 0, 0, 0)
+    recording_dt = [test_date_time]
+
+    new_item = DeploymentFactory(
+        owner=user, deployment_start=dt(1066, 1, 1, 0, 0, 0))
+
+    api_url = '/api/datafile/'
+    payload = {
+        "deployment": new_item.deployment_device_ID,
+        "files": files,
+        "recording_dt": recording_dt
+    }
+
+    response_create = api_client_with_credentials.post(
+        api_url, data=payload,  format='multipart')
+    response_create_json = response_create.data
+
+    print(f"Response: {response_create_json}")
+
+    assert response_create.status_code == 201
+
+    assert response_create_json["uploaded_files"][0]["original_name"] == temp.name
+
+    file_object = DataFile.objects.get(
+        file_name=response_create_json["uploaded_files"][0]["file_name"])
+    file_path = file_object.full_path()
+
+    assert os.path.exists(file_path)
+
+    object_url = f"{api_url}{file_object.pk}/"
+    # update the object
+    api_check_update(api_client_with_credentials,
+                     object_url, "foo.jpg", "original_name")
+
+    # delete the object and clear the file
+
+    response_delete = api_client_with_credentials.delete(
+        object_url, format="json")
+    print(f"Response: {response_delete.data}")
+    assert response_delete.status_code == 204
+
+    assert not os.path.exists(file_path)
+
+# Test file creation with a device
+# Test file creation with a single deployment
+
+
+@pytest.mark.django_db
+def test_create_delete_datafile_by_device(api_client_with_credentials):
+    """
+    Test: Can files be created and retrieved through the API. This tests using a deployment object.
+    """
+
+    user = api_client_with_credentials.handler._force_user
+
+    # Generate a file
+    temp = BytesIO()
+    test_image = create_image()
+    test_image.save(temp, format="JPEG")
+    temp.name = "test_file.jpeg"
+    temp.seek(0)
+    files = [temp]
+
+    test_date_time = dt(1066, 1, 2, 0, 0, 0)
+    recording_dt = [test_date_time]
+
+    new_device = DeviceFactory()
+
+    new_deployment = DeploymentFactory(
+        owner=user, deployment_start=dt(1066, 1, 1, 0, 0, 0), device=new_device)
+
+    api_url = '/api/datafile/'
+    payload = {
+        "device": new_device.device_ID,
+        "files": files,
+        "recording_dt": recording_dt
+    }
+
+    response_create = api_client_with_credentials.post(
+        api_url, data=payload,  format='multipart')
+    response_create_json = response_create.data
+
+    print(f"Response: {response_create_json}")
+
+    assert response_create.status_code == 201
+
+    assert response_create_json["uploaded_files"][0]["original_name"] == temp.name
+
+    file_object = DataFile.objects.get(
+        file_name=response_create_json["uploaded_files"][0]["file_name"])
+    file_path = file_object.full_path()
+
+    assert os.path.exists(file_path)
+
+    # delete the object and clear the file
+
+    delete_url = f"{api_url}{file_object.pk}/"
+
+    response_delete = api_client_with_credentials.delete(
+        delete_url, format="json")
+    print(f"Response: {response_delete.data}")
+    assert response_delete.status_code == 204
+
+    assert not os.path.exists(file_path)
+
+# Test file update

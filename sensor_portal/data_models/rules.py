@@ -294,10 +294,10 @@ class CanManageProjectContainingDataFile(R):
         if initial_bool is not None:
             return initial_bool
         else:
-            is_manager = user.pk in instance.values_list(
-                "deployment__project__managers__pk", flat=True)
-            is_owner = user.pk in instance.values_list(
-                "deployment__project__owner__pk", flat=True)
+            is_manager = user.pk in instance.deployment.project.all().values_list(
+                "managers__pk", flat=True)
+            is_owner = user.pk in instance.deployment.project.all().values_list(
+                "owner__pk", flat=True)
 
             return any([is_manager, is_owner])
 
@@ -346,10 +346,9 @@ class CanManageDeploymentContainingDataFile(R):
         if initial_bool is not None:
             return initial_bool
         else:
-            is_manager = user.pk in instance.values_list(
-                "deployment__managers__pk", flat=True)
-            is_owner = user.pk in instance.values_list(
-                "deployment__owner__pk", flat=True)
+            is_manager = user.pk in instance.deployment.managers.all().values_list("pk",
+                                                                                   flat=True)
+            is_owner = user == instance.deployment.owner
 
             return any([is_manager, is_owner])
 

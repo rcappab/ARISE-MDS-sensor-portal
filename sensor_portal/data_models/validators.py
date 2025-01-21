@@ -14,9 +14,9 @@ def data_file_in_deployment(recording_dt, deployment):
     else:
         deployment_end = f" - {str(deployment.deployment_end)}"
     valid_recording_dt_list = deployment.check_dates([recording_dt])
-    if not len(valid_recording_dt_list) == 0:
+    if all(valid_recording_dt_list):
         return True, ""
-    error_message = {"recording_dt": f"recording_dt not in deployment {deployment.deployment_deviceID} date time range "
+    error_message = {"recording_dt": f"recording_dt not in deployment {deployment.deployment_device_ID} date time range "
                      f"{str(deployment.deployment_start)}{deployment_end}"}
     return False, error_message
 
