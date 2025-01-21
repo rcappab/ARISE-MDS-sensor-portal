@@ -33,9 +33,9 @@ from django.urls import reverse
 from django.utils import timezone as djtimezone
 from sizefield.models import FileSizeField
 from timezone_field import TimeZoneField
-from .general_functions import check_dt
 
 from . import validators
+from .general_functions import check_dt
 
 
 class Basemodel(models.Model):
@@ -148,6 +148,17 @@ class DeviceModel(Basemodel):
         return self.name
 
 
+class DataStorageInput(Basemodel):
+    name = models.CharField(max_length=20, unique=True)
+    username = models.CharField(
+        max_length=50, unique=True)
+    password = models.CharField(max_length=50)
+    address = models.CharField(
+        max_length=100, unique=True)
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, related_name="owned_inputstorages",
+                              on_delete=models.SET_NULL, null=True)
+
+
 class Device(Basemodel):
     device_ID = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=50, blank=True)
@@ -172,7 +183,7 @@ class Device(Basemodel):
 
     username = models.CharField(
         max_length=100, unique=True, null=True, blank=True, default=None)
-    authentication = models.CharField(max_length=100, blank=True, null=True)
+    password = models.CharField(max_length=100, blank=True, null=True)
     extra_data = models.JSONField(default=dict, blank=True)
 
     def is_active(self):
