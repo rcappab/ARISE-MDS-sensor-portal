@@ -36,24 +36,12 @@ from timezone_field import TimeZoneField
 
 from . import validators
 from .general_functions import check_dt
+from utils.models import BaseModel
+
+from encrypted_model_fields.fields import EncryptedCharField
 
 
-class Basemodel(models.Model):
-    created_on = models.DateTimeField(auto_now_add=True)
-    modified_on = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        abstract = True
-
-    def model_name(self):
-        return self._meta.model_name
-
-    def save(self, *args, **kwargs):
-        self.clean()
-        return super().save(*args, **kwargs)
-
-
-class Site(Basemodel):
+class Site(BaseModel):
     name = models.CharField(max_length=50)
     short_name = models.CharField(max_length=10, blank=True)
 
@@ -66,14 +54,14 @@ class Site(Basemodel):
         return super().save(*args, **kwargs)
 
 
-class DataType(Basemodel):
+class DataType(BaseModel):
     name = models.CharField(max_length=50)
 
     def __str__(self):
         return self.name
 
 
-class Project(Basemodel):
+class Project(BaseModel):
     # Metadata
     project_ID = models.CharField(max_length=10, unique=True, blank=True)
     name = models.CharField(max_length=50)
@@ -136,7 +124,7 @@ class Project(Basemodel):
         # annotator_usergroup_profile.save()
 
 
-class DeviceModel(Basemodel):
+class DeviceModel(BaseModel):
     name = models.CharField(max_length=50, blank=True, unique=True)
     manufacturer = models.CharField(max_length=50, blank=True)
     type = models.ForeignKey(DataType, models.PROTECT,
@@ -148,18 +136,7 @@ class DeviceModel(Basemodel):
         return self.name
 
 
-class DataStorageInput(Basemodel):
-    name = models.CharField(max_length=20, unique=True)
-    username = models.CharField(
-        max_length=50, unique=True)
-    password = models.CharField(max_length=50)
-    address = models.CharField(
-        max_length=100, unique=True)
-    owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, related_name="owned_inputstorages",
-                              on_delete=models.SET_NULL, null=True)
-
-
-class Device(Basemodel):
+class Device(BaseModel):
     device_ID = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=50, blank=True)
     model = models.ForeignKey(
@@ -183,7 +160,7 @@ class Device(Basemodel):
 
     username = models.CharField(
         max_length=100, unique=True, null=True, blank=True, default=None)
-    password = models.CharField(max_length=100, blank=True, null=True)
+    password = EncryptedCharField(max_length=100, blank=True, null=True)
     extra_data = models.JSONField(default=dict, blank=True)
 
     def is_active(self):
@@ -307,7 +284,7 @@ class Device(Basemodel):
 #         annotator_usergroup_profile.save()
 
 
-class Deployment(Basemodel):
+class Deployment(BaseModel):
     deployment_device_ID = models.CharField(
         max_length=100, blank=True, editable=False, unique=True)
     deployment_ID = models.CharField(max_length=50)
@@ -511,7 +488,7 @@ def update_project(sender, instance, action, reverse, *args, **kwargs):
 #     all_groups.filter(all_is_null=True).delete()
 
 
-class DataFile(Basemodel):
+class DataFile(BaseModel):
     deployment = models.ForeignKey(
         Deployment, on_delete=models.CASCADE, related_name="files")
 

@@ -36,3 +36,4 @@ pyjwt==2.9.0
 pytest==8.3.3
 pytest-django==4.9.0
 factory-boy==3.3.1
+django-encrypted-model-fields==0.6.5

@@ -26,7 +26,13 @@ FILE_STORAGE_URL = 'storage/'
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-c-=p42@cm%8sy6-49_32*1g31eh*_w^nj)is51-%$m49zwkvm7'
+if os.environ.get('DEV') is not None:
+    SECRET_KEY = 'django-insecure-c-=p42@cm%8sy6-49_32*1g31eh*_w^nj)is51-%$m49zwkvm7'
+else:
+    SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', None)
+
+
+FIELD_ENCRYPTION_KEY = os.environ.get('FIELD_ENCRYPTION_KEY', '')
 
 if os.environ.get('DEV') is not None:
     print("Running in dev mode")
@@ -65,10 +71,13 @@ INSTALLED_APPS = [
     'debug_toolbar',
     'corsheaders',
     'rest_framework_simplejwt.token_blacklist',
+    'encrypted_model_fields',
     # my apps
     'data_models',
     'user_management',
+    'external_storage_import',
     'utils'
+
 ]
 
 MIDDLEWARE = [

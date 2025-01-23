@@ -51,11 +51,14 @@ def post_save_device(sender, instance, created, **kwargs):
             add_device_user = True
 
     if add_device_user:
-        device_user = DeviceUser(username=f"{instance.device_ID}_user",
+        user_name = f"{instance.device_ID}_user"
+        if (instance.username is not None) and (instance.username != ":"):
+            user_name = instance.username
+        device_user = DeviceUser(username=user_name,
                                  device=instance,
                                  is_active=True)
-        if (instance.authentication is not None) & (instance.authentication != ""):
-            device_user.password = instance.authentication
+        if (instance.password is not None) and (instance.password != ""):
+            device_user.password = instance.password
         if instance.owner:
             device_user.email = instance.owner.email
         device_user.save()

@@ -1,23 +1,17 @@
+from .models import DataFile, DataType, Deployment, Device, DeviceModel, Project, Site
 from django.conf import settings
 from django.contrib import admin
 
-from .models import DataFile, DataType, Deployment, Device, DeviceModel, Project, Site
+from .forms import DeviceForm
+
+from utils.admin import GenericAdmin, AddOwnerAdmin
 
 # Register your models here.
 
 
 @admin.register(DataType, DeviceModel)
-class GenericAdmin(admin.ModelAdmin):
-    readonly_fields = ['created_on', 'modified_on']
-
-
-class AddOwnerAdmin(GenericAdmin):
-    readonly_fields = ['owner']
-
-    def save_model(self, request, obj, form, change):
-        if obj.owner is None:
-            obj.owner = request.user
-        super().save_model(request, obj, form, change)
+class GenericAdmin(GenericAdmin):
+    pass
 
 
 @admin.register(Site)
@@ -28,6 +22,7 @@ class SiteAdmin(GenericAdmin):
 
 @admin.register(Device)
 class DeviceAdmin(AddOwnerAdmin):
+    form = DeviceForm
     list_display = ['device_ID', 'type']
     search_fields = ['device_ID']
     list_filter = ['type']
