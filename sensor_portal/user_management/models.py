@@ -81,15 +81,15 @@ def pre_user_save(sender, instance, **kwargs):
 def create_user_token(sender, instance, created, **kwargs):
     if created:
         newtoken = Token(user=instance)
-        if isinstance(instance, DeviceUser):
-            if (instance.device.authentication is not None) & (instance.device.authentication != ""):
-                newtoken.key = instance.device.authentication
+        # if isinstance(instance, DeviceUser):
+        #     if (instance.device.password is not None) & (instance.device.password != ""):
+        #         newtoken.key = instance.device.password
         newtoken.save()
 
-    if isinstance(instance, DeviceUser):
-        if ((instance.password is None) | (instance.password == "")):
-            User.objects.filter(pk=instance.pk).update(
-                password=make_password(instance.auth_token.key))
+    # if isinstance(instance, DeviceUser):
+    #     if ((instance.password is None) | (instance.password == "")):
+    #         User.objects.filter(pk=instance.pk).update(
+    #             password=make_password(instance.auth_token.key))
 
 # def create_user_group(group_name):
 #     try:

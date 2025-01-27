@@ -14,9 +14,10 @@ from .rules import (
     CanViewProjectContainingDeployment,
     CanViewProjectContainingDevice,
     IsManager,
-    IsOwner,
     IsViewer,
 )
+
+from utils.rules import IsOwner
 
 # PROJECT
 perms['data_models.add_project'] = is_authenticated & is_active

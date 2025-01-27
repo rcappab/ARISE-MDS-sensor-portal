@@ -37,6 +37,7 @@ from timezone_field import TimeZoneField
 from . import validators
 from .general_functions import check_dt
 from utils.models import BaseModel
+from external_storage_import.models import DataStorageInput
 
 from encrypted_model_fields.fields import EncryptedCharField
 
@@ -72,6 +73,8 @@ class Project(BaseModel):
     contact = models.CharField(max_length=50, blank=True)
     contact_email = models.CharField(max_length=100, blank=True)
     organisation = models.CharField(max_length=100, blank=True)
+    data_storages = models.ManyToManyField(
+        DataStorageInput, related_name="linked_projects")
 
     def is_active(self):
         if self.id:
@@ -161,6 +164,9 @@ class Device(BaseModel):
     username = models.CharField(
         max_length=100, unique=True, null=True, blank=True, default=None)
     password = EncryptedCharField(max_length=100, blank=True, null=True)
+    input_storage = models.ForeignKey(
+        DataStorageInput, null=True, blank=True, related_name="linked_devices", on_delete=models.SET_NULL)
+
     extra_data = models.JSONField(default=dict, blank=True)
 
     def is_active(self):
@@ -494,7 +500,7 @@ class DataFile(BaseModel):
 
     file_type = models.ForeignKey(
         DataType, models.PROTECT, related_name="files", null=True, default=None)
-    file_name = models.CharField(max_length=50, unique=True)
+    file_name = models.CharField(max_length=100, unique=True)
     file_size = FileSizeField()
     file_format = models.CharField(max_length=10)
 

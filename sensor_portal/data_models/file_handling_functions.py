@@ -1,7 +1,7 @@
 import os
 from datetime import datetime as dt
 
-from data_models.models import DataFile
+from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.utils import timezone as djtimezone
 from PIL import ExifTags, Image
@@ -12,6 +12,8 @@ from .general_functions import check_dt
 
 def create_file_objects(files, check_filename=False, recording_dt=None, extra_data=None, deployment_object=None,
                         device_object=None, data_types=None, request_user=None):
+    from data_models.models import DataFile
+
     invalid_files = []
     existing_files = []
     uploaded_files = []
@@ -161,8 +163,23 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
             file_size=file_size,
             extra_data=file_extra_data
         )
+        try:
+            new_datafile_obj.full_clean()
+        except ValidationError as e:
+            invalid_files.append(
+                {filename: {"message": f"Error creating database records {repr(e)}", "status": 400}})
+            continue
+        except Exception as e:
+            invalid_files.append(
+                {filename: {"message": repr(e), "status": 400}})
+            continue
 
-        handle_uploaded_file(file, file_fullpath)
+        try:
+            handle_uploaded_file(file, file_fullpath)
+        except Exception as e:
+            invalid_files.append(
+                {filename: {"message": repr(e), "status": 400}})
+            continue
 
         new_datafile_obj.set_file_url()
         all_new_objects.append(new_datafile_obj)
@@ -176,7 +193,7 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
             deployment.set_last_file()
     else:
         final_status = status.HTTP_400_BAD_REQUEST
-        if all([[y[x].get('status') for x in y.keys()][0] for y in invalid_files]):
+        if all([[y[x].get('status') == 403 for x in y.keys()][0] for y in invalid_files]):
             final_status = status.HTTP_403_FORBIDDEN
     return (uploaded_files, invalid_files, existing_files, final_status)
 

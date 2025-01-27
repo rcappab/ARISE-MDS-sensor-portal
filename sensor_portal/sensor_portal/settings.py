@@ -26,7 +26,10 @@ FILE_STORAGE_URL = 'storage/'
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-if os.environ.get('DEV') is not None:
+
+DEVMODE = os.environ.get('DEV') is not None
+
+if DEVMODE:
     SECRET_KEY = 'django-insecure-c-=p42@cm%8sy6-49_32*1g31eh*_w^nj)is51-%$m49zwkvm7'
 else:
     SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', None)
@@ -34,7 +37,7 @@ else:
 
 FIELD_ENCRYPTION_KEY = os.environ.get('FIELD_ENCRYPTION_KEY', '')
 
-if os.environ.get('DEV') is not None:
+if DEVMODE:
     print("Running in dev mode")
     DEBUG = True
     STATIC_URL = 'static/'

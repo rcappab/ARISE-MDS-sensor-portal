@@ -2,7 +2,7 @@ from django.forms import ModelForm, PasswordInput
 from .models import DataStorageInput
 
 
-class DeviceForm(ModelForm):
+class DataStorageInputForm(ModelForm):
     class Meta:
         model = DataStorageInput
         widgets = {
