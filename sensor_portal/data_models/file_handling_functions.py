@@ -4,31 +4,25 @@ from datetime import datetime as dt
 from django.core.exceptions import ValidationError
 from django.conf import settings
 from django.utils import timezone as djtimezone
-from PIL import ExifTags, Image
+
 from rest_framework import status
 
 from .general_functions import check_dt
+from data_handlers.base_data_handler_class import data_type_handler_collection
 
 
 def create_file_objects(files, check_filename=False, recording_dt=None, extra_data=None, deployment_object=None,
-                        device_object=None, data_types=None, request_user=None):
-    from data_models.models import DataFile
+                        device_object=None, request_user=None):
+    from data_models.models import DataFile, DataType
 
     invalid_files = []
     existing_files = []
     uploaded_files = []
     if extra_data is None:
         extra_data = [{}]
+    data_types = []
 
     print(files)
-
-    if recording_dt is None:
-        recording_dt = [get_image_recording_dt(x) for x in files]
-
-    if all([x is None for x in recording_dt]):
-        invalid_files += [{x.name: {"message": "Unable to extract recording date time", "status": 400}}
-                          for x in files]
-        return (uploaded_files, invalid_files, existing_files, status.HTTP_400_BAD_REQUEST)
 
     upload_dt = djtimezone.now()
 
@@ -54,6 +48,75 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
             if len(data_types) > 1:
                 data_types = [x for x, y in zip(
                     data_types, not_duplicated) if y]
+
+    if device_object is None and deployment_object:
+        device_object = deployment_object.device
+
+    if device_object:
+        device_model_object = device_object.model
+        data_handlers = data_type_handler_collection()
+        valid_files = data_handlers.get_valid_files(
+            device_model_object.type.name, device_model_object.name, files)
+        if len(valid_files) == 0:
+            # More informative errors at some point
+            invalid_files += [{x.name: {"message": f"Invalid file type for {device_model_object.name}", "status": 400}}
+                              for x in files]
+            return (uploaded_files, invalid_files, existing_files, status.HTTP_400_BAD_REQUEST)
+        else:
+            valid_files_bool = [x in valid_files for x in files]
+            invalid_files += [{x.name: {"message": f"Invalid file type for {device_model_object.name}", "status": 400}}
+                              for x, y in zip(files, valid_files_bool) if not y]
+
+            files = valid_files
+            if recording_dt is not None and len(recording_dt) > 1:
+                recording_dt = [x for x, y in zip(
+                    recording_dt, valid_files_bool) if y]
+            if len(extra_data) > 1:
+                extra_data = [x for x, y in zip(
+                    extra_data, valid_files_bool) if y]
+
+        data_handler = data_handlers.get_file_handler(
+            device_model_object.type.name, device_model_object.name)
+
+        new_recording_dt = []
+        new_extra_data = []
+        new_data_types = []
+
+        for i in range(len(files)):
+            if len(extra_data) > 1:
+                file_extra_data = extra_data[i]
+            else:
+                file_extra_data = extra_data[0]
+
+            if recording_dt is None:
+                file_recording_dt = recording_dt
+            elif len(recording_dt) > 1:
+                file_recording_dt = recording_dt[i]
+            else:
+                file_recording_dt = recording_dt[0]
+            file = files[i]
+
+            new_file_recording_dt, new_file_extra_data, new_file_data_type = data_handler(file,
+                                                                                          file_recording_dt,
+                                                                                          file_extra_data,
+                                                                                          device_model_object.type.name)
+            new_recording_dt.append(new_file_recording_dt)
+            new_extra_data.append(new_file_extra_data)
+            new_data_types.append(new_file_data_type)
+
+        recording_dt = new_recording_dt
+        extra_data = new_extra_data
+        data_types = new_data_types
+        print(recording_dt, extra_data, data_types)
+    else:
+        invalid_files += [{x.name: {"message": "No linked device", "status": 400}}
+                          for x in files]
+        return (uploaded_files, invalid_files, existing_files, status.HTTP_400_BAD_REQUEST)
+
+    if all([x is None for x in recording_dt]):
+        invalid_files += [{x.name: {"message": "Unable to extract recording date time", "status": 400}}
+                          for x in files]
+        return (uploaded_files, invalid_files, existing_files, status.HTTP_400_BAD_REQUEST)
 
     if deployment_object:
         if request_user:
@@ -129,9 +192,9 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
             file_data_type = file_deployment.device_type
         else:
             if len(data_types) > 1:
-                file_data_type = data_types[i]
+                file_data_type = DataType.objects.get(name=data_types[i])
             else:
-                file_data_type = data_types[0]
+                file_data_type = DataType.objects.get(name=data_types[0])
 
         file_local_path = os.path.join(
             settings.FILE_STORAGE_ROOT, file_data_type.name)
@@ -198,20 +261,6 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
     return (uploaded_files, invalid_files, existing_files, final_status)
 
 
-def get_image_recording_dt(uploaded_file):
-    si = uploaded_file.file
-    image = Image.open(si)
-    exif = image.getexif()
-    exif_tags = {ExifTags.TAGS[k]: v for k,
-                 v in exif.items() if k in ExifTags.TAGS}
-    recording_dt = exif_tags.get('DateTimeOriginal')
-    if recording_dt is None:
-        recording_dt = exif_tags.get('DateTime')
-    if recording_dt is None:
-        return None
-    return dt.strptime(recording_dt, '%Y:%m:%d %H:%M:%S')
-
-
 def handle_uploaded_file(file, filepath, multipart=False):
     os.makedirs(os.path.split(filepath)[0], exist_ok=True)
     if multipart and os.path.exists(filepath):
@@ -235,8 +284,7 @@ def clear_uploaded_file(filepath):
 def get_new_name(deployment, recording_dt, file_local_path, file_path, file_n=None):
     if file_n is None:
         file_n = get_n_files(os.path.join(file_local_path, file_path)) + 1
-    newname = f"{deployment.deployment_device_ID}_{dt.strftime(recording_dt, '%Y-%m-%d_%H-%M-%S')}_"
-    f"({file_n})"
+    newname = f"{deployment.deployment_device_ID}_{dt.strftime(recording_dt, '%Y-%m-%d_%H-%M-%S')}_({file_n})"
     return newname
 
 

@@ -401,6 +401,7 @@ class DataFileUploadSerializer(serializers.Serializer):
                                                    f"Deployment {deployment} does not exist",
                                                    "deployment_ID": f"Deployment ID {deployment_ID} does not exist"})
             data['deployment_object'] = deployment_object
+            data['device_object'] = deployment_object.device
         elif device or device_ID:
             try:
                 device_object = Device.objects.get(
