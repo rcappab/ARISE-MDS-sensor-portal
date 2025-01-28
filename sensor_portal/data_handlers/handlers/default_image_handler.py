@@ -4,7 +4,7 @@ from typing import Tuple
 from data_handlers.functions import open_exif, check_exif_keys, get_image_recording_dt
 
 
-class default_image_handler(data_type_handler):
+class DefaultImageHandler(DataTypeHandler):
     data_types = ["wildlifecamera", "insectcamera", "timelapsecamera"]
     device_models = ["default"]
     safe_formats = [".jpg", ".jpeg", ".png"]

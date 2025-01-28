@@ -5,7 +5,7 @@ from typing import Callable, Tuple
 from datetime import datetime
 
 
-class data_type_handler():
+class DataTypeHandler():
     data_types = ["default"]
     device_models = ["default"]
     safe_formats = [""]
@@ -35,7 +35,7 @@ class data_type_handler():
         return recording_dt, extra_data, data_type
 
 
-class data_type_handler_collection():
+class DataTypeHandlerCollection():
     data_type_handlers = {}
 
     def __init__(self, root_path="") -> None:
@@ -48,7 +48,7 @@ class data_type_handler_collection():
             module = importlib.import_module(
                 f"data_handlers.handlers.{handler}")
             cls = getattr(module, handler)
-            if data_type_handler in cls.__bases__:
+            if DataTypeHandler in cls.__bases__:
                 for data_type in cls.data_types:
 
                     if not self.data_type_handlers.get(data_type):
