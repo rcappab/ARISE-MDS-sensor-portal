@@ -37,10 +37,10 @@ else:
 
 FIELD_ENCRYPTION_KEY = os.environ.get('FIELD_ENCRYPTION_KEY', '')
 
+STATIC_URL = 'staticfiles/'
 if DEVMODE:
     print("Running in dev mode")
     DEBUG = True
-    STATIC_URL = 'static/'
     STATICFILES_DIRS = [
         os.path.join(BASE_DIR, 'static_files'),
     ]

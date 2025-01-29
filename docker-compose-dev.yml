@@ -1,11 +1,21 @@
 services:
+  sensor_portal_nginx:
+      build: 
+          context: .
+          dockerfile: ./dockerfiles/sensor_portal_nginx.dockerfile
+      ports:
+          - "8080:80"
+      depends_on:
+          - "sensor_portal_frontend"
+          - "sensor_portal_django"
+      restart: unless-stopped
   sensor_portal_frontend:
     build:
       context: .
       dockerfile: ./dockerfiles/sensor_portal_frontend.dockerfile
     image: sensor_portal_frontend_image
     ports:
-      - '3000:3000'
+      - '3000'
     volumes:
       - ./frontend/src:/app/frontend/src
       - ./frontend/public:/app/frontend/public
@@ -18,7 +28,7 @@ services:
     environment:
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
-      - REACT_APP_API_BASE_URL=http://localhost:8000/api
+      - REACT_APP_API_BASE_URL=api
   sensor_portal_django:
     build:
       context: .
@@ -29,7 +39,7 @@ services:
       - ./file_storage:/media/file_storage
       - ./sensor_portal:/usr/src/sensor_portal
     ports:
-      - "8000:8000"
+      - "8000"
     environment:
       - POSTGRES_NAME=postgres
       - POSTGRES_USER=postgres
@@ -66,6 +76,7 @@ services:
       - CELERY_BROKER=redis://sensor_portal_redis:6379/0
       - CELERY_BACKEND=redis://sensor_portal_redis:6379/0
       - DEV=True
+      - FIELD_ENCRYPTION_KEY=FrMHRMwLSdQytSjWRAIwaFPzzWC1R5XIPaH6HQbcryA=
     depends_on:
       sensor_portal_db:
         condition: service_healthy
@@ -94,6 +105,7 @@ services:
       - CELERY_BROKER=redis://sensor_portal_redis:6379/0
       - CELERY_BACKEND=redis://sensor_portal_redis:6379/0
       - DEV=True
+      - FIELD_ENCRYPTION_KEY=FrMHRMwLSdQytSjWRAIwaFPzzWC1R5XIPaH6HQbcryA=
     depends_on:
       sensor_portal_db:
         condition: service_healthy
@@ -119,6 +131,7 @@ services:
       - CELERY_BROKER=redis://sensor_portal_redis:6379/0
       - CELERY_BACKEND=redis://sensor_portal_redis:6379/0
       - DEV=True
+      - FIELD_ENCRYPTION_KEY=FrMHRMwLSdQytSjWRAIwaFPzzWC1R5XIPaH6HQbcryA=
     depends_on:
       sensor_portal_db:
         condition: service_healthy

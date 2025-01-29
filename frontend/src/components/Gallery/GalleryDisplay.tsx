@@ -5,10 +5,12 @@ interface Props {
 	data: [];
 	onTileClick: (index) => void;
 	nameKey: string;
+	thumbKey?: string;
 }
 
 const GalleryDisplay = ({
 	nameKey,
+	thumbKey = "",
 	data = [],
 	onTileClick = () => {},
 }: Props) => {
@@ -21,6 +23,7 @@ const GalleryDisplay = ({
 				return (
 					<GalleryTile
 						cardTitle={x[nameKey]}
+						cardImageURL={x[thumbKey]}
 						index={index}
 						key={`tile_${index}`}
 						extraClasses={x["is_active"] ? "" : "text-white bg-secondary"}

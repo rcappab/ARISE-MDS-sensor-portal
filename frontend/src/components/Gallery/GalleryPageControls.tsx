@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import "../../styles/pagination.css";
 import FormSelect from "../FormSelect.tsx";
 
@@ -79,6 +79,7 @@ const GalleryPageControls = ({
 						step="5"
 						value={pageSize}
 						onChange={(e) => {
+							setPage(1);
 							handleChangePageSize(e.target.value);
 						}}
 					/>

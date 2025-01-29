@@ -15,7 +15,7 @@ import DetailModal from "../Detail/DetailModal.tsx";
 
 const Gallery = () => {
 	const { fromID, fromObject, objectType, nameKey } = useOutletContext();
-	const defaultPageSize = 1;
+	const defaultPageSize = 30;
 	const [searchParams, setSearchParams] = useSearchParams();
 	const [formKeys, setFormKeys] = useState<String[]>([]);
 	const [pageNum, setPageNum] = useState(Number(searchParams.get("page")) || 1);
@@ -25,6 +25,8 @@ const Gallery = () => {
 	const { authTokens, user } = useContext(AuthContext);
 
 	let additionalOrdering;
+	let defaultOrdering = nameKey;
+	let thumbKey = "";
 
 	if (objectType === "device") {
 		additionalOrdering = [{ value: "name", label: "Device name alphabetical" }];
@@ -32,19 +34,18 @@ const Gallery = () => {
 		additionalOrdering = [
 			{ value: "deploymentStart", label: "Deployment start time" },
 		];
+		thumbKey = "last_imageURL";
 	} else if (objectType === "datafile") {
+		defaultOrdering = "recording_dt";
 		additionalOrdering = [
 			{ value: "recording_dt", label: "Recording datetime ascending" },
 			{ value: "-recording_dt", label: "Recording datetime descending" },
 		];
+		thumbKey = "file_url";
 	} else {
 		additionalOrdering = [];
 	}
 
-	let defaultOrdering = nameKey;
-	if (objectType === "datafile") {
-		defaultOrdering = "recording_dt";
-	}
 	const [orderBy, setOrderBy] = useState(
 		searchParams.get("ordering")
 			? searchParams.get("ordering")
@@ -232,6 +233,7 @@ const Gallery = () => {
 						data={data.results}
 						onTileClick={openDetail}
 						nameKey={nameKey}
+						thumbKey={thumbKey}
 					/>
 				</div>
 			</div>
