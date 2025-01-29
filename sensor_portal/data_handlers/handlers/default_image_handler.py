@@ -1,4 +1,4 @@
-from data_handlers.base_data_handler_class import data_type_handler
+from data_handlers.base_data_handler_class import DataTypeHandler
 from datetime import datetime
 from typing import Tuple
 from data_handlers.functions import open_exif, check_exif_keys, get_image_recording_dt
@@ -8,7 +8,6 @@ class DefaultImageHandler(DataTypeHandler):
     data_types = ["wildlifecamera", "insectcamera", "timelapsecamera"]
     device_models = ["default"]
     safe_formats = [".jpg", ".jpeg", ".png"]
-    main_media_type = "image"
     full_name = "Default image handler"
     description = """Data handler for image files."""
     validity_description = """<ul>
@@ -16,8 +15,6 @@ class DefaultImageHandler(DataTypeHandler):
     </ul>"""
     handling_description = """<ul>
     <li>Recording datetime is extracted from exif.</li>
-    <li>Recording datetime is assumed to be in local timezone.</li>
-    <li>New filename is generated, csv is saved with this new filename</li>
     <li><strong>Extra metadata attached:</strong>
     <ul>
     <li> Image dimensions: extracted from exif</li>

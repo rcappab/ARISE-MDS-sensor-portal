@@ -29,7 +29,7 @@ class SSH_client():
             print("Connection failed")
             return False
 
-    def CloseConnectionToFTP(self):
+    def close_connection_to_ftp(self):
         try:
             self.ftp_t.close()
             print("FTP connection closed")

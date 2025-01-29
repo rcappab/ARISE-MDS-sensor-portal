@@ -9,7 +9,6 @@ class DataTypeHandler():
     data_types = ["default"]
     device_models = ["default"]
     safe_formats = [""]
-    main_media_type = ""
     full_name = "No name provided"
     description = "No description provided"
     validity_description = "No validity description provided"

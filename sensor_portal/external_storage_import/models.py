@@ -88,3 +88,4 @@ class DataStorageInput(BaseModel):
             for problem_file in invalid_files:
                 print(
                     f"{self.name} - {device.device_ID} - {problem_file}")
+        ssh_client.CloseConnectionToFTP

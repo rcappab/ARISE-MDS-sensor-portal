@@ -10,7 +10,6 @@ class Snyper4GHandler(DataTypeHandler):
     data_types = ["wildlifecamera", "timelapsecamera"]
     device_models = ["default"]
     safe_formats = [".jpg", ".jpeg", ".txt"]
-    main_media_type = "image"
     full_name = "Wide 4G handler"
     description = """Data handler for wide 4G handler"""
     validity_description = """<ul>
