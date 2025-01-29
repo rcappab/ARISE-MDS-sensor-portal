@@ -1,13 +1,14 @@
-from django.db import models
-from django.conf import settings
-from utils.models import BaseModel
-from encrypted_model_fields.fields import EncryptedCharField
-from utils.ssh_client import SSH_client
+import io
 from posixpath import join, splitext
+from sys import exception
+
 from data_models.file_handling_functions import create_file_objects
 from django.conf import settings
-import io
 from django.core.files import File
+from django.db import models
+from encrypted_model_fields.fields import EncryptedCharField
+from utils.models import BaseModel
+from utils.ssh_client import SSH_client
 
 
 class DataStorageInput(BaseModel):
@@ -27,15 +28,123 @@ class DataStorageInput(BaseModel):
         return SSH_client(self.username, self.password, self.address, 22)
 
     def setup_users(self):
-        ssh_client = self.init_ssh_client()
-        ssh_client.connect_to_ftp()
+        connection_success, ssh_client = self.check_connection()
+        if not connection_success:
+            print(f"{self.name} - unable to connect")
+            return
 
-    def check_connetion(self):
-        # Should try and connect to server based on provided credentials.
-        pass
+        # Get list of all current users
+        stdin, stdout, stderr = ssh_client.send_ssh_command(
+            'cut -d: -f1 /etc/passwd')
+        existing_users = [x.decode("utf-8")
+                          for x in stdout.read().splitlines()]
+
+        all_devices = self.linked_devices.all()
+
+        required_users = all_devices.exclude(
+            username="", username__isnull=True).values('username', 'password')
+        missing_users = [x for x in required_users if x['username']
+                         not in existing_users]
+
+        user_group_name = "ftpuser"
+
+        # check main user group exists
+        stdin, stdout, stderr = ssh_client.send_ssh_command(
+            f"grep {user_group_name} /etc/group")
+
+        group_users = stdout.read().decode("utf-8")
+
+        if group_users == '':
+            # If group does not exist, create it
+            stdin, stdout, stderr = ssh_client.send_ssh_command(
+                f"groupadd {user_group_name}", True)
+
+        for user in missing_users:
+            username = user["username"]
+            user_password = user["password"]
+
+            stdin, stdout, stderr = ssh_client.send_ssh_command(
+                f"perl -e 'print crypt('{user_password}', 'password')'")
+            encrypted_user_password = stdout.read().decode("utf-8")
+
+            print(f"{self.name} - add user {username}")
+            # Add new user, add to ftpuser group
+            stdin, stdout, stderr = ssh_client.send_ssh_command(
+                f"useradd -m -p {encrypted_user_password}-N -g {user_group_name} {username}", True)
+
+            # Create a group for this user
+            stdin, stdout, stderr = ssh_client.send_ssh_command(
+                f"groupadd g{username}", True)
+
+            # Add service account to the user group
+            stdin, stdout, stderr = ssh_client.send_ssh_command(
+                f"usermod -a -G g{username} {self.username}", True)
+
+            # Allow user and service account to own it
+            stdin, stdout, stderr = ssh_client.send_ssh_command(
+                f"chown {username}:g{username} /home/{username}", True)
+
+            # allow user and service account to own it
+            stdin, stdout, stderr = ssh_client.send_ssh_command(
+                f"chmod -R g+srwx /home/{username}", True)
+
+            # Prevent other users viewing the contents
+            stdin, stdout, stderr = ssh_client.send_ssh_command(
+                f"chmod -R o-rwx /home/{username}", True)
+
+        for user in required_users:
+            username = user["username"]
+            print(f"{self.name} - check user {username} permissions")
+
+            # Check that service account is in user's group
+            stdin, stdout, stderr = ssh_client.send_ssh_command(
+                f"id {self.username} | grep -c g{username}")
+
+            if int(stdout.read().decode("utf-8")) == 0:
+                # check if group exists
+                stdin, stdout, stderr = ssh_client.send_ssh_command(
+                    f"grep g{username} /etc/group")
+                group_users = stdout.read().decode("utf-8")
+                if group_users == '':
+                    # If group does not exist, create it
+                    stdin, stdout, stderr = ssh_client.send_ssh_command(
+                        f"groupadd g{username}", True)
+                if not (self.username in group_users):
+                    # If service account is not in the group, add it.
+                    stdin, stdout, stderr = ssh_client.send_ssh_command(
+                        f"usermod -a -G g{username} {self.username}", True)
+                # Try to list user home directory
+                stdin, stdout, stderr = ssh_client.send_ssh_command(
+                    f"ls -ld /home/{username} | grep -c g{username}")
+                if int(stdout.read().decode("utf-8")) == 0:
+                    # If unable to list directory, make sure group permissions are correct
+                    stdin, stdout, stderr = ssh_client.send_ssh_command(
+                        f"chown {username}:g{username} /home/{username}", True)
+
+                # allow user and main user to own it
+                stdin, stdout, stderr = ssh_client.send_ssh_command(
+                    f"chmod -R g+srwx /home/{username}", True)
+                # prevent other users viewing the contents
+                stdin, stdout, stderr = ssh_client.send_ssh_command(
+                    f"chmod -R o-rwx /home/{username}", True)
+
+        ssh_client.close_connection_to_ftp()
+
+    def check_connection(self):
+        try:
+            ssh_client = self.init_ssh_client()
+            return True, ssh_client
+        except Exception as e:
+            print(f"{self.name} - error")
+            print(repr(e))
+            return False, None
 
     def check_input(self):
-        ssh_client = self.init_ssh_client()
+        connection_success, ssh_client = self.check_connection()
+        if not connection_success:
+            print(f"{self.name} - unable to connect")
+            return
+
         ssh_client.connect_to_ftp()
         all_devices = self.linked_devices.all()
         all_dirs_attributes = ssh_client.ftp_sftp.listdir_attr()
@@ -88,4 +197,4 @@ class DataStorageInput(BaseModel):
             for problem_file in invalid_files:
                 print(
                     f"{self.name} - {device.device_ID} - {problem_file}")
-        ssh_client.CloseConnectionToFTP
+        ssh_client.close_connection_to_ftp()
