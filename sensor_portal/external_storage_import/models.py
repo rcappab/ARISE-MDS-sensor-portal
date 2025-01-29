@@ -1,6 +1,5 @@
 import io
 from posixpath import join, splitext
-from sys import exception
 
 from data_models.file_handling_functions import create_file_objects
 from django.conf import settings

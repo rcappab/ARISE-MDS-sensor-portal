@@ -1,5 +1,5 @@
 from datetime import datetime as dt
-from PIL import ExifTags, Image
+from PIL import ExifTags, Image, TiffImagePlugin
 
 
 def open_exif(uploaded_file):
@@ -17,6 +17,8 @@ def check_exif_keys(image_exif, exif_keys, round_val=2):
     for exif_key in exif_keys:
         val = image_exif.get(exif_key)
         if val is not None:
+            if type(val) is TiffImagePlugin.IFDRational:
+                val = float(val)
             if type(val) is float:
                 val = round(val, round_val)
             new_data[exif_key] = val

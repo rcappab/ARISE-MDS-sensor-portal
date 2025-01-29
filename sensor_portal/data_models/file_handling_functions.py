@@ -8,7 +8,7 @@ from django.utils import timezone as djtimezone
 from rest_framework import status
 
 from .general_functions import check_dt
-from data_handlers.base_data_handler_class import data_type_handler_collection
+from data_handlers.base_data_handler_class import DataTypeHandlerCollection
 
 
 def create_file_objects(files, check_filename=False, recording_dt=None, extra_data=None, deployment_object=None,
@@ -52,62 +52,70 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
     if device_object is None and deployment_object:
         device_object = deployment_object.device
 
+    tasks = None
+
     if device_object:
         device_model_object = device_object.model
-        data_handlers = data_type_handler_collection()
-        valid_files = data_handlers.get_valid_files(
-            device_model_object.type.name, device_model_object.name, files)
-        if len(valid_files) == 0:
-            # More informative errors at some point
-            invalid_files += [{x.name: {"message": f"Invalid file type for {device_model_object.name}", "status": 400}}
-                              for x in files]
-            return (uploaded_files, invalid_files, existing_files, status.HTTP_400_BAD_REQUEST)
-        else:
-            valid_files_bool = [x in valid_files for x in files]
-            invalid_files += [{x.name: {"message": f"Invalid file type for {device_model_object.name}", "status": 400}}
-                              for x, y in zip(files, valid_files_bool) if not y]
+        data_handlers = DataTypeHandlerCollection()
 
-            files = valid_files
-            if recording_dt is not None and len(recording_dt) > 1:
-                recording_dt = [x for x, y in zip(
-                    recording_dt, valid_files_bool) if y]
-            if len(extra_data) > 1:
-                extra_data = [x for x, y in zip(
-                    extra_data, valid_files_bool) if y]
-
-        data_handler = data_handlers.get_file_handler(
+        data_handler = data_handlers.get_handler(
             device_model_object.type.name, device_model_object.name)
 
-        new_recording_dt = []
-        new_extra_data = []
-        new_data_types = []
+        if data_handler is not None:
 
-        for i in range(len(files)):
-            if len(extra_data) > 1:
-                file_extra_data = extra_data[i]
+            valid_files = data_handler.get_valid_files(files)
+
+            if len(valid_files) == 0:
+                # More informative errors at some point
+                invalid_files += [{x.name: {"message": f"Invalid file type for {device_model_object.name}", "status": 400}}
+                                  for x in files]
+                return (uploaded_files, invalid_files, existing_files, status.HTTP_400_BAD_REQUEST)
             else:
-                file_extra_data = extra_data[0]
+                valid_files_bool = [x in valid_files for x in files]
+                invalid_files += [{x.name: {"message": f"Invalid file type for {device_model_object.name}", "status": 400}}
+                                  for x, y in zip(files, valid_files_bool) if not y]
 
-            if recording_dt is None:
-                file_recording_dt = recording_dt
-            elif len(recording_dt) > 1:
-                file_recording_dt = recording_dt[i]
-            else:
-                file_recording_dt = recording_dt[0]
-            file = files[i]
+                files = valid_files
+                if recording_dt is not None and len(recording_dt) > 1:
+                    recording_dt = [x for x, y in zip(
+                        recording_dt, valid_files_bool) if y]
+                if len(extra_data) > 1:
+                    extra_data = [x for x, y in zip(
+                        extra_data, valid_files_bool) if y]
 
-            new_file_recording_dt, new_file_extra_data, new_file_data_type = data_handler(file,
-                                                                                          file_recording_dt,
-                                                                                          file_extra_data,
-                                                                                          device_model_object.type.name)
-            new_recording_dt.append(new_file_recording_dt)
-            new_extra_data.append(new_file_extra_data)
-            new_data_types.append(new_file_data_type)
+            new_recording_dt = []
+            new_extra_data = []
+            new_data_types = []
+            new_tasks = []
 
-        recording_dt = new_recording_dt
-        extra_data = new_extra_data
-        data_types = new_data_types
-        print(recording_dt, extra_data, data_types)
+            for i in range(len(files)):
+                if len(extra_data) > 1:
+                    file_extra_data = extra_data[i]
+                else:
+                    file_extra_data = extra_data[0]
+
+                if recording_dt is None:
+                    file_recording_dt = recording_dt
+                elif len(recording_dt) > 1:
+                    file_recording_dt = recording_dt[i]
+                else:
+                    file_recording_dt = recording_dt[0]
+                file = files[i]
+
+                new_file_recording_dt, new_file_extra_data, new_file_data_type, new_file_task = data_handler.handle_file(file,
+                                                                                                                         file_recording_dt,
+                                                                                                                         file_extra_data,
+                                                                                                                         device_model_object.type.name)
+                new_recording_dt.append(new_file_recording_dt)
+                new_extra_data.append(new_file_extra_data)
+                new_data_types.append(new_file_data_type)
+                new_tasks.append(new_file_task)
+
+            recording_dt = new_recording_dt
+            extra_data = new_extra_data
+            data_types = new_data_types
+            tasks = new_tasks
+
     else:
         invalid_files += [{x.name: {"message": "No linked device", "status": 400}}
                           for x in files]
@@ -181,8 +189,6 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
         file_recording_dt = check_dt(
             file_recording_dt, file_deployment.time_zone)
 
-        print(extra_data)
-
         if len(extra_data) > 1:
             file_extra_data = extra_data[i]
         else:
@@ -192,14 +198,16 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
             file_data_type = file_deployment.device_type
         else:
             if len(data_types) > 1:
-                file_data_type = DataType.objects.get(name=data_types[i])
+                file_data_type, created = DataType.objects.get_or_create(
+                    name=data_types[i])
             else:
-                file_data_type = DataType.objects.get(name=data_types[0])
+                file_data_type, created = DataType.objects.get_or_create(
+                    name=data_types[0])
 
         file_local_path = os.path.join(
-            settings.FILE_STORAGE_ROOT, file_data_type.name)
-        file_path = os.path.join(
-            file_deployment.deployment_device_ID, str(upload_dt.date()))
+            settings.FILE_STORAGE_ROOT)
+        file_path = os.path.join(file_data_type.name,
+                                 file_deployment.deployment_device_ID, str(upload_dt.date()))
 
         file_extension = os.path.splitext(filename)[1]
         new_file_name = get_new_name(file_deployment,
@@ -249,11 +257,15 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
 
     final_status = status.HTTP_201_CREATED
     if len(all_new_objects) > 0:
-        # probably shift all this to an async job
         uploaded_files = DataFile.objects.bulk_create(all_new_objects, update_conflicts=True, update_fields=[
             "extra_data"], unique_fields=["file_name"])
-        for deployment in deployment_objects:
+        for deployment in set(deployment_objects):
             deployment.set_last_file()
+
+        if tasks is not None:
+            # For unique tasks, fire off jobs to perform them
+            pass
+
     else:
         final_status = status.HTTP_400_BAD_REQUEST
         if all([[y[x].get('status') == 403 for x in y.keys()][0] for y in invalid_files]):

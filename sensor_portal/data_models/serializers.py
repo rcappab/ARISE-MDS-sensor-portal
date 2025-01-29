@@ -275,6 +275,12 @@ class ProjectSerializer(OwnerMangerMixIn, CreatedModifiedMixIn, serializers.Mode
         super(ProjectSerializer, self).__init__(*args, **kwargs)
 
 
+class DeviceModelSerializer(CreatedModifiedMixIn, OwnerMangerMixIn, serializers.ModelSerializer):
+    class Meta:
+        model = DeviceModel
+        exclude = []
+
+
 class DeviceSerializer(OwnerMangerMixIn, CreatedModifiedMixIn, CheckFormMixIn, serializers.ModelSerializer):
     type = serializers.SlugRelatedField(
         slug_field='name', queryset=DataType.objects.all(), required=False)
@@ -286,7 +292,7 @@ class DeviceSerializer(OwnerMangerMixIn, CreatedModifiedMixIn, CheckFormMixIn, s
                                                   required=False)
 
     username = serializers.CharField(required=False)
-    authentication = serializers.CharField(required=False)
+    password = serializers.CharField(required=False)
     is_active = serializers.BooleanField(
         read_only=True)
 
@@ -301,9 +307,12 @@ class DeviceSerializer(OwnerMangerMixIn, CreatedModifiedMixIn, CheckFormMixIn, s
     def to_representation(self, instance):
         initial_rep = super(DeviceSerializer, self).to_representation(instance)
         fields_to_pop = [
-            "username",
-            "authentication",
+            "username"
         ]
+        fields_to_always_pop = [
+            "password"
+        ]
+        [initial_rep.pop(field, '') for field in fields_to_always_pop]
         if self.context.get('request'):
             user_is_manager = self.context['request'].user.has_perm(
                 self.management_perm, obj=instance)

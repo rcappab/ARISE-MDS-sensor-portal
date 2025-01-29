@@ -8,10 +8,10 @@ import dateutil.parser
 
 class Snyper4GHandler(DataTypeHandler):
     data_types = ["wildlifecamera", "timelapsecamera"]
-    device_models = ["default"]
+    device_models = ["4G Wide Pro"]
     safe_formats = [".jpg", ".jpeg", ".txt"]
     full_name = "Wide 4G handler"
-    description = """Data handler for wide 4G handler"""
+    description = """Data handler for wide 4G wildlifecamera"""
     validity_description = """<ul>
     <li>File format must be in available formats.</li>
     <li>Image naming convention must be in the format []-[Image type (ME, TL, DR)]-[]., e.g '860946060409946-ME-27012025134802-SYPW1128' or '860946060409946-DR-27012025120154-SYPW1120'</li>
@@ -28,29 +28,22 @@ class Snyper4GHandler(DataTypeHandler):
     </ul>"""
 
     def handle_file(self, file, recording_dt: datetime = None, extra_data: dict = None, data_type: str = None) -> Tuple[datetime, dict, str]:
-        recording_dt, extra_data, data_type = super().handle_file(
+        recording_dt, extra_data, data_type, task = super().handle_file(
             file, recording_dt, extra_data, data_type)
 
         split_filename = os.path.splitext(file.name)
         file_extension = split_filename[1]
 
         if file_extension == ".txt":
-            report_dict = {}
-            # Should extract date time from file
-            for line in file:
-                line_split = line.split(":", 1)
-                line_split[1] = line_split[1].replace("\n", "")
 
-                if line_split[0] not in report_dict.keys():
-                    report_dict[line_split[0]] = []
-
-                report_dict[line_split[0]].append(line_split[1])
+            report_dict = self.parse_report_file(file)
 
             dates = [dateutil.parser.parse(x, dayfirst=True)
                      for x in report_dict['Date']]
             recording_dt = min(dates)
-
             extra_data["daily_report"] = True
+
+            data_type = "report"
         else:
             split_image_filename = split_filename[0].split("-")
 
@@ -74,4 +67,18 @@ class Snyper4GHandler(DataTypeHandler):
 
             extra_data.update(new_extra_data)
 
-        return recording_dt, extra_data, data_type
+        return recording_dt, extra_data, data_type, task
+
+    def parse_report_file(self, file):
+        report_dict = {}
+        # Should extract date time from file
+        for line in file.file:
+            line = line.decode("utf-8")
+            line_split = line.split(":", 1)
+            line_split[1] = line_split[1].replace("\n", "")
+
+            if line_split[0] not in report_dict.keys():
+                report_dict[line_split[0]] = []
+
+            report_dict[line_split[0]].append(line_split[1])
+        return report_dict

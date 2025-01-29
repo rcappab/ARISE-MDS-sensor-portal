@@ -250,7 +250,7 @@ class Device(BaseModel):
         else:
             new_end = check_dt(new_end)
 
-        print(deployment_pk)
+        # print(deployment_pk)
         all_deploys = self.deployments.all().exclude(pk=deployment_pk)
         all_deploys = all_deploys.annotate(deployment_end_indefinite=Case(
             When(deployment_end__isnull=True,
@@ -262,7 +262,7 @@ class Device(BaseModel):
             default=F('deployment_end')
         )
         )
-        print(all_deploys.values('deployment_end', 'deployment_end_indefinite'))
+        # print(all_deploys.values('deployment_end', 'deployment_end_indefinite'))
         all_deploys = all_deploys.annotate(in_deployment=ExpressionWrapper(
             Q(Q(deployment_end_indefinite__gte=new_start)
               & Q(deployment_start__lte=new_end)),
@@ -412,7 +412,7 @@ class Deployment(BaseModel):
         for dt in dt_list:
             # if no TZ, localise to the device's timezone
             dt = check_dt(dt, self.time_zone)
-            print(dt)
+            # print(dt)
             result_list.append((dt >= self.deployment_start) and (
                 (self.deployment_end is None) or (dt <= self.deployment_end)))
 
@@ -462,8 +462,8 @@ def post_save_deploy(sender, instance, created, **kwargs):
 
     global_project, added = Project.objects.get_or_create(
         name=settings.GLOBAL_PROJECT_ID)
-    print(global_project)
-    print(instance.project.all())
+    # print(global_project)
+    # print(instance.project.all())
     if global_project not in instance.project.all():
         instance.project.add(global_project)
         print("add global project")

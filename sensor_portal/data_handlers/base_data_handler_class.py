@@ -1,6 +1,5 @@
 import importlib
 import os
-import sys
 from typing import Callable, Tuple
 from datetime import datetime
 
@@ -26,12 +25,12 @@ class DataTypeHandler():
     def get_valid_files(self, files, device_label=None):
         return [x for x in files if self.format_check(x, device_label)]
 
-    def handle_file(self, file, recording_dt: datetime = None, extra_data: dict = None, data_type: str = None) -> Tuple[datetime, dict, str]:
+    def handle_file(self, file, recording_dt: datetime = None, extra_data: dict = None, data_type: str = None) -> Tuple[datetime, dict, str, str]:
 
         if extra_data is None:
             extra_data = {}
 
-        return recording_dt, extra_data, data_type
+        return recording_dt, extra_data, data_type, None
 
 
 class DataTypeHandlerCollection():
@@ -43,17 +42,17 @@ class DataTypeHandlerCollection():
         handler_files = [os.path.splitext(x)[0] for x in os.listdir(
             handler_dir) if os.path.splitext(x)[1] == '.py']
 
-        for handler in handler_files:
-            module = importlib.import_module(
-                f"data_handlers.handlers.{handler}")
-            cls = getattr(module, handler)
-            if DataTypeHandler in cls.__bases__:
-                for data_type in cls.data_types:
+        for handler_file in handler_files:
+            importlib.import_module(
+                f"data_handlers.handlers.{handler_file}")
 
-                    if not self.data_type_handlers.get(data_type):
-                        self.data_type_handlers[data_type] = {}
-                    for model in cls.device_models:
-                        self.data_type_handlers[data_type][model] = cls()
+        all_handlers = DataTypeHandler.__subclasses__()
+        for handler in all_handlers:
+            for data_type in handler.data_types:
+                if not self.data_type_handlers.get(data_type):
+                    self.data_type_handlers[data_type] = {}
+                for model in handler.device_models:
+                    self.data_type_handlers[data_type][model] = handler()
 
     def set_default_model(self, data_type, device_model):
 
@@ -90,6 +89,13 @@ class DataTypeHandlerCollection():
         device_model = self.set_default_model(data_type, device_model)
 
         return self.data_type_handlers[data_type].get(device_model)
+
+    def get_handler(self, data_type, device_model) -> type[DataTypeHandler]:
+        device_model = self.set_default_model(data_type, device_model)
+        if device_model is None:
+            return None
+        print(f"Got data handler {data_type} {device_model}")
+        return self.data_type_handlers[data_type][device_model]
 
     def get_file_handler(self, data_type, device_model) -> Callable:
 

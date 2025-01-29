@@ -25,7 +25,7 @@ class DefaultImageHandler(DataTypeHandler):
     </ul>"""
 
     def handle_file(self, file, recording_dt: datetime = None, extra_data: dict = None, data_type: str = None) -> Tuple[datetime, dict, str]:
-        recording_dt, extra_data, data_type = super().handle_file(
+        recording_dt, extra_data, data_type, task = super().handle_file(
             file, recording_dt, extra_data, data_type)
         image_exif = open_exif(file)
         recording_dt = get_image_recording_dt(image_exif)
@@ -36,4 +36,4 @@ class DefaultImageHandler(DataTypeHandler):
 
         extra_data.update(new_extra_data)
 
-        return recording_dt, extra_data, data_type
+        return recording_dt, extra_data, data_type, task
