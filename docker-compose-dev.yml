@@ -16,9 +16,6 @@ services:
       volumes:      
         - ./file_storage:/file_storage
         - ./sensor_portal/static:/backend_static  
-      volumes:      
-        - ./file_storage:/file_storage
-        - ./sensor_portal/static:/backend_static  
   sensor_portal_frontend:
     build:
       context: .

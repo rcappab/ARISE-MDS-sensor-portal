@@ -162,15 +162,16 @@ const DetailEditForm = ({
 
 		if (!response["ok"]) {
 			formValid = doValidation(response);
-			toast.error("Error in submission", {
-				id: toastId,
-			});
-			if (!formValid) {
-				return;
-			}
-		}
-
-		if (addNew) {
+			toast.error(
+				`Error in submission ${
+					response["detail"] ? ":" + response["detail"] : ""
+				}`,
+				{
+					id: toastId,
+				}
+			);
+			return;
+		} else if (addNew) {
 			toast.success(`${objectType} succesfully added`, {
 				id: toastId,
 			});

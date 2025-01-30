@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import DetailEditForm from "./DetailEditForm.tsx";
 import JSONInput from "../JSONInput.tsx";
 import FormMap from "../FormMap.tsx";
@@ -30,9 +30,13 @@ const DetailEditDeployment = ({
 }: Props) => {
 	// deployment
 
+	console.log("DATA IN DEPLOYMENT DETAIL EDIT");
+	console.log(selectedData);
+
 	const [deploymentID, setDeploymentID] = useState(
 		selectedData ? selectedData["deployment_ID"] : ""
 	);
+	console.log(deploymentID);
 	const [device_type_ID, setDevice_type_ID] = useState(
 		selectedData ? selectedData["device_type_ID"] : null
 	);
@@ -95,6 +99,24 @@ const DetailEditDeployment = ({
 		setLatLong(null);
 		setExtraInfo({});
 	};
+
+	useEffect(() => {
+		setDeploymentID(selectedData ? selectedData["deployment_ID"] : "");
+		setDevice_type_ID(selectedData ? selectedData["device_type_ID"] : null);
+		setDevice_n(selectedData ? selectedData["device_n"] : 1);
+		setProject_ID(selectedData ? selectedData["project_ID"] : []);
+		setSite_ID(selectedData ? selectedData["site_ID"] : null);
+		setDevice_ID(selectedData ? selectedData["device_ID"] : null);
+		setDeployment_start(
+			selectedData ? selectedData["deployment_start"] : new Date().toJSON()
+		);
+		setDeployment_end(selectedData ? selectedData["deployment_end"] : null);
+		setLatLong({
+			lat: selectedData ? selectedData["Latitude"] : null,
+			lng: selectedData ? selectedData["Longitude"] : null,
+		});
+		setExtraInfo(selectedData ? selectedData["extra_data"] : {});
+	}, [selectedData]);
 
 	// useEffect(() => {
 	// 	handleFormChange();

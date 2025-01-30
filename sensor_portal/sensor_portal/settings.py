@@ -46,10 +46,13 @@ if DEVMODE:
     ]
     STATIC_ROOT = os.path.join(BASE_DIR, 'static')
     CORS_ALLOW_ALL_ORIGINS = True
-    CSRF_TRUSTED_ORIGINS = ['http://localhost:8080']
+    CSRF_COOKIE_DOMAIN = '127.0.0.1'
 
-ALLOWED_HOSTS = []
-
+    CSRF_TRUSTED_ORIGINS = ['http://localhost:8080',
+                            'https://localhost:8080']
+    ALLOWED_HOSTS = ['localhost']
+    CORS_ORIGINS_WHITELIST = [
+        'http://localhost:8080', 'https://localhost:8080']
 print("Reading settings!")
 
 # Application definition
@@ -85,11 +88,11 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
