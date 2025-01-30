@@ -1,14 +1,14 @@
+import os
 from datetime import datetime, timedelta, tzinfo
 from random import sample
 
 import factory
 import pytz
+from django.conf import settings
 from django.utils import timezone as djtimezone
 from user_management.factories import UserFactory
-from .general_functions import create_image
-import os
-from django.conf import settings
 
+from .general_functions import create_image
 from .models import DataFile, DataType, Deployment, Device, DeviceModel, Project, Site
 
 
@@ -116,10 +116,10 @@ class DataFileFactory(factory.django.DjangoModelFactory):
                                  tzinfo=djtimezone.utc
                                  )
     local_path = os.path.join(
-        settings.FILE_STORAGE_ROOT, "test")
+        settings.FILE_STORAGE_ROOT)
 
-    path = factory.LazyAttribute(lambda o: os.path.join(
-        o.deployment.deployment_device_ID, str(o.upload_dt.date())))
+    path = factory.LazyAttribute(lambda o: os.path.join("test",
+                                                        o.deployment.deployment_device_ID, str(o.upload_dt.date())))
 
     @factory.post_generation
     def make_image(self, create, extracted, **kwargs):
