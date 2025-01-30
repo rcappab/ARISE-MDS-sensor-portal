@@ -6,9 +6,16 @@ services:
       ports:
           - "8080:80"
       depends_on:
-          - "sensor_portal_frontend"
-          - "sensor_portal_django"
+        sensor_portal_django:
+          condition: service_healthy
+          restart: true
+        sensor_portal_frontend:
+          condition: service_started
+          restart: true
       restart: unless-stopped
+      volumes:      
+        - ./file_storage:/file_storage
+        - ./sensor_portal/static:/backend_static  
   sensor_portal_frontend:
     build:
       context: .
@@ -20,10 +27,6 @@ services:
       - ./frontend/src:/app/frontend/src
       - ./frontend/public:/app/frontend/public
     command: npm start
-    depends_on:
-      sensor_portal_django:
-        condition: service_healthy
-        restart: true
     restart: always
     environment:
       - CHOKIDAR_USEPOLLING=true

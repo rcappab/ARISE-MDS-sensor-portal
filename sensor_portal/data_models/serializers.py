@@ -1,7 +1,7 @@
 from datetime import datetime as dt
 
-from django.core.exceptions import ObjectDoesNotExist
 import magic
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 from django.utils import timezone as djtimezone
 from PIL import ExifTags, Image
@@ -10,7 +10,7 @@ from rest_framework_gis import serializers as geoserializers
 from timezone_field.rest_framework import TimeZoneSerializerField
 from user_management.models import User
 from utils.serializers import SlugRelatedGetOrCreateField
-from django.db.models import Q
+
 from . import validators
 from .models import DataFile, DataType, Deployment, Device, DeviceModel, Project, Site
 
@@ -350,7 +350,7 @@ class DataFileSerializer(CreatedModifiedMixIn, serializers.ModelSerializer):
 
     class Meta:
         model = DataFile
-        exclude = ["do_not_remove"]
+        exclude = ["do_not_remove", "path", "local_path"]
 
     def validate(self, data):
         data = super().validate(data)
