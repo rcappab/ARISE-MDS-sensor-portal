@@ -66,5 +66,5 @@ class DeployAdmin(AddOwnerAdmin):
 class FileAdmin(GenericAdmin):
     list_display = ['file_name', 'file_type', 'deployment',
                     'archived', 'local_storage', 'created_on']
-    search_fields = ['filename']
+    search_fields = ['file_name']
     list_filter = ['archived', 'local_storage', 'file_type']

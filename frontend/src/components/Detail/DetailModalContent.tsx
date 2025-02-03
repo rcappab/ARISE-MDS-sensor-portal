@@ -1,7 +1,6 @@
 import React from "react";
-import DetailDisplayTable from "./DetailDisplayTable.tsx";
 import DetailEdit from "./DetailEdit.tsx";
-import DetailDisplayRelated from "./DetailDisplayRelated.tsx";
+import DetailDisplay from "./DetailDisplay.tsx";
 
 interface Props {
 	objectType: string;
@@ -9,9 +8,6 @@ interface Props {
 	selectedData: object | null;
 	onSubmit?: (e: Event, addNew: boolean, response: object) => void;
 	onCancel?: (e: any) => void;
-	hideKeys?: string[];
-	timeKeys?: string[];
-	jsonKeys?: string[];
 }
 
 const DetailModalContent = ({
@@ -20,15 +16,6 @@ const DetailModalContent = ({
 	selectedData,
 	onSubmit = (e, addNew, response) => {},
 	onCancel = () => {},
-	hideKeys = ["combo_project", "last_imageURL"],
-	timeKeys = [
-		"created_on",
-		"modified_on",
-		"recording_dt",
-		"deployment_start",
-		"deployment_end",
-	],
-	jsonKeys = ["extra_data"],
 }: Props) => {
 	if (selectedData) {
 		if (!selectedData["user_is_manager"]) {
@@ -44,18 +31,10 @@ const DetailModalContent = ({
 			onCancel={onCancel}
 		/>
 	) : (
-		<div>
-			<DetailDisplayRelated
-				objectType={objectType}
-				selectedDataID={(selectedData as object)["id"] as number}
-			/>
-			<DetailDisplayTable
-				selectedData={selectedData}
-				hideKeys={hideKeys}
-				timeKeys={timeKeys}
-				jsonKeys={jsonKeys}
-			/>
-		</div>
+		<DetailDisplay
+			objectType={objectType}
+			selectedData={selectedData}
+		/>
 	);
 };
 

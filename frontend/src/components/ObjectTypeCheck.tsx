@@ -3,6 +3,7 @@ import { Outlet, useParams } from "react-router-dom";
 import {
 	getNameKey,
 	getValidGalleries,
+	getValidParents,
 	getValidObject,
 } from "../utils/objectChecks";
 import Error404page from "../pages/Error404page";
@@ -39,6 +40,7 @@ export const ObjectTypeCheck = () => {
 	}
 
 	const validGalleries = getValidGalleries(objectType);
+	const validParents = getValidParents(objectType);
 
 	const contextData = {
 		fromObject: fromObject,
@@ -46,6 +48,7 @@ export const ObjectTypeCheck = () => {
 		objectType: objectType,
 		nameKey: nameKey,
 		validGalleries: validGalleries,
+		validParents: validParents,
 	};
 
 	console.log(contextData);

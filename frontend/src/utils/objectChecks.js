@@ -14,12 +14,23 @@ const validGalleries = {
 	datafile: [],
 };
 
+const validParents = {
+	deployment: ["device", "project"],
+	device: [],
+	project: [],
+	datafile: ["deployment"],
+};
+
 export const getNameKey = function (objectType) {
 	return nameKeys[objectType];
 };
 
 export const getValidGalleries = function (fromObject) {
 	return validGalleries[fromObject];
+};
+
+export const getValidParents = function (fromObject) {
+	return validParents[fromObject];
 };
 
 export const getValidObject = function (objectType) {

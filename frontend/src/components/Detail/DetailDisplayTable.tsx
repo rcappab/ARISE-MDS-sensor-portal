@@ -1,23 +1,18 @@
 import React from "react";
 import { dtFormat } from "../../utils/timezoneFunctions";
+import { capitalizeFirstLetter } from "../../utils/generalFunctions";
 
 interface Props {
 	selectedData: object | null;
-	hideKeys?: string[];
+	displayKeys?: string[];
 	timeKeys?: string[];
 	jsonKeys?: string[];
 }
 
 const DetailDisplayTable = ({
 	selectedData,
-	hideKeys = ["combo_project", "last_imageURL"],
-	timeKeys = [
-		"created_on",
-		"modified_on",
-		"recording_dt",
-		"deployment_start",
-		"deployment_end",
-	],
+	displayKeys = [],
+	timeKeys = [],
 	jsonKeys = ["extra_data"],
 }: Props) => {
 	const convertDates = function (key, value) {
@@ -34,7 +29,7 @@ const DetailDisplayTable = ({
 	};
 
 	const tableRow = function (key, value) {
-		if (hideKeys.includes(key)) {
+		if (!displayKeys.includes(key) || value === null) {
 			return null;
 		}
 
@@ -50,8 +45,10 @@ const DetailDisplayTable = ({
 							{Object.keys(value).map((e_iKey, i) => {
 								return (
 									<tr key={`${key}_${e_iKey}`}>
-										<th scope="row">{e_iKey}</th>
-										<td>{value[e_iKey]}</td>
+										<th scope="row">
+											{capitalizeFirstLetter(e_iKey.replace(/_/g, " "))}
+										</th>
+										<td>{String(value[e_iKey])}</td>
 									</tr>
 								);
 							})}
@@ -65,7 +62,7 @@ const DetailDisplayTable = ({
 
 		return (
 			<tr key={key}>
-				<th scope="row">{key}</th>
+				<th scope="row">{capitalizeFirstLetter(key.replace(/_/g, " "))}</th>
 				{value_result}
 			</tr>
 		);
@@ -74,7 +71,7 @@ const DetailDisplayTable = ({
 	return selectedData ? (
 		<table className="table detail-table">
 			<tbody>
-				{Object.keys(selectedData).map((key, i) => {
+				{displayKeys.map((key, i) => {
 					return tableRow(key, selectedData[key]);
 				})}
 			</tbody>
