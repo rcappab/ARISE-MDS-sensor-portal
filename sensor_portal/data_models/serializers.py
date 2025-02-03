@@ -348,9 +348,16 @@ class DataFileSerializer(CreatedModifiedMixIn, serializers.ModelSerializer):
     file_type = serializers.StringRelatedField()
     recording_dt = serializers.DateTimeField(default_timezone=djtimezone.utc)
 
+    def to_representation(self, instance):
+        initial_rep = super(DataFileSerializer,
+                            self).to_representation(instance)
+        initial_rep["favourite"] = instance.favourite_of.all().filter(
+            pk=self.context['request'].user.pk).exists()
+        return initial_rep
+
     class Meta:
         model = DataFile
-        exclude = ["do_not_remove", "path", "local_path"]
+        exclude = ["do_not_remove", "path", "local_path", "favourite_of"]
 
     def validate(self, data):
         data = super().validate(data)

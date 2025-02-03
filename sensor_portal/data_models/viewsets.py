@@ -5,6 +5,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 from django.utils import timezone as djtimezone
 from rest_framework import status, viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework_gis import filters as filters_gis
@@ -94,6 +95,19 @@ class DataFileViewSet(OptionalPaginationViewSet):
                      'deployment__deployment_device_ID',
                      'deployment__device__name',
                      'deployment__device__device_ID']
+
+    @action(detail=True, methods=['post'])
+    def favourite_file(self, request, pk=None, permission_classes=['data_models.view_datafile']):
+        data_file = self.get_object()
+        user = request.user
+        if user:
+            if data_file.favourite_of.all().filter(pk=user.pk).exists():
+                data_file.favourite_of.remove(user)
+            else:
+                data_file.favourite_of.add(user)
+            return Response({}, status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_403_FORBIDDEN)
 
     def perform_update(self, serializer):
         self.check_attachment(serializer)
