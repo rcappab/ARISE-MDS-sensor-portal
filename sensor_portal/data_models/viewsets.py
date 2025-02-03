@@ -165,3 +165,4 @@ class DataTypeViewset(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSet):
     serializer_class = DataTypeSerializer
     queryset = DataType.objects.all().distinct()
     search_fields = ['name']
+    filterset_class = DataTypeFilter

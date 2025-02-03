@@ -64,7 +64,12 @@ const GalleryTile = ({
 		>
 			{getImage()}
 			<div className="card-body">
-				<h6 className="card-title">{cardTitle}</h6>
+				<h6
+					className="card-title"
+					style={{ fontSize: "0.75rem" }}
+				>
+					{cardTitle}
+				</h6>
 				<p className="card-text">
 					{cardText}
 					<small className="text-muted"></small>

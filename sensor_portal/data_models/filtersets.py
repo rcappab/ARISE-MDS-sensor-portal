@@ -1,6 +1,6 @@
 import django_filters.rest_framework
 
-from .models import DataFile, Deployment, Device, Project
+from .models import DataFile, Deployment, Device, Project, DataType
 
 
 class GenericFilter(django_filters.FilterSet):
@@ -8,6 +8,10 @@ class GenericFilter(django_filters.FilterSet):
         field_name='created_on', lookup_expr='gt')
     created_before = django_filters.DateFilter(
         field_name='created_on', lookup_expr='lte')
+    modified_after = django_filters.DateFilter(
+        field_name='modified_on', lookup_expr='gt')
+    modified_before = django_filters.DateFilter(
+        field_name='modified_on', lookup_expr='lte')
 
     class Meta:
         fields = {
@@ -26,6 +30,20 @@ class ExtraDataFilterMixIn(django_filters.FilterSet):
         return queryset.filter(**{
             newname: newvalue,
         })
+
+
+class DataTypeFilter(GenericFilter):
+    file_type = django_filters.BooleanFilter(
+        method='is_file_type', label="file_type")
+    device_type = django_filters.BooleanFilter(
+        method='is_file_type', label="device_type")
+
+    def is_file_type(self, queryset, name, value):
+        print(name)
+        if (name == "file_type"):
+            return queryset.filter(files__isnull=not value)
+        else:
+            return queryset.filter(device_models__isnull=not value)
 
 
 class DeploymentFilter(GenericFilter, ExtraDataFilterMixIn):
@@ -70,6 +88,11 @@ class DeviceFilter(GenericFilter, ExtraDataFilterMixIn):
     is_active = django_filters.BooleanFilter(
         field_name="deployments__is_active")
 
+    device_type = django_filters.ModelChoiceFilter(field_name='device__type',
+                                                   queryset=DataType.objects.filter(
+                                                       devices__isnull=False).distinct(),
+                                                   label="device type")
+
     class Meta:
         model = Device
         fields = GenericFilter.Meta.fields.copy()
@@ -88,6 +111,11 @@ class DataFileFilter(GenericFilter, ExtraDataFilterMixIn):
                                                 label='is favourite')
     is_active = django_filters.BooleanFilter(
         field_name="deployment__is_active")
+
+    device_type = django_filters.ModelChoiceFilter(field_name='deployment__device__type',
+                                                   queryset=DataType.objects.filter(
+                                                       devices__isnull=False).distinct(),
+                                                   label="device type")
 
     class Meta:
         model = DataFile

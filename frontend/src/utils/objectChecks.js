@@ -4,7 +4,7 @@ const nameKeys = {
 	deployment: "deployment_device_ID",
 	device: "device_ID",
 	project: "project_ID",
-	datafile: "filename",
+	datafile: "file_name",
 };
 
 const validGalleries = {

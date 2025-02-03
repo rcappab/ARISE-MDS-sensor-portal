@@ -46,6 +46,7 @@ function GalleryForm({
 	const [isActive, setIsActive] = useState(searchParams.get("is_active"));
 	const [site, setSite] = useState(searchParams.get("site"));
 	const [deviceType, setDeviceType] = useState(searchParams.get("device_type"));
+	const [fileType, setFileType] = useState(searchParams.get("file_type"));
 
 	useEffect(() => {
 		if (searchParams.size === 0) {
@@ -162,10 +163,33 @@ function GalleryForm({
 						label="Device type"
 						choices={[]}
 						value={deviceType}
-						apiURL="datatype/"
+						apiURL="datatype/?device_type=true"
 						valueKey="id"
 						labelKey="name"
 						handleChange={setDeviceType}
+					/>
+				</div>
+			</div>
+		);
+	};
+
+	const dataFileTypeField = function () {
+		if (objectType !== "datafile") return;
+
+		return (
+			<div className="col-lg-2">
+				<div className="form-floating">
+					<FormSelectAPI
+						key="select-filetype"
+						id="select-fileType"
+						name="file_type"
+						label="File type"
+						choices={[]}
+						value={fileType}
+						apiURL="datatype/?file_type=true"
+						valueKey="id"
+						labelKey="name"
+						handleChange={setFileType}
 					/>
 				</div>
 			</div>
@@ -214,6 +238,7 @@ function GalleryForm({
 					{activeField()}
 					{siteField()}
 					{deviceTypeField()}
+					{dataFileTypeField()}
 					{dateField(
 						"start_date",
 						"deployment_start__gte",

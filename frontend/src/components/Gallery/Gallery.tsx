@@ -15,7 +15,7 @@ import DetailModal from "../Detail/DetailModal.tsx";
 
 const Gallery = () => {
 	const { fromID, fromObject, objectType, nameKey } = useOutletContext();
-	const defaultPageSize = 30;
+	const defaultPageSize = 28;
 	const [searchParams, setSearchParams] = useSearchParams();
 	const [formKeys, setFormKeys] = useState<String[]>([]);
 	const [pageNum, setPageNum] = useState(Number(searchParams.get("page")) || 1);
@@ -34,14 +34,12 @@ const Gallery = () => {
 		additionalOrdering = [
 			{ value: "deploymentStart", label: "Deployment start time" },
 		];
-		thumbKey = "last_imageURL";
 	} else if (objectType === "datafile") {
 		defaultOrdering = "recording_dt";
 		additionalOrdering = [
 			{ value: "recording_dt", label: "Recording datetime ascending" },
 			{ value: "-recording_dt", label: "Recording datetime descending" },
 		];
-		thumbKey = "file_url";
 	} else {
 		additionalOrdering = [];
 	}
@@ -230,10 +228,9 @@ const Gallery = () => {
 					className={`${isPlaceholderData ? "opacity-50" : ""} container`}
 				>
 					<GalleryDisplay
+						objectType={objectType}
 						data={data.results}
 						onTileClick={openDetail}
-						nameKey={nameKey}
-						thumbKey={thumbKey}
 					/>
 				</div>
 			</div>
