@@ -13,7 +13,7 @@ const DetailDisplayFile = ({ fileName, fileURL, fileFormat }: Props) => {
 	return (
 		<div>
 			<a
-				href={"/" + fileURL}
+				href={fileURL}
 				target="_blank'"
 			>
 				{isImage ? (

@@ -11,12 +11,14 @@ from rest_framework.response import Response
 from rest_framework_gis import filters as filters_gis
 from utils.viewsets import OptionalPaginationViewSet
 from django.db.models import Q
+from .permissions import perms
 
 
 from .filtersets import *
 from .models import DataFile, DataType, Deployment, Device, Project, Site
 from .serializers import *
 from .file_handling_functions import create_file_objects
+from .plotting_functions import get_all_file_metric_dicts
 
 
 class AddOwnerViewSet(viewsets.ModelViewSet):
@@ -50,9 +52,16 @@ class DeploymentViewSet(AddOwnerViewSet, CheckFormViewSet, OptionalPaginationVie
         else:
             return DeploymentSerializer
 
-    def perform_create(self, serializer):
-        self.check_attachment(serializer)
-        super(DeploymentViewSet, self).perform_create(serializer)
+    @action(detail=True, methods=['get'])
+    def metrics(self, request, pk=None):
+        deployment = self.get_object()
+        user = request.user
+        data_files = perms['data_models.view_datafile'].filter(
+            user, deployment.files.all())
+        if not data_files.exists():
+            return Response({}, status=status.HTTP_200_OK)
+        file_metric_dicts = get_all_file_metric_dicts(data_files)
+        return Response(file_metric_dicts, status=status.HTTP_200_OK)
 
     def perform_update(self, serializer):
         self.check_attachment(serializer)
@@ -79,12 +88,34 @@ class ProjectViewSet(AddOwnerViewSet, OptionalPaginationViewSet):
     filterset_class = ProjectFilter
     search_fields = ['project_ID', 'name', 'organization']
 
+    @action(detail=True, methods=['get'])
+    def metrics(self, request, pk=None):
+        project = self.get_object()
+        user = request.user
+        data_files = perms['data_models.view_datafile'].filter(
+            user, DataFile.objects.filter(deployment__project=project))
+        if not data_files.exists():
+            return Response({}, status=status.HTTP_200_OK)
+        file_metric_dicts = get_all_file_metric_dicts(data_files)
+        return Response(file_metric_dicts, status=status.HTTP_200_OK)
+
 
 class DeviceViewSet(AddOwnerViewSet, OptionalPaginationViewSet):
     serializer_class = DeviceSerializer
     queryset = Device.objects.all().distinct()
     filterset_class = DeviceFilter
     search_fields = ['device_ID', 'name', 'model__name']
+
+    @action(detail=True, methods=['get'])
+    def metrics(self, request, pk=None):
+        device = self.get_object()
+        user = request.user
+        data_files = perms['data_models.view_datafile'].filter(
+            user, DataFile.objects.filter(deployment__device=device))
+        if not data_files.exists():
+            return Response({}, status=status.HTTP_200_OK)
+        file_metric_dicts = get_all_file_metric_dicts(data_files)
+        return Response(file_metric_dicts, status=status.HTTP_200_OK)
 
 
 class DataFileViewSet(OptionalPaginationViewSet):
@@ -96,8 +127,8 @@ class DataFileViewSet(OptionalPaginationViewSet):
                      'deployment__device__name',
                      'deployment__device__device_ID']
 
-    @action(detail=True, methods=['post'])
-    def favourite_file(self, request, pk=None, permission_classes=['data_models.view_datafile']):
+    @action(detail=True, methods=['post'], permission_classes=['data_models.view_datafile'])
+    def favourite_file(self, request, pk=None):
         data_file = self.get_object()
         user = request.user
         if user:

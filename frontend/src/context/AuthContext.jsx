@@ -25,7 +25,7 @@ export const AuthProvider = () => {
 	const loginUserFunction = async (username, password) => {
 		console.log("bar");
 		const response = await fetch(
-			`${process.env.REACT_APP_API_BASE_URL}/token/`,
+			`/${process.env.REACT_APP_API_BASE_URL}/token/`,
 			{
 				method: "POST",
 				headers: {
@@ -62,7 +62,7 @@ export const AuthProvider = () => {
 
 	const updateToken = async () => {
 		const response = await fetch(
-			`${process.env.REACT_APP_API_BASE_URL}/token/refresh/`,
+			`/${process.env.REACT_APP_API_BASE_URL}/token/refresh/`,
 			{
 				method: "POST",
 				headers: {
