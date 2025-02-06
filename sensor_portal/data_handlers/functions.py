@@ -1,5 +1,6 @@
 from datetime import datetime as dt
 from PIL import ExifTags, Image, TiffImagePlugin
+import os
 
 
 def open_exif(uploaded_file):
@@ -34,3 +35,19 @@ def get_image_recording_dt(image_exif):
     if recording_dt is None:
         return None
     return dt.strptime(recording_dt, '%Y:%m:%d %H:%M:%S')
+
+
+def generate_thumbnail(data_file, max_width=100, max_height=100):
+    file_path = data_file.full_path()
+    thumb_path = os.path.join(os.path.split(
+        file_path)[0], data_file.file_name+"_THUMB.jpg")
+
+    # open image file
+    image = Image.open(file_path)
+    image.thumbnail((max_width, max_height))
+
+    # creating thumbnail
+    image.save(thumb_path)
+    data_file.set_thumb_url()
+
+    return data_file, ["thumb_url"]

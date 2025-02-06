@@ -1,7 +1,8 @@
 import importlib
 import os
-from typing import Callable, Tuple
+from typing import Any, Callable, Tuple
 from datetime import datetime
+from typing import List, Callable
 
 
 class DataTypeHandler():
@@ -25,7 +26,11 @@ class DataTypeHandler():
     def get_valid_files(self, files, device_label=None):
         return [x for x in files if self.format_check(x, device_label)]
 
-    def handle_file(self, file, recording_dt: datetime = None, extra_data: dict = None, data_type: str = None) -> Tuple[datetime, dict, str, str]:
+    def handle_file(self,
+                    file,
+                    recording_dt: datetime = None,
+                    extra_data: dict = None,
+                    data_type: str = None) -> Tuple[datetime, dict, str, str]:
 
         if extra_data is None:
             extra_data = {}
@@ -34,6 +39,7 @@ class DataTypeHandler():
 
 
 class DataTypeHandlerCollection():
+
     data_type_handlers = {}
 
     def __init__(self, root_path="") -> None:
@@ -105,3 +111,47 @@ class DataTypeHandlerCollection():
             return None
         print(f"Got data handler {data_type} {device_model}")
         return self.data_type_handlers[data_type][device_model].handle_file
+
+
+def post_upload_task_handler(file_pks: List[int],
+                             task_function: Callable[[Any], Tuple[Any | None, List[str] | None]]) -> None:
+    # Due to the way the data_handler imports work, cannot import the data model to type this more strongly
+    """
+Wrapper function to handle applying post upload functions on files. Will lock any files being operated on, return them to their initial lock state when done.
+
+Args:
+    file_pks (List[int]): list of DataFile primary keys. These will be the files on which task_function is called.
+    task_function (Callable[[DataFile], Tuple[DataFile  |  None, List[str]  |  None]]): Function to carry out on each DataFile.
+
+    task_function Should take the DataFile as arguments and return a modified DataFile and a list of the names of the modified fields.
+    """
+    from data_models.models import DataFile
+    # get datafiles
+    data_file_objs = DataFile.objects.filter(
+        pk__in=file_pks).order_by("created_on")
+    # save initial do_not_delete state of files
+
+    do_not_remove_initial = data_file_objs.values_list(
+        "do_not_remove", flat=True)
+
+    # lock datafiles
+    data_file_objs.update(do_not_remove=True)
+
+    updated_data_objs = []
+
+    # loop through datafiles
+    for i, data_file in enumerate(data_file_objs):
+
+        file_do_not_remove = do_not_remove_initial[i]
+
+        updated_data_file, modified_fields = task_function(
+            data_file, file_do_not_remove)
+        if updated_data_file is not None:
+            updated_data_file.do_not_remove = file_do_not_remove
+            updated_data_objs.append(updated_data_file)
+
+    if "do_not_remove" not in modified_fields:
+        modified_fields.append("do_not_remove")
+
+    # update objects
+    DataFile.objects.bulk_update(updated_data_objs, modified_fields)

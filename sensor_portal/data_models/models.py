@@ -510,8 +510,9 @@ class DataFile(BaseModel):
     local_path = models.CharField(max_length=500, blank=True)
 
     extra_data = models.JSONField(default=dict, blank=True)
-    extra_versions = models.JSONField(default=dict, blank=True)
-    thumb_path = models.JSONField(default=None, blank=True, null=True)
+    linked_files = models.JSONField(default=dict, blank=True)
+
+    thumb_url = models.CharField(max_length=500, null=True, blank=True)
 
     local_storage = models.BooleanField(default=True)
     archived = models.BooleanField(default=False)
@@ -541,21 +542,27 @@ class DataFile(BaseModel):
     def full_path(self):
         return os.path.join(self.local_path, self.path, f"{self.file_name}{self.file_format}")
 
+    def thumb_path(self):
+        return os.path.join(
+            self.local_path, self.path, self.file_name+"_THUMB.jpg")
+
     def set_file_url(self):
         if self.local_storage:
-
+            # is some of this normpath and replace stuff really needed?
             self.file_url = os.path.normpath(
                 os.path.join(settings.FILE_STORAGE_URL,
                              self.path,
                              (self.file_name + self.file_format))
             ).replace("\\", "/")
-            # if not self.thumbpath:
-            # last_images = self.DeployLastIm.all()
-            # if lastim.exists() and self.deployment:
-            #    self.deployment.GetLastImageURL()
-            #    self.deployment.save()
         else:
             self.file_url = None
+
+    def set_thumb_url(self, has_thumb=True):
+        if has_thumb:
+            self.thumb_path = os.path.normpath(os.path.join(settings.FILE_STORAGE_URL,
+                                                            self.path, self.file_name+"_THUMB.jpg"))
+        else:
+            self.thumb_path = None
 
     def clean_file(self, delete_obj=False):
         print(f"clean {delete_obj}")
@@ -570,7 +577,7 @@ class DataFile(BaseModel):
                 pass
 
         try:
-            thumb_path = self.thumb_path["filepath"]
+            thumb_path = self.thumb_path()
             os.remove(thumb_path)
             os.removedirs(os.path.split(thumb_path)[0])
         except TypeError:
@@ -578,7 +585,7 @@ class DataFile(BaseModel):
         except OSError:
             pass
 
-        for v in self.extra_versions.values():
+        for v in self.linked_files.values():
             try:
                 extra_version_path = v["filepath"]
                 os.remove(extra_version_path)
@@ -591,8 +598,8 @@ class DataFile(BaseModel):
         if not delete_obj:
             self.local_storage = False
             self.local_path = ""
-            self.extra_versions = {}
-            self.thumb_path = None
+            self.linked_files = {}
+            self.set_thumb_url(False)
             self.save()
 
     def save(self, *args, **kwargs):
@@ -609,7 +616,7 @@ class DataFile(BaseModel):
         super(DataFile, self).clean()
 
 
-@receiver(post_save, sender=DataFile)
+@ receiver(post_save, sender=DataFile)
 def post_save_file(sender, instance, created, **kwargs):
     # if created:
     # print("Refresh file cache")
@@ -621,12 +628,12 @@ def post_save_file(sender, instance, created, **kwargs):
     #    instance.deployment.SetLastImage(instance)
 
 
-@receiver(pre_delete, sender=DataFile)
+@ receiver(pre_delete, sender=DataFile)
 def pre_remove_file(sender, instance, **kwargs):
     # deletes the attached file form data storage
     instance.clean_file(True)
 
 
-@receiver(post_delete, sender=DataFile)
+@ receiver(post_delete, sender=DataFile)
 def post_remove_file(sender, instance, **kwargs):
     instance.deployment.set_last_file()

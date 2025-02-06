@@ -10,6 +10,8 @@ from rest_framework import status
 from .general_functions import check_dt
 from data_handlers.base_data_handler_class import DataTypeHandlerCollection
 
+from django.conf import settings
+
 
 def create_file_objects(files, check_filename=False, recording_dt=None, extra_data=None, deployment_object=None,
                         device_object=None, request_user=None):
@@ -56,7 +58,7 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
 
     if device_object:
         device_model_object = device_object.model
-        data_handlers = DataTypeHandlerCollection()
+        data_handlers = settings.DATA_HANDLERS
 
         data_handler = data_handlers.get_handler(
             device_model_object.type.name, device_model_object.name)

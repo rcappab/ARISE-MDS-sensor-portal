@@ -1,9 +1,11 @@
 from data_handlers.handlers.default_image_handler import DataTypeHandler
 from datetime import datetime
-from typing import Tuple
+from typing import Any, List, Tuple
 from data_handlers.functions import open_exif, check_exif_keys, get_image_recording_dt
 import os
 import dateutil.parser
+from celery import shared_task
+import pandas as pd
 
 
 class Snyper4GHandler(DataTypeHandler):
@@ -36,7 +38,7 @@ class Snyper4GHandler(DataTypeHandler):
 
         if file_extension == ".txt":
 
-            report_dict = self.parse_report_file(file)
+            report_dict = parse_report_file(file)
 
             dates = [dateutil.parser.parse(x, dayfirst=True)
                      for x in report_dict['Date']]
@@ -69,7 +71,7 @@ class Snyper4GHandler(DataTypeHandler):
 
         return recording_dt, extra_data, data_type, task
 
-    def parse_report_file(self, file):
+    def parse_report_file(file):
         report_dict = {}
         # Should extract date time from file
         for line in file.file:
@@ -82,3 +84,49 @@ class Snyper4GHandler(DataTypeHandler):
 
             report_dict[line_split[0]].append(line_split[1])
         return report_dict
+
+
+@shared_task(name="snyper4G_convert_daily_report")
+def convert_daily_report_task(file_pks: List[int]):
+    from base_data_handler_class import post_upload_task_handler
+    post_upload_task_handler(file_pks, Snyper4GHandler.convert_daily_report)
+
+
+def convert_daily_report(data_file) -> Tuple[Any | None, List[str] | None]:
+    # specific handler task
+    try:
+        data_file_path = data_file.full_path()
+        # open txt file
+        with open(data_file_path, "r") as txt_file:
+            report_dict = Snyper4GHandler.parse_report_file(txt_file)
+
+            report_dict['Date'] = [dateutil.parser.parse(x, dayfirst=True)
+                                   for x in report_dict['Date']]
+            # convert to CSV file
+            report_df = pd.DataFrame.from_dict(report_dict)
+
+            # write CSV, delete txt
+            data_file_path_split = os.path.split(data_file_path)
+            data_file_name = os.path.splitext(data_file_path_split[1])
+
+            data_file_csv_path = os.path.join(
+                data_file_path_split[1], data_file_name+".csv")
+
+            report_df.to_csv(data_file_csv_path, index_label=False)
+
+            # update file object
+            data_file.file_size = os.stat(data_file_csv_path)
+            data_file.modified_on = datetime.now()
+            data_file.file_format = ".csv"
+
+            # remove original file
+            os.remove(data_file_path)
+
+            return data_file, [
+                "file_size", "modified_on", "file_format"]
+
+            # end specific handler task
+    except Exception as e:
+        # One file failing shouldn't lead to the whole job failing
+        print(repr(e))
+        return None, None
