@@ -1,6 +1,8 @@
 import paramiko
 from posixpath import join, split, splitext
 
+import paramiko.ssh_exception
+
 
 class SSH_client():
     def __init__(self,
@@ -54,7 +56,8 @@ class SSH_client():
             username=self.username,
             password=self.password)
 
-    def send_ssh_command(self, command, sudo=False, max_tries=100):
+    def send_ssh_command(self, command, sudo=False, max_tries=100, debug=False):
+
         success = False
         currtries = 0
         while (not success) and (currtries < max_tries):
@@ -63,12 +66,17 @@ class SSH_client():
                     command = "sudo -S -p '' " + command
                 stdin, stdout, stderr = self.ssh_c.exec_command(command)
                 if sudo:
-                    stdin.write(self.pword + "\n")
+                    stdin.write(self.password + "\n")
                     stdin.flush()
                 success = True
             except:
                 currtries += 1
                 self.connect_to_ssh()
+            if debug:
+                print(command, "SUDO", sudo, "SUCCESS", success)
+
+        if not success:
+            raise paramiko.ssh_exception
 
         return stdin, stdout, stderr
 

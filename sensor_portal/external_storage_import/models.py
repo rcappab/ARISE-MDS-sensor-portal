@@ -26,11 +26,17 @@ class DataStorageInput(BaseModel):
     def init_ssh_client(self):
         return SSH_client(self.username, self.password, self.address, 22)
 
+    def check_users_input(self):
+        self.setup_users()
+        self.check_input()
+
     def setup_users(self):
         connection_success, ssh_client = self.check_connection()
         if not connection_success:
             print(f"{self.name} - unable to connect")
             return
+
+        ssh_client.connect_to_ssh()
 
         # Get list of all current users
         stdin, stdout, stderr = ssh_client.send_ssh_command(
