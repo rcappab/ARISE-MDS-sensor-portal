@@ -27,6 +27,9 @@ class DefaultImageHandler(DataTypeHandler):
     def handle_file(self, file, recording_dt: datetime = None, extra_data: dict = None, data_type: str = None) -> Tuple[datetime, dict, str]:
         recording_dt, extra_data, data_type, task = super().handle_file(
             file, recording_dt, extra_data, data_type)
+
+        task = "data_handler_generate_thumbnails"
+
         image_exif = open_exif(file)
         recording_dt = get_image_recording_dt(image_exif)
 

@@ -49,5 +49,6 @@ def generate_thumbnail(data_file, max_width=100, max_height=100):
     # creating thumbnail
     image.save(thumb_path)
     data_file.set_thumb_url()
+    print(data_file.thumb_url)
 
     return data_file, ["thumb_url"]

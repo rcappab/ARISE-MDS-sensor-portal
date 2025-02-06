@@ -46,6 +46,7 @@ class Snyper4GHandler(DataTypeHandler):
             extra_data["daily_report"] = True
 
             data_type = "report"
+            task = "snyper4G_convert_daily_report"
         else:
             split_image_filename = split_filename[0].split("-")
 
@@ -68,27 +69,29 @@ class Snyper4GHandler(DataTypeHandler):
                 "YResolution", "XResolution", "Software"])
 
             extra_data.update(new_extra_data)
+            task = "data_handler_generate_thumbnails"
 
         return recording_dt, extra_data, data_type, task
 
-    def parse_report_file(file):
-        report_dict = {}
-        # Should extract date time from file
-        for line in file.file:
-            line = line.decode("utf-8")
-            line_split = line.split(":", 1)
-            line_split[1] = line_split[1].replace("\n", "")
 
-            if line_split[0] not in report_dict.keys():
-                report_dict[line_split[0]] = []
+def parse_report_file(file):
+    report_dict = {}
+    # Should extract date time from file
+    for line in file.file:
+        line = line.decode("utf-8")
+        line_split = line.split(":", 1)
+        line_split[1] = line_split[1].replace("\n", "")
 
-            report_dict[line_split[0]].append(line_split[1])
-        return report_dict
+        if line_split[0] not in report_dict.keys():
+            report_dict[line_split[0]] = []
+
+        report_dict[line_split[0]].append(line_split[1])
+    return report_dict
 
 
 @shared_task(name="snyper4G_convert_daily_report")
 def convert_daily_report_task(file_pks: List[int]):
-    from base_data_handler_class import post_upload_task_handler
+    from data_handlers.post_upload_task_handler import post_upload_task_handler
     post_upload_task_handler(file_pks, Snyper4GHandler.convert_daily_report)
 
 

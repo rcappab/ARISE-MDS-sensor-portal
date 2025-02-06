@@ -97,7 +97,7 @@ def device_check_type(device_type, device_model):
     if device_type is None or device_model.type == device_type:
         return True, ""
     error_message = {
-        'device': f"{device_model.name} is not a {device_type.name} device"}
+        'model': f"{device_model.name} is not a {device_type.name} device"}
     return False, error_message
 
 

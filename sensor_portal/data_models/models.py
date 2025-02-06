@@ -559,10 +559,10 @@ class DataFile(BaseModel):
 
     def set_thumb_url(self, has_thumb=True):
         if has_thumb:
-            self.thumb_path = os.path.normpath(os.path.join(settings.FILE_STORAGE_URL,
-                                                            self.path, self.file_name+"_THUMB.jpg"))
+            self.thumb_url = os.path.normpath(os.path.join(settings.FILE_STORAGE_URL,
+                                                           self.path, self.file_name+"_THUMB.jpg"))
         else:
-            self.thumb_path = None
+            self.thumb_url = None
 
     def clean_file(self, delete_obj=False):
         print(f"clean {delete_obj}")

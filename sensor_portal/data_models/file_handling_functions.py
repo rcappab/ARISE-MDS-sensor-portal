@@ -11,6 +11,8 @@ from .general_functions import check_dt
 from data_handlers.base_data_handler_class import DataTypeHandlerCollection
 
 from django.conf import settings
+from celery import chord
+from sensor_portal.celery import app
 
 
 def create_file_objects(files, check_filename=False, recording_dt=None, extra_data=None, deployment_object=None,
@@ -266,7 +268,15 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
 
         if tasks is not None:
             # For unique tasks, fire off jobs to perform them
-            pass
+            unique_tasks = list(set(tasks))
+            for task_name in unique_tasks:
+                # get filenames for this task
+                task_file_names = [x.file_name for x,
+                                   y in zip(uploaded_files, tasks) if y == task_name]
+
+                new_task = app.signature(
+                    task_name, [task_file_names], immutable=True)
+                new_task.apply_async()
 
     else:
         final_status = status.HTTP_400_BAD_REQUEST
