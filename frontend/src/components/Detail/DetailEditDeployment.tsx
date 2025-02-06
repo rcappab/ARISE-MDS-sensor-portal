@@ -65,10 +65,10 @@ const DetailEditDeployment = ({
 	);
 
 	const [latitude, setLatitude] = useState(
-		selectedData ? selectedData["Latitude"] : null
+		selectedData ? selectedData["latitude"] : null
 	);
 	const [longitude, setLongitude] = useState(
-		selectedData ? selectedData["Longitude"] : null
+		selectedData ? selectedData["longitude"] : null
 	);
 
 	const [extraInfo, setExtraInfo] = useState(
@@ -112,8 +112,8 @@ const DetailEditDeployment = ({
 		);
 		setDeployment_end(selectedData ? selectedData["deployment_end"] : null);
 		setLatLong({
-			lat: selectedData ? selectedData["Latitude"] : null,
-			lng: selectedData ? selectedData["Longitude"] : null,
+			lat: selectedData ? selectedData["latitude"] : null,
+			lng: selectedData ? selectedData["longitude"] : null,
 		});
 		setExtraInfo(selectedData ? selectedData["extra_data"] : {});
 	}, [selectedData]);
