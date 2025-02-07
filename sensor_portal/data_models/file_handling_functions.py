@@ -263,8 +263,6 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
     if len(all_new_objects) > 0:
         uploaded_files = DataFile.objects.bulk_create(all_new_objects, update_conflicts=True, update_fields=[
             "extra_data"], unique_fields=["file_name"])
-        for deployment in set(deployment_objects):
-            deployment.set_last_file()
 
         if tasks is not None:
             # For unique tasks, fire off jobs to perform them

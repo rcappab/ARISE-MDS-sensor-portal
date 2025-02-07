@@ -6,6 +6,8 @@ import os
 import dateutil.parser
 from celery import shared_task
 import pandas as pd
+import io
+from django.core.files import File
 
 
 class Snyper4GHandler(DataTypeHandler):
@@ -81,6 +83,7 @@ def parse_report_file(file):
         line = line.decode("utf-8")
         line_split = line.split(":", 1)
         line_split[1] = line_split[1].replace("\n", "")
+        line_split[1] = line_split[1].replace("\r", "")
 
         if line_split[0] not in report_dict.keys():
             report_dict[line_split[0]] = []
@@ -92,44 +95,64 @@ def parse_report_file(file):
 @shared_task(name="snyper4G_convert_daily_report")
 def convert_daily_report_task(file_pks: List[int]):
     from data_handlers.post_upload_task_handler import post_upload_task_handler
-    post_upload_task_handler(file_pks, Snyper4GHandler.convert_daily_report)
+    post_upload_task_handler(file_pks, convert_daily_report)
 
 
 def convert_daily_report(data_file) -> Tuple[Any | None, List[str] | None]:
     # specific handler task
-    try:
-        data_file_path = data_file.full_path()
-        # open txt file
-        with open(data_file_path, "r") as txt_file:
-            report_dict = Snyper4GHandler.parse_report_file(txt_file)
+    data_file_path = data_file.full_path()
+    # open txt file
+    with File(open(data_file_path, mode='rb'), os.path.split(data_file_path)[1]) as txt_file:
+        report_dict = parse_report_file(txt_file)
 
-            report_dict['Date'] = [dateutil.parser.parse(x, dayfirst=True)
-                                   for x in report_dict['Date']]
-            # convert to CSV file
-            report_df = pd.DataFrame.from_dict(report_dict)
+        report_dict['Date'] = [dateutil.parser.parse(x, dayfirst=True)
+                               for x in report_dict['Date']]
 
-            # write CSV, delete txt
-            data_file_path_split = os.path.split(data_file_path)
-            data_file_name = os.path.splitext(data_file_path_split[1])
+        report_dict = {k.lower(): v for k, v in report_dict.items()}
 
-            data_file_csv_path = os.path.join(
-                data_file_path_split[1], data_file_name+".csv")
+        # convert to CSV file
+        report_df = pd.DataFrame.from_dict(report_dict)
 
-            report_df.to_csv(data_file_csv_path, index_label=False)
+        # specific handling of columns
+        if 'battery' in report_df.columns:
+            # remove string from number
+            report_df['battery'] = report_df['battery'].apply(
+                lambda x: x.replace("%", ""))
 
-            # update file object
-            data_file.file_size = os.stat(data_file_csv_path)
-            data_file.modified_on = datetime.now()
-            data_file.file_format = ".csv"
+        if 'temp' in report_df.columns:
+            # remove string from number
+            report_df['temp'] = report_df['temp'].apply(
+                lambda x: x.replace(" Celsius Degree", ""))
 
-            # remove original file
-            os.remove(data_file_path)
+        if 'sd' in report_df.columns:
+            # split by /, remove the M, convert to number, divide.
+            report_df['sd'] = report_df['sd'].apply(lambda x: divmod(*[int(y.replace("M", ""))
+                                                                       for y in x.split("/")]))
 
-            return data_file, [
-                "file_size", "modified_on", "file_format"]
+        # rename columns more informatively or to skip in plotting
+        report_df = report_df.rename(columns={"imei": "imei__",
+                                              "csq": "csq__",
+                                              "temp": "temp__temperature_degrees_celsius",
+                                              "battery": "battery__battery_%",
+                                              "sd": "sd__proportion_sd"})
 
-            # end specific handler task
-    except Exception as e:
-        # One file failing shouldn't lead to the whole job failing
-        print(repr(e))
-        return None, None
+        # write CSV, delete txt
+        data_file_path_split = os.path.split(data_file_path)
+        data_file_name = os.path.splitext(data_file_path_split[1])[0]
+
+        data_file_csv_path = os.path.join(
+            data_file_path_split[0], data_file_name+".csv")
+
+        report_df.to_csv(data_file_csv_path, index_label=False, index=False)
+        # update file object
+        data_file.file_size = os.stat(data_file_csv_path).st_size
+        data_file.modified_on = datetime.now()
+        data_file.file_format = ".csv"
+
+        # remove original file
+        os.remove(data_file_path)
+
+        return data_file, [
+            "file_size", "modified_on", "file_format"]
+
+        # end specific handler task

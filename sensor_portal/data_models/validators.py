@@ -78,7 +78,7 @@ def deployment_check_type(device_type, device):
     if device_type is None or device.type == device_type:
         return True, ""
     error_message = {
-        'device': f"{device.deviceID} is not a {device_type.name} device"}
+        'device': f"{device.device_ID} is not a {device_type.name} device"}
     return False, error_message
 
 
