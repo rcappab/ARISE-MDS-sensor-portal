@@ -126,7 +126,10 @@ def convert_daily_report(data_file) -> Tuple[Any | None, List[str] | None]:
 
         if 'sd' in report_df.columns:
             # split by /, remove the M, convert to number, divide.
-            report_df['sd'] = report_df['sd'].apply(lambda x: divmod(*[int(y.replace("M", ""))
+            def divide(num_1, num_2):
+                return num_1/num_2
+
+            report_df['sd'] = report_df['sd'].apply(lambda x: divide(*[int(y.replace("M", ""))
                                                                        for y in x.split("/")]))
 
         # rename columns more informatively or to skip in plotting
