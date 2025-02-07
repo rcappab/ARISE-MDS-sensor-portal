@@ -8,25 +8,32 @@ interface Props {
 
 const MetricPlot = ({ data }: Props) => {
 	console.log(data);
+
+	let plot_data = [] as object[];
+	if (data["plot_type"].includes("scatter")) {
+		plot_data.push({
+			x: data["x_values"],
+			y: data["y_values"],
+			type: "scatter",
+			mode: "lines+markers",
+			marker: { color: "red" },
+			name: "",
+		});
+	}
+
+	if (data["plot_type"].includes("bar")) {
+		plot_data.push({
+			type: "bar",
+			x: data["x_values"],
+			y: data["y_values"],
+			marker: { color: "steelblue" },
+			name: "",
+		});
+	}
+
 	return (
 		<Plot
-			data={[
-				{
-					x: data["x_values"],
-					y: data["y_values"],
-					type: "scatter",
-					mode: "lines+markers",
-					marker: { color: "red" },
-					name: "",
-				},
-				{
-					type: "bar",
-					x: data["x_values"],
-					y: data["y_values"],
-					marker: { color: "steelblue" },
-					name: "",
-				},
-			]}
+			data={plot_data}
 			layout={{
 				showlegend: false,
 				title: {
