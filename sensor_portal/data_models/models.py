@@ -336,9 +336,8 @@ class Deployment(BaseModel):
         max_length=100, blank=True, null=True, editable=False)
     last_image = models.ForeignKey("DataFile", blank=True, on_delete=models.SET_NULL, null=True, editable=False,
                                    related_name="deployment_last_image")
-    last_file = models.ForeignKey("DataFile", blank=True, on_delete=models.SET_NULL, null=True, editable=False,
-                                  related_name="deployment_last_file")
-    last_imageURL = models.CharField(
+
+    thumb_url = models.CharField(
         max_length=500, null=True, blank=True, editable=False)
 
     def get_absolute_url(self):
@@ -348,10 +347,11 @@ class Deployment(BaseModel):
         return self.deployment_device_ID
 
     def clean(self):
-        result, message = validators.deployment_check_type(
-            self.device_type, self.device)
-        if not result:
-            raise ValidationError(message)
+        # result, message = validators.deployment_check_type(
+        #     self.device_type, self.device)
+        # if not result:
+        #     raise ValidationError(message)
+
         result, message = validators.deployment_start_time_after_end_time(
             self.deployment_start, self.deployment_end)
         if not result:
@@ -418,30 +418,16 @@ class Deployment(BaseModel):
 
         return result_list
 
-    def set_last_file(self, newfile=None):
-        try:
-            if self.files.exists():
-                file_object = self.files.all().latest('recording_dt')
-            elif newfile is not None:
-                if self.last_file is None:
-                    file_object = newfile
-            else:
-                file_object = None
-            if file_object is not None:
-                self.last_file = file_object
-                self.set_last_image()
-                self.save()
+    def set_thumb_url(self):
 
-        except:
-            print(traceback.format_exc())
-            pass
-
-    def set_last_image(self):
-        if self.last_file:
-            # check for thumbnail first
-            if self.last_file.file_format.lower() in [".jpg", ".jpeg"]:
-                self.last_image = self.last_file
-                self.last_imageURL = self.last_file.file_url
+        last_file = self.files.filter(thumb_url__isnull=False).order_by(
+            'recording_dt').last()
+        if last_file is not None:
+            self.last_image = last_file
+            self.thumb_url = last_file.thumb_url
+        else:
+            self.last_image = None
+            self.thumb_url = None
 
 
 @receiver(post_save, sender=Deployment)
@@ -566,8 +552,7 @@ class DataFile(BaseModel):
 
     def clean_file(self, delete_obj=False):
         print(f"clean {delete_obj}")
-        if (
-                self.do_not_remove or self.deployment_last_image.exists or self.deployment_last_file.exists) and not delete_obj:
+        if (self.do_not_remove or self.deployment_last_image.exists()) and not delete_obj:
             return
         if self.local_storage:
             try:
@@ -616,24 +601,19 @@ class DataFile(BaseModel):
         super(DataFile, self).clean()
 
 
-@ receiver(post_save, sender=DataFile)
+@receiver(post_save, sender=DataFile)
 def post_save_file(sender, instance, created, **kwargs):
-    # if created:
-    # print("Refresh file cache")
-    # RefreshFileCache()
-
-    # cache.delete_many(["allowed_files_{0}".format(x) for x in User.objects.all().values_list("username",flat=True)])
-    instance.deployment.set_last_file(instance)
-    # if instance.format.lower() in [".jpg",".jpeg",".png",".dat"]:
-    #    instance.deployment.SetLastImage(instance)
+    instance.deployment.set_thumb_url(instance)
+    instance.deployment.save()
 
 
-@ receiver(pre_delete, sender=DataFile)
+@receiver(pre_delete, sender=DataFile)
 def pre_remove_file(sender, instance, **kwargs):
     # deletes the attached file form data storage
     instance.clean_file(True)
 
 
-@ receiver(post_delete, sender=DataFile)
+@receiver(post_delete, sender=DataFile)
 def post_remove_file(sender, instance, **kwargs):
-    instance.deployment.set_last_file()
+    instance.deployment.set_thumb_url()
+    instance.deployment.save()

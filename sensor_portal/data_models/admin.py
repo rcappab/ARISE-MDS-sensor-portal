@@ -49,7 +49,7 @@ class DeployAdmin(AddOwnerAdmin):
     list_filter = ['is_active', 'device_type']
     readonly_fields = GenericAdmin.readonly_fields + \
         AddOwnerAdmin.readonly_fields + ['deployment_device_ID',
-                                         'combo_project', 'device_type', 'is_active']
+                                         'combo_project', 'device_type', 'is_active', 'thumb_url']
     autocomplete_fields = ('device', 'project')
 
     #  admin form hack to make sure global project is added
@@ -68,3 +68,5 @@ class FileAdmin(GenericAdmin):
                     'archived', 'local_storage', 'created_on']
     search_fields = ['file_name']
     list_filter = ['archived', 'local_storage', 'file_type']
+    readonly_fields = GenericAdmin.readonly_fields + \
+        ["upload_dt", "original_name", "local_path", "path", "file_url", "thumb_url"]

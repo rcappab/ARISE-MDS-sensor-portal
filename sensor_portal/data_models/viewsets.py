@@ -96,7 +96,7 @@ class ProjectViewSet(AddOwnerViewSet, OptionalPaginationViewSet):
             user, DataFile.objects.filter(deployment__project=project))
         if not data_files.exists():
             return Response({}, status=status.HTTP_200_OK)
-        file_metric_dicts = get_all_file_metric_dicts(data_files)
+        file_metric_dicts = get_all_file_metric_dicts(data_files, False)
         return Response(file_metric_dicts, status=status.HTTP_200_OK)
 
 

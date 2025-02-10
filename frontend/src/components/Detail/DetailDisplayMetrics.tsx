@@ -53,7 +53,14 @@ const DetailDisplayMetrics = ({ id, objectType }: Props) => {
 			console.log(key);
 			return (
 				<TabPanel>
-					<MetricPlot data={data[key]} />
+					<div
+						style={{
+							display: "flex",
+							justifyContent: "center",
+						}}
+					>
+						<MetricPlot data={data[key]} />
+					</div>
 				</TabPanel>
 			);
 		});

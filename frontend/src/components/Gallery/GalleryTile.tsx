@@ -19,32 +19,34 @@ const GalleryTile = ({
 	onClick = (int) => {},
 }: Props) => {
 	const getImage = function () {
-		if (cardImageURL !== "") {
+		console.log(cardImageURL);
+		if (cardImageURL !== null && cardImageURL !== "") {
 			return (
 				<img
-					className="card-img"
+					className="card-img-top"
 					src={cardImageURL}
 					alt=""
 					loading="lazy"
+					style={{ maxHeight: "160px" }}
 				/>
 			);
 		} else {
 			return (
 				<svg
-					className="bd-placeholder-img card-img"
+					className="bd-placeholder-img card-img-top"
 					width="100%"
-					height="140"
+					height="160px"
 					xmlns="http://www.w3.org/2000/svg"
 					role="img"
-					aria-label="Placeholder: Image cap"
 					preserveAspectRatio="xMidYMid slice"
 					focusable="false"
+					style={{ maxHeight: "160px" }}
 				>
 					<title>Placeholder</title>
 					<rect
 						width="100%"
 						height="100%"
-						fill="#868e96"
+						fill="white"
 					></rect>
 				</svg>
 			);
@@ -58,7 +60,7 @@ const GalleryTile = ({
 
 	return (
 		<div
-			className={"card m-2 p-2 " + extraClasses}
+			className={"card h-100 p-2 " + extraClasses}
 			id={`card_${index}`}
 			onClick={handleOnClick}
 		>

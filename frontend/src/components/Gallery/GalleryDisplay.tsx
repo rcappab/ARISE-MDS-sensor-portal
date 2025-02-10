@@ -17,31 +17,22 @@ const GalleryDisplay = ({
 	let thumbKey = "";
 	let textKey = "";
 	if (objectType === "deployment") {
-		thumbKey = "last_imageURL";
+		thumbKey = "thumb_url";
 		textKey = "site";
 	} else if (objectType === "datafile") {
-		thumbKey = "file_url";
+		thumbKey = "thumb_url";
 		textKey = "recording_dt";
+	} else if (objectType === "device") {
+		textKey = "type";
 	}
 
 	return (
 		<div
 			id="gallery-rows"
-			className="row row-cols-1 row-cols-lg-5 justify-content-center justify-content-start"
+			className="row row-cols-1 row-cols-lg-5 justify-content-start g-2 p-2"
 		>
 			{data.map((x, index) => {
 				let imageURL = x[thumbKey];
-				if (objectType === "datafile") {
-					console.log(x["file_format"]);
-					if (
-						![".jpg", ".jpeg", ".png"].includes(
-							String(x["file_format"]).toLowerCase()
-						)
-					) {
-						imageURL = "";
-					}
-				}
-
 				let extraClasses = "";
 				if (objectType !== "datafile") {
 					x["is_active"]
@@ -49,15 +40,17 @@ const GalleryDisplay = ({
 						: (extraClasses = "text-white bg-secondary");
 				}
 				return (
-					<GalleryTile
-						cardTitle={x[nameKey]}
-						cardText={x[textKey]}
-						cardImageURL={imageURL}
-						index={index}
-						key={`tile_${index}`}
-						extraClasses={extraClasses}
-						onClick={onTileClick}
-					/>
+					<div className="col">
+						<GalleryTile
+							cardTitle={x[nameKey]}
+							cardText={x[textKey]}
+							cardImageURL={imageURL}
+							index={index}
+							key={`tile_${index}`}
+							extraClasses={extraClasses}
+							onClick={onTileClick}
+						/>
+					</div>
 				);
 			})}
 		</div>

@@ -6,7 +6,7 @@ import numpy as np
 import os
 
 
-def get_all_file_metric_dicts(data_files):
+def get_all_file_metric_dicts(data_files, get_report_metrics=True):
 
     all_file_metric_dict = {}
 
@@ -17,9 +17,10 @@ def get_all_file_metric_dicts(data_files):
             db_file_dict, 'recording_dt__date', 'Date', ["bar", "scatter"])
         all_file_metric_dict.update(db_file_metric_dict)
 
-    # Report file metrics
-    report_file_metric_dict = report_file_metrics(data_files)
-    all_file_metric_dict.update(report_file_metric_dict)
+    if get_report_metrics:
+        # Report file metrics
+        report_file_metric_dict = report_file_metrics(data_files)
+        all_file_metric_dict.update(report_file_metric_dict)
 
     return all_file_metric_dict
 

@@ -169,7 +169,7 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedM
 
     class Meta:
         model = Deployment
-        exclude = ['last_image', 'last_file']
+        exclude = ['last_image']
 
     def __init__(self, *args, **kwargs):
         self.clear_project = False
