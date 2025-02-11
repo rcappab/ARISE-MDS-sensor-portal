@@ -1,7 +1,8 @@
 import paramiko
 from posixpath import join, split, splitext
-
+from scp import SCPClient
 import paramiko.ssh_exception
+from .general import convert_unit
 
 
 class SSH_client():
@@ -26,24 +27,28 @@ class SSH_client():
                 (self.address, self.port))
             self.ftp_t.connect(username=self.username, password=self.password)
             self.ftp_sftp = paramiko.SFTPClient.from_transport(self.ftp_t)
+            sftp_channel = self.ftp_sftp.get_channel()
+            sftp_channel.settimeout(60*10)
             return True
-        except:
-            print("Connection failed")
+        except Exception as e:
+            print(repr(e))
             return False
 
     def close_connection_to_ftp(self):
         try:
             self.ftp_t.close()
             print("FTP connection closed")
-        except:
-            print("No FTP to close")
+        except Exception as e:
+            print(repr(e))
 
     def connect_to_ssh(self, port=None):
         try:
             self.ssh_c.exec_command('ls')
+            print("SSH already connected")
             return
-        except:
-            print("no SSH connection")
+        except Exception as e:
+            print(repr(e))
+            print("No existing SSH connection")
 
         if port is None:
             port = self.port
@@ -56,8 +61,42 @@ class SSH_client():
             username=self.username,
             password=self.password)
 
-    def send_ssh_command(self, command, sudo=False, max_tries=100, debug=False):
+    def close_connection(self):
+        try:
+            self.ssh_c.close()
+        except Exception as e:
+            print(repr(e))
+            print("Unable to close SSH connection")
+            pass
 
+    def connect_to_scp(self):
+        self.connect_to_ssh()
+        try:
+            self.scp = SCPClient(self.ssh_c.get_transport(
+            ), progress=lambda file_name, size, sent: self.scp_progress_function(file_name, size, sent))
+        except Exception as e:
+            print(repr(e))
+            print("Unable to start SCP connection")
+
+    def close_scp_connection(self):
+        try:
+            self.scp_c.close()
+        except Exception as e:
+            print(repr(e))
+            print("Unable to close SCP connection")
+            pass
+
+    def scp_progress_function(self, file_name, size, sent):
+
+        sent_mb = convert_unit(sent, 'MB')
+        size_mb = convert_unit(size, 'MB')
+
+        if sent_mb % 50 != 0:
+            return
+        print(
+            f"{file_name} progress: {sent_mb}/{size_mb} {float(sent)/float(size)*100}% \r")
+
+    def send_ssh_command(self, command, sudo=False, max_tries=100, debug=False):
         success = False
         currtries = 0
         while (not success) and (currtries < max_tries):
@@ -69,7 +108,8 @@ class SSH_client():
                     stdin.write(self.password + "\n")
                     stdin.flush()
                 success = True
-            except:
+            except Exception as e:
+                print(repr(e))
                 currtries += 1
                 self.connect_to_ssh()
             if debug:
@@ -79,12 +119,6 @@ class SSH_client():
             raise paramiko.ssh_exception
 
         return stdin, stdout, stderr
-
-    def close_connection(self):
-        try:
-            self.ssh_c.close()
-        except:
-            pass
 
     def mkdir_p(self, remote, is_dir=False):
         """

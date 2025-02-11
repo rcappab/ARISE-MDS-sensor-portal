@@ -84,7 +84,8 @@ INSTALLED_APPS = [
     'data_models',
     'user_management',
     'external_storage_import',
-    'utils'
+    'utils',
+    'archiving'
 
 ]
 
@@ -243,3 +244,6 @@ CELERY_BEAT_SCHEDULE = {}
 GLOBAL_PROJECT_ID = "GLOBAL"
 
 DATA_HANDLERS = DataTypeHandlerCollection()
+
+MIN_ARCHIVE_SIZE_GB = 1
+MAX_ARHIVE_SIZE_GB = 10

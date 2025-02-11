@@ -167,6 +167,13 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMangerMixIn, CreatedModifiedM
 
     # check project permissions here or in viewpoint
 
+    def to_representation(self, instance):
+        initial_rep = super(DeploymentFieldsMixIn,
+                            self).to_representation(instance)
+        if not self.context.get('request'):
+            initial_rep.pop('thumb_url')
+        return initial_rep
+
     class Meta:
         model = Deployment
         exclude = ['last_image']
@@ -351,13 +358,19 @@ class DataFileSerializer(CreatedModifiedMixIn, serializers.ModelSerializer):
     def to_representation(self, instance):
         initial_rep = super(DataFileSerializer,
                             self).to_representation(instance)
-        initial_rep["favourite"] = instance.favourite_of.all().filter(
-            pk=self.context['request'].user.pk).exists()
+        if self.context.get('request'):
+            initial_rep["favourite"] = instance.favourite_of.all().filter(
+                pk=self.context['request'].user.pk).exists()
+            initial_rep.pop('path')
+        else:
+            to_exclude = ["file_url", "thumb_url"]
+            [initial_rep.pop(x) for x in to_exclude]
         return initial_rep
 
     class Meta:
         model = DataFile
-        exclude = ["do_not_remove", "path", "local_path", "favourite_of"]
+        exclude = ["do_not_remove", "local_path", "favourite_of",
+                   "tar_file", "archived", "local_storage"]
 
     def validate(self, data):
         data = super().validate(data)

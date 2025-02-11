@@ -31,6 +31,7 @@ from django.db.models.signals import m2m_changed, post_delete, post_save, pre_de
 from django.dispatch import receiver
 from django.urls import reverse
 from django.utils import timezone as djtimezone
+from utils.general import convert_unit
 from sizefield.models import FileSizeField
 from timezone_field import TimeZoneField
 
@@ -38,6 +39,7 @@ from . import validators
 from .general_functions import check_dt
 from utils.models import BaseModel
 from external_storage_import.models import DataStorageInput
+from archiving.models import Archive, TarFile
 
 from encrypted_model_fields.fields import EncryptedCharField
 
@@ -75,6 +77,8 @@ class Project(BaseModel):
     organisation = models.CharField(max_length=100, blank=True)
     data_storages = models.ManyToManyField(
         DataStorageInput, related_name="linked_projects")
+    archives = models.ForeignKey(
+        Archive, related_name="linked_projects", null=True, on_delete=models.SET_NULL)
 
     def is_active(self):
         if self.id:
@@ -92,8 +96,6 @@ class Project(BaseModel):
     annotators = models.ManyToManyField(
         settings.AUTH_USER_MODEL, blank=True, related_name="annotatable_projects")
 
-    # Archiving
-    archive_files = models.BooleanField(default=True)
     clean_time = models.IntegerField(default=90)
 
     def __str__(self):
@@ -479,6 +481,29 @@ def update_project(sender, instance, action, reverse, *args, **kwargs):
 #     )
 #     all_groups.filter(all_is_null=True).delete()
 
+class DataFileQuerySet(models.QuerySet):
+    def full_paths(self):
+        # Your custom query logic here
+        file_path_components = self.values(
+            "local_path", "path", "file_name", "file_format")
+        all_full_paths = [os.path.join(
+            x["local_path"], x["path"], x["file_name"]+x["file_format"]) for x in file_path_components]
+        return all_full_paths
+
+    def relative_paths(self):
+        # Your custom query logic here
+        file_path_components = self.values(
+            "path", "file_name", "file_format")
+        all_relative_paths = [os.path.join(
+            x["path"], x["file_name"]+x["file_format"]) for x in file_path_components]
+        return all_relative_paths
+
+    def file_size(self, unit=""):
+        total_file_size = self.aggregate(total_file_size=Sum("file_size"))[
+            "total_file_size"]
+        converted_file_size = convert_unit(total_file_size, unit)
+        return converted_file_size
+
 
 class DataFile(BaseModel):
     deployment = models.ForeignKey(
@@ -502,7 +527,8 @@ class DataFile(BaseModel):
 
     local_storage = models.BooleanField(default=True)
     archived = models.BooleanField(default=False)
-    # tarfile = models.ForeignKey(TarFile, on_delete=models.SET_NULL, blank=True, null=True, related_name="Files")
+    tar_file = models.ForeignKey(
+        TarFile, on_delete=models.SET_NULL, blank=True, null=True, related_name="files")
     favourite_of = models.ManyToManyField(
         settings.AUTH_USER_MODEL, blank=True, related_name="favourites")
 
@@ -510,6 +536,8 @@ class DataFile(BaseModel):
     original_name = models.CharField(max_length=100, blank=True, null=True)
     file_url = models.CharField(max_length=500, null=True, blank=True)
     tag = models.CharField(max_length=250, null=True, blank=True)
+
+    objects = DataFileQuerySet.as_manager()
 
     def __str__(self):
         return f"{self.file_name}{self.file_format}"
