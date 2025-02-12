@@ -10,15 +10,15 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework_gis import filters as filters_gis
 from utils.viewsets import OptionalPaginationViewSet
-from django.db.models import Q
-from .permissions import perms
 
-
+from .file_handling_functions import create_file_objects
 from .filtersets import *
 from .models import DataFile, DataType, Deployment, Device, Project, Site
-from .serializers import *
-from .file_handling_functions import create_file_objects
+from .permissions import perms
 from .plotting_functions import get_all_file_metric_dicts
+from .serializers import (DataFileSerializer, DataTypeSerializer,
+                          DeploymentSerializer, DeploymentSerializer_GeoJSON,
+                          DeviceSerializer, ProjectSerializer, SiteSerializer)
 
 
 class AddOwnerViewSet(viewsets.ModelViewSet):
@@ -186,13 +186,13 @@ class DataFileViewSet(OptionalPaginationViewSet):
                         status=status_code, headers=headers)
 
 
-class SiteViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSet):
+class SiteViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = SiteSerializer
     queryset = Site.objects.all().distinct()
     search_fields = ['name', 'short_name']
 
 
-class DataTypeViewset(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSet):
+class DataTypeViewset(viewsets.ReadOnlyModelViewSet):
     serializer_class = DataTypeSerializer
     queryset = DataType.objects.all().distinct()
     search_fields = ['name']

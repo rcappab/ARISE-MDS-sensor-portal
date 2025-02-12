@@ -10,10 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
-from data_handlers.base_data_handler_class import DataTypeHandlerCollection
 import os
 from datetime import timedelta
 from pathlib import Path
+
+from data_handlers.base_data_handler_class import DataTypeHandlerCollection
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -198,7 +199,8 @@ REST_FRAMEWORK = {
         'bridgekeeper.rest_framework.RulePermissions',
     ),
     'DEFAULT_PAGINATION_CLASS': 'utils.paginators.VariablePagePaginator',
-    'PAGE_SIZE': 1,
+    'PAGE_SIZE': 50,
+    'MAX_PAGE_SIZE': 100,
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.TokenAuthentication',
@@ -246,4 +248,8 @@ GLOBAL_PROJECT_ID = "GLOBAL"
 DATA_HANDLERS = DataTypeHandlerCollection()
 
 MIN_ARCHIVE_SIZE_GB = 1
-MAX_ARHIVE_SIZE_GB = 10
+MAX_ARCHIVE_SIZE_GB = 10
+
+if DEVMODE:
+    MIN_ARCHIVE_SIZE_GB = 0.01
+    MAX_ARCHIVE_SIZE_GB = 0.025

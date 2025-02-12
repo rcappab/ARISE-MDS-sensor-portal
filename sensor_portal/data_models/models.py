@@ -4,44 +4,32 @@ from datetime import datetime, time, timedelta, timezone
 from threading import local
 from unittest import TextTestRunner
 
+from archiving.models import Archive, TarFile
 from bridgekeeper import perms
 from django.conf import settings
 from django.contrib.auth.models import Group
 from django.contrib.gis.db import models as gis_models
 from django.contrib.gis.geos import Point
-from django.core.exceptions import (
-    MultipleObjectsReturned,
-    ObjectDoesNotExist,
-    ValidationError,
-)
+from django.core.exceptions import (MultipleObjectsReturned,
+                                    ObjectDoesNotExist, ValidationError)
 from django.db import models
-from django.db.models import (
-    BooleanField,
-    Case,
-    DateTimeField,
-    ExpressionWrapper,
-    F,
-    JSONField,
-    Q,
-    Sum,
-    Value,
-    When,
-)
-from django.db.models.signals import m2m_changed, post_delete, post_save, pre_delete
+from django.db.models import (BooleanField, Case, DateTimeField,
+                              ExpressionWrapper, F, Max, Min, Q, Sum, Value,
+                              When)
+from django.db.models.signals import (m2m_changed, post_delete, post_save,
+                                      pre_delete)
 from django.dispatch import receiver
 from django.urls import reverse
 from django.utils import timezone as djtimezone
-from utils.general import convert_unit
+from encrypted_model_fields.fields import EncryptedCharField
+from external_storage_import.models import DataStorageInput
 from sizefield.models import FileSizeField
 from timezone_field import TimeZoneField
+from utils.general import convert_unit
+from utils.models import BaseModel
 
 from . import validators
 from .general_functions import check_dt
-from utils.models import BaseModel
-from external_storage_import.models import DataStorageInput
-from archiving.models import Archive, TarFile
-
-from encrypted_model_fields.fields import EncryptedCharField
 
 
 class Site(BaseModel):
@@ -76,8 +64,8 @@ class Project(BaseModel):
     contact_email = models.CharField(max_length=100, blank=True)
     organisation = models.CharField(max_length=100, blank=True)
     data_storages = models.ManyToManyField(
-        DataStorageInput, related_name="linked_projects")
-    archives = models.ForeignKey(
+        DataStorageInput, related_name="linked_projects", blank=True)
+    archive = models.ForeignKey(
         Archive, related_name="linked_projects", null=True, on_delete=models.SET_NULL)
 
     def is_active(self):
@@ -503,6 +491,15 @@ class DataFileQuerySet(models.QuerySet):
             "total_file_size"]
         converted_file_size = convert_unit(total_file_size, unit)
         return converted_file_size
+
+    def min_date(self):
+        return self.aggregate(min_date=Min("recording_dt"))["min_date"]
+
+    def max_date(self):
+        return self.aggregate(max_date=Max("recording_dt"))["max_date"]
+
+    def device_type(self):
+        return self.annotate(device_type=F('deployment__device__type__name'))
 
 
 class DataFile(BaseModel):

@@ -1,18 +1,18 @@
+import itertools
 import os
 from datetime import datetime as dt
 
-from django.core.exceptions import ValidationError
+from celery import chord
+from data_handlers.base_data_handler_class import DataTypeHandlerCollection
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.utils import timezone as djtimezone
-
 from rest_framework import status
+from utils.general import convert_unit
+
+from sensor_portal.celery import app
 
 from .general_functions import check_dt
-from data_handlers.base_data_handler_class import DataTypeHandlerCollection
-
-from django.conf import settings
-from celery import chord
-from sensor_portal.celery import app
 
 
 def create_file_objects(files, check_filename=False, recording_dt=None, extra_data=None, deployment_object=None,
@@ -319,3 +319,39 @@ def get_n_files(dir_path):
     else:
         n_files = 0
     return n_files
+
+
+def group_files_by_size(file_objs,
+                        max_size=settings.MAX_ARCHIVE_SIZE_GB):
+
+    curr_key = 0
+    curr_total = 0
+    file_info = []
+
+    file_objs = file_objs.order_by('recording_dt')
+
+    file_values = file_objs.values('pk', 'file_size')
+    for file_value in file_values:
+        file_size = convert_unit(file_value['file_size'], "GB")
+
+        if (curr_total+file_size) > max_size:
+            # If the new file would push over the max size, start a new split
+            curr_total = file_size
+            curr_key += 1
+        else:
+            curr_total += file_size
+
+        file_info.append(
+            {"pk": file_value['pk'], "file_size": file_size, "key": curr_key})
+
+    groups = []
+
+    for k, g in itertools.groupby(file_info, lambda x: x.get("key")):
+        files = list(g)
+
+        total_size_gb = sum([x.get('file_size') for x in files])
+        file_pks = [x.get('pk') for x in files]
+        # Store group iterator as a list
+        groups.append({"file_pks": file_pks, "total_size_gb": total_size_gb})
+
+    return groups

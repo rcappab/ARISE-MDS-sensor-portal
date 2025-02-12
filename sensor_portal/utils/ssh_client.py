@@ -1,7 +1,9 @@
-import paramiko
 from posixpath import join, split, splitext
-from scp import SCPClient
+
+import paramiko
 import paramiko.ssh_exception
+from scp import SCPClient
+
 from .general import convert_unit
 
 
@@ -45,7 +47,7 @@ class SSH_client():
         try:
             self.ssh_c.exec_command('ls')
             print("SSH already connected")
-            return
+            return True
         except Exception as e:
             print(repr(e))
             print("No existing SSH connection")
@@ -53,13 +55,20 @@ class SSH_client():
         if port is None:
             port = self.port
 
-        self.ssh_c = paramiko.SSHClient()
-        self.ssh_c.set_missing_host_key_policy(paramiko.client.AutoAddPolicy)
-        self.ssh_c.connect(
-            self.address,
-            port,
-            username=self.username,
-            password=self.password)
+        try:
+            self.ssh_c = paramiko.SSHClient()
+            self.ssh_c.set_missing_host_key_policy(
+                paramiko.client.AutoAddPolicy)
+            self.ssh_c.connect(
+                self.address,
+                port,
+                username=self.username,
+                password=self.password)
+            return True
+        except Exception as e:
+            print(repr(e))
+            print("Unable to start SSH connection")
+            return False
 
     def close_connection(self):
         try:
@@ -67,16 +76,17 @@ class SSH_client():
         except Exception as e:
             print(repr(e))
             print("Unable to close SSH connection")
-            pass
 
     def connect_to_scp(self):
         self.connect_to_ssh()
         try:
-            self.scp = SCPClient(self.ssh_c.get_transport(
+            self.scp_c = SCPClient(self.ssh_c.get_transport(
             ), progress=lambda file_name, size, sent: self.scp_progress_function(file_name, size, sent))
+            return True
         except Exception as e:
             print(repr(e))
             print("Unable to start SCP connection")
+            return False
 
     def close_scp_connection(self):
         try:
@@ -84,7 +94,6 @@ class SSH_client():
         except Exception as e:
             print(repr(e))
             print("Unable to close SCP connection")
-            pass
 
     def scp_progress_function(self, file_name, size, sent):
 

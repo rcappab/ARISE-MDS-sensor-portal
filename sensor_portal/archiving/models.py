@@ -1,14 +1,13 @@
-from django.db import models
-from django.dispatch import receiver
-from django.db.models.signals import pre_delete
+import os
+
 from django.conf import settings
+from django.db import models
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
 from django.utils import timezone as djtimezone
 from encrypted_model_fields.fields import EncryptedCharField
-from data_models.models import BaseModel
-import os
+from utils.models import BaseModel
 from utils.ssh_client import SSH_client
-
-# Create your models here.
 
 
 class Archive(BaseModel):
@@ -29,6 +28,14 @@ class Archive(BaseModel):
 
     def init_ssh_client(self):
         return SSH_client(self.username, self.password, self.address, 22)
+
+    def check_projects(self):
+        from .functions import check_archive_projects
+        check_archive_projects(self)
+
+    def check_upload(self):
+        from .functions import check_archive_upload
+        check_archive_upload(self)
 
 
 class TarFile(BaseModel):
@@ -52,10 +59,12 @@ class TarFile(BaseModel):
             if ".tar.gz" not in tar_name:
                 tar_name = tar_name+".tar.gz"
             try:
-                os.remove(os.path.join(self.path, tar_name))
-                os.removedirs(os.path)
-            except OSError:
-                pass
+                os.remove(os.path.join(
+                    settings.FILE_STORAGE_ROOT, self.path, tar_name))
+                os.removedirs(os.path.join(
+                    settings.FILE_STORAGE_ROOT, self.path))
+            except OSError as e:
+                print(repr(e))
 
             if not delete_obj:
                 self.local_storage = False
