@@ -1,6 +1,7 @@
 *.bak
 secrets/
 file_storage/
+scratch/
 sensor_portal_database/
 .idea
 .idea/*
