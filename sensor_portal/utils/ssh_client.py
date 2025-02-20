@@ -9,10 +9,10 @@ from .general import convert_unit
 
 class SSH_client():
     def __init__(self,
-                 username,
-                 password,
-                 address,
-                 port):
+                 username: str,
+                 password: str,
+                 address: str,
+                 port: int):
         self.username = username
         self.password = password
         self.address = address
@@ -23,7 +23,7 @@ class SSH_client():
             print("Try to reestablish connection")
             self.connect_to_ftp()
 
-    def connect_to_ftp(self):
+    def connect_to_ftp(self) -> bool:
         try:
             self.ftp_t = paramiko.Transport(
                 (self.address, self.port))
@@ -43,14 +43,13 @@ class SSH_client():
         except Exception as e:
             print(repr(e))
 
-    def connect_to_ssh(self, port=None):
+    def connect_to_ssh(self, port=None) -> bool:
         try:
             self.ssh_c.exec_command('ls')
             print("SSH already connected")
             return True
-        except Exception as e:
-            print(repr(e))
-            print("No existing SSH connection")
+        except AttributeError:
+            pass
 
         if port is None:
             port = self.port
@@ -77,7 +76,7 @@ class SSH_client():
             print(repr(e))
             print("Unable to close SSH connection")
 
-    def connect_to_scp(self):
+    def connect_to_scp(self) -> bool:
         self.connect_to_ssh()
         try:
             self.scp_c = SCPClient(self.ssh_c.get_transport(
@@ -95,7 +94,7 @@ class SSH_client():
             print(repr(e))
             print("Unable to close SCP connection")
 
-    def scp_progress_function(self, file_name, size, sent):
+    def scp_progress_function(self, file_name: str, size: int, sent: int):
 
         sent_mb = convert_unit(sent, 'MB')
         size_mb = convert_unit(size, 'MB')
@@ -105,7 +104,11 @@ class SSH_client():
         print(
             f"{file_name} progress: {sent_mb}/{size_mb} {float(sent)/float(size)*100}% \r")
 
-    def send_ssh_command(self, command, sudo=False, max_tries=100, debug=False):
+    def send_ssh_command(self, command: str,
+                         sudo: bool = False,
+                         max_tries: int = 100,
+                         return_strings: bool = True,
+                         debug: bool = False) -> tuple[int, list[str], str]:
         success = False
         currtries = 0
         while (not success) and (currtries < max_tries):
@@ -116,6 +119,7 @@ class SSH_client():
                 if sudo:
                     stdin.write(self.password + "\n")
                     stdin.flush()
+
                 success = True
             except Exception as e:
                 print(repr(e))
@@ -125,9 +129,20 @@ class SSH_client():
                 print(command, "SUDO", sudo, "SUCCESS", success)
 
         if not success:
-            raise paramiko.ssh_exception
+            raise paramiko.ssh_exception.SSHException
 
-        return stdin, stdout, stderr
+        stdout.channel.set_combine_stderr(True)
+
+        if return_strings:
+            stdout_lines = stdout.readlines()
+            stdout_lines = [x.strip("\n") for x in stdout_lines]
+            stderr_str = stderr.read().decode()
+            exit_status = stdout.channel.recv_exit_status()
+
+            return exit_status, stdout_lines, stderr_str
+        else:
+
+            return -1, stdout, stderr
 
     def mkdir_p(self, remote, is_dir=False):
         """

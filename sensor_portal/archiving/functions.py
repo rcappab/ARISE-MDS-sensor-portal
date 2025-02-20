@@ -105,3 +105,5 @@ def check_archive_upload(archive: Archive):
             tar_obj.files.update(archived=True)
             tar_obj.clean_tar()
         tar_obj.save()
+
+        archive_ssh.close_connection()

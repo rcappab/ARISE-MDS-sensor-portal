@@ -26,7 +26,7 @@ class Archive(BaseModel):
     root_folder = models.CharField(
         max_length=100, unique=True)
 
-    def init_ssh_client(self):
+    def init_ssh_client(self) -> SSH_client:
         return SSH_client(self.username, self.password, self.address, 22)
 
     def check_projects(self):
@@ -68,7 +68,6 @@ class TarFile(BaseModel):
 
             if not delete_obj:
                 self.local_storage = False
-                self.path = ""
                 self.save()
 
 

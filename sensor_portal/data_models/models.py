@@ -471,7 +471,6 @@ def update_project(sender, instance, action, reverse, *args, **kwargs):
 
 class DataFileQuerySet(models.QuerySet):
     def full_paths(self):
-        # Your custom query logic here
         file_path_components = self.values(
             "local_path", "path", "file_name", "file_format")
         all_full_paths = [os.path.join(
@@ -479,12 +478,18 @@ class DataFileQuerySet(models.QuerySet):
         return all_full_paths
 
     def relative_paths(self):
-        # Your custom query logic here
         file_path_components = self.values(
             "path", "file_name", "file_format")
         all_relative_paths = [os.path.join(
             x["path"], x["file_name"]+x["file_format"]) for x in file_path_components]
         return all_relative_paths
+
+    def full_names(self):
+        file_name_components = self.values(
+            "file_name", "file_format")
+        all_names = [x["file_name"]+x["file_format"]
+                     for x in file_name_components]
+        return all_names
 
     def file_size(self, unit=""):
         total_file_size = self.aggregate(total_file_size=Sum("file_size"))[

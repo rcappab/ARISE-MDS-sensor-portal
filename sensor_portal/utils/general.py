@@ -69,3 +69,8 @@ def get_md5(file_path: str) -> str:
         for chunk in iter(lambda: f.read(4096), b""):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
+
+
+def divide_chunks(list_to_chunk, chunk_size):
+    for i in range(0, len(list_to_chunk), chunk_size):
+        yield list_to_chunk[i:i + chunk_size]

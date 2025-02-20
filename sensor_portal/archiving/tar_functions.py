@@ -1,6 +1,7 @@
 
 import os
 from datetime import datetime
+from posixpath import join as posixjoin
 
 from data_models.file_handling_functions import group_files_by_size
 from data_models.metadata_functions import metadata_json_from_files
@@ -8,6 +9,7 @@ from data_models.models import DataFile
 from django.conf import settings
 from django.db.models import QuerySet
 from utils.general import call_with_output
+from utils.ssh_client import SSH_client
 
 from .bagit_functions import bag_info_from_files
 from .models import Archive, TarFile
@@ -131,3 +133,12 @@ def create_tar_file(file_objs, name_suffix=0):
         return False, tar_name, None
 
     return True, tar_name, full_tar_path
+
+
+def check_tar_status(ssh_client: SSH_client, tar_path: str) -> tuple[int, str]:
+    status_code, stdout, stderr = ssh_client.send_ssh_command(
+        f"dmls -l {posixjoin(tar_path)}")
+    if status_code != 0:
+        return status_code, None
+    target_tar_status = stdout[0].split(" ")[-2]
+    return status_code, target_tar_status

@@ -39,10 +39,9 @@ class DataStorageInput(BaseModel):
         ssh_client.connect_to_ssh()
 
         # Get list of all current users
-        stdin, stdout, stderr = ssh_client.send_ssh_command(
+        status_code, stdout, stderr = ssh_client.send_ssh_command(
             'cut -d: -f1 /etc/passwd')
-        existing_users = [x.decode("utf-8")
-                          for x in stdout.read().splitlines()]
+        existing_users = stdout
 
         all_devices = self.linked_devices.all()
 
@@ -54,47 +53,47 @@ class DataStorageInput(BaseModel):
         user_group_name = "ftpuser"
 
         # check main user group exists
-        stdin, stdout, stderr = ssh_client.send_ssh_command(
+        status_code, stdout, stderr = ssh_client.send_ssh_command(
             f"grep {user_group_name} /etc/group")
 
-        group_users = stdout.read().decode("utf-8")
+        group_users = stdout
 
-        if group_users == '':
+        if len(group_users) == 0:
             # If group does not exist, create it
-            stdin, stdout, stderr = ssh_client.send_ssh_command(
+            status_code, stdout, stderr = ssh_client.send_ssh_command(
                 f"groupadd {user_group_name}", True)
 
         for user in missing_users:
             username = user["username"]
             user_password = user["password"]
 
-            stdin, stdout, stderr = ssh_client.send_ssh_command(
+            status_code, stdout, stderr = ssh_client.send_ssh_command(
                 f"perl -e 'print crypt('{user_password}', 'password')'")
-            encrypted_user_password = stdout.read().decode("utf-8")
+            encrypted_user_password = stdout[0]
 
             print(f"{self.name} - add user {username}")
             # Add new user, add to ftpuser group
-            stdin, stdout, stderr = ssh_client.send_ssh_command(
+            status_code, stdout, stderr = ssh_client.send_ssh_command(
                 f"useradd -m -p {encrypted_user_password}-N -g {user_group_name} {username}", True)
 
             # Create a group for this user
-            stdin, stdout, stderr = ssh_client.send_ssh_command(
+            status_code, stdout, stderr = ssh_client.send_ssh_command(
                 f"groupadd g{username}", True)
 
             # Add service account to the user group
-            stdin, stdout, stderr = ssh_client.send_ssh_command(
+            status_code, stdout, stderr = ssh_client.send_ssh_command(
                 f"usermod -a -G g{username} {self.username}", True)
 
             # Allow user and service account to own it
-            stdin, stdout, stderr = ssh_client.send_ssh_command(
+            status_code, stdout, stderr = ssh_client.send_ssh_command(
                 f"chown {username}:g{username} /home/{username}", True)
 
             # allow user and service account to own it
-            stdin, stdout, stderr = ssh_client.send_ssh_command(
+            status_code, stdout, stderr = ssh_client.send_ssh_command(
                 f"chmod -R g+srwx /home/{username}", True)
 
             # Prevent other users viewing the contents
-            stdin, stdout, stderr = ssh_client.send_ssh_command(
+            status_code, stdout, stderr = ssh_client.send_ssh_command(
                 f"chmod -R o-rwx /home/{username}", True)
 
         for user in required_users:
@@ -102,26 +101,32 @@ class DataStorageInput(BaseModel):
             print(f"{self.name} - check user {username} permissions")
 
             # Check that service account is in user's group
-            stdin, stdout, stderr = ssh_client.send_ssh_command(
+            status_code, stdout, stderr = ssh_client.send_ssh_command(
                 f"id {self.username} | grep -c g{username}")
+            grep_result = int(stdout[0])
 
-            if int(stdout.read().decode("utf-8")) == 0:
+            if grep_result == 0:
                 # check if group exists
-                stdin, stdout, stderr = ssh_client.send_ssh_command(
+                status_code, stdout, stderr = ssh_client.send_ssh_command(
                     f"grep g{username} /etc/group")
-                group_users = stdout.read().decode("utf-8")
-                if group_users == '':
+                group_users = stdout
+
+                if len(group_users) == 0:
                     # If group does not exist, create it
-                    stdin, stdout, stderr = ssh_client.send_ssh_command(
+                    status_code, stdout, stderr = ssh_client.send_ssh_command(
                         f"groupadd g{username}", True)
+
                 if not (self.username in group_users):
                     # If service account is not in the group, add it.
-                    stdin, stdout, stderr = ssh_client.send_ssh_command(
+                    status_code, stdout, stderr = ssh_client.send_ssh_command(
                         f"usermod -a -G g{username} {self.username}", True)
+
                 # Try to list user home directory
-                stdin, stdout, stderr = ssh_client.send_ssh_command(
+                status_code, stdout, stderr = ssh_client.send_ssh_command(
                     f"ls -ld /home/{username} | grep -c g{username}")
-                if int(stdout.read().decode("utf-8")) == 0:
+                grep_result = int(stdout[0])
+
+                if grep_result == 0:
                     # If unable to list directory, make sure group permissions are correct
                     stdin, stdout, stderr = ssh_client.send_ssh_command(
                         f"chown {username}:g{username} /home/{username}", True)
