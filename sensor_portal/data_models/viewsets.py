@@ -9,30 +9,18 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework_gis import filters as filters_gis
-from utils.viewsets import OptionalPaginationViewSet
+from utils.viewsets import (AddOwnerViewSet, CheckFormViewSet,
+                            OptionalPaginationViewSet)
 
 from .file_handling_functions import create_file_objects
 from .filtersets import *
 from .models import DataFile, DataType, Deployment, Device, Project, Site
 from .permissions import perms
 from .plotting_functions import get_all_file_metric_dicts
-from .serializers import (DataFileSerializer, DataTypeSerializer,
-                          DeploymentSerializer, DeploymentSerializer_GeoJSON,
-                          DeviceSerializer, ProjectSerializer, SiteSerializer)
-
-
-class AddOwnerViewSet(viewsets.ModelViewSet):
-    def perform_create(self, serializer):
-        serializer.save(owner=self.request.user)
-
-
-class CheckFormViewSet(viewsets.ModelViewSet):
-    def get_serializer_context(self):
-        context = super(CheckFormViewSet, self).get_serializer_context()
-
-        context.update(
-            {'form': 'multipart/form-data' in self.request.content_type})
-        return context
+from .serializers import (DataFileSerializer, DataFileUploadSerializer,
+                          DataTypeSerializer, DeploymentSerializer,
+                          DeploymentSerializer_GeoJSON, DeviceSerializer,
+                          ProjectSerializer, SiteSerializer)
 
 
 class DeploymentViewSet(AddOwnerViewSet, CheckFormViewSet, OptionalPaginationViewSet):
@@ -125,10 +113,19 @@ class DataFileViewSet(OptionalPaginationViewSet):
     search_fields = ['file_name',
                      'deployment__deployment_device_ID',
                      'deployment__device__name',
-                     'deployment__device__device_ID']
+                     'deployment__device__device_ID',
+                     '=tag']
+
+    @action(detail=False, methods=['get'])
+    def test(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        # is this also filtering by permissions?
+        print(self.filterset_class)
+        print(queryset.count())
+        return Response({queryset.count()}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'], permission_classes=['data_models.view_datafile'])
-    def favourite_file(self, request, pk=None):
+    def favourite_file(self, request):
         data_file = self.get_object()
         user = request.user
         if user:
