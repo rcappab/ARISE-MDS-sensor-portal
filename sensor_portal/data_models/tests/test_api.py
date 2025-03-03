@@ -4,14 +4,12 @@ from datetime import datetime as dt
 from io import BytesIO
 
 import pytest
-from data_models.factories import DeploymentFactory, DeviceFactory, ProjectFactory
+from data_models.factories import (DeploymentFactory, DeviceFactory,
+                                   ProjectFactory)
 from data_models.general_functions import create_image
 from data_models.models import DataFile
-from data_models.serializers import (
-    DeploymentSerializer,
-    DeviceSerializer,
-    ProjectSerializer,
-)
+from data_models.serializers import (DeploymentSerializer, DeviceSerializer,
+                                     ProjectSerializer)
 
 
 def api_check_post(api_client, api_url, payload, check_key):
