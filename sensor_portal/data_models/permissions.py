@@ -1,23 +1,21 @@
 from bridgekeeper import perms
 from bridgekeeper.rules import is_active, is_authenticated, is_staff
-
-from .rules import (
-    CanManageDeployedDevice,
-    CanManageDeploymentContainingDataFile,
-    CanManageDeviceContainingDataFile,
-    CanManageProjectContainingDataFile,
-    CanManageProjectContainingDeployment,
-    CanViewDeployedDevice,
-    CanViewDeploymentContainingDataFile,
-    CanViewDeviceContainingDataFile,
-    CanViewProjectContainingDataFile,
-    CanViewProjectContainingDeployment,
-    CanViewProjectContainingDevice,
-    IsManager,
-    IsViewer,
-)
-
 from utils.rules import IsOwner
+
+from .rules import (CanAnnotateDeploymentContainingDataFile,
+                    CanAnnotateDeviceContainingDataFile,
+                    CanAnnotateProjectContainingDataFile,
+                    CanManageDeployedDevice,
+                    CanManageDeploymentContainingDataFile,
+                    CanManageDeviceContainingDataFile,
+                    CanManageProjectContainingDataFile,
+                    CanManageProjectContainingDeployment,
+                    CanViewDeployedDevice, CanViewDeploymentContainingDataFile,
+                    CanViewDeviceContainingDataFile,
+                    CanViewProjectContainingDataFile,
+                    CanViewProjectContainingDeployment,
+                    CanViewProjectContainingDevice, IsAnnotator, IsManager,
+                    IsViewer)
 
 # PROJECT
 perms['data_models.add_project'] = is_authenticated & is_active
@@ -29,6 +27,7 @@ perms['data_models.delete_project'] = is_authenticated & (
 perms['data_models.view_project'] = is_authenticated & (is_staff
                                                         | IsOwner()
                                                         | IsManager()  # project owner OR project manager
+                                                        | IsAnnotator()
                                                         | IsViewer()  # OR in project group
                                                         ) & is_active  # deployment/device viewers don't need to see project objects?
 
@@ -42,6 +41,7 @@ perms['data_models.delete_device'] = is_authenticated & (is_staff
 perms['data_models.view_device'] = is_authenticated & (is_staff
                                                        | IsOwner()
                                                        | IsManager()
+                                                       | IsAnnotator()
                                                        | IsViewer()
                                                        | CanViewProjectContainingDevice()
                                                        ) & is_active  # deployment viewers don't need to see device?
@@ -62,6 +62,7 @@ perms['data_models.delete_deployment'] = is_authenticated & (is_staff
 perms['data_models.view_deployment'] = is_authenticated & (is_staff
                                                            | IsOwner()
                                                            | IsManager()
+                                                           | IsAnnotator()
                                                            | IsViewer()
                                                            | CanManageProjectContainingDeployment()
                                                            | CanViewProjectContainingDeployment()
@@ -83,9 +84,22 @@ perms['data_models.view_datafile'] = is_authenticated & (is_staff
                                                          | CanManageProjectContainingDataFile()
                                                          | CanManageDeploymentContainingDataFile()
                                                          | CanManageDeviceContainingDataFile()
+                                                         | CanAnnotateDeploymentContainingDataFile()
+                                                         | CanAnnotateDeviceContainingDataFile()
+                                                         | CanAnnotateProjectContainingDataFile()
                                                          | CanViewProjectContainingDataFile()
                                                          | CanViewDeploymentContainingDataFile()
                                                          | CanViewDeviceContainingDataFile()) & is_active
+perms['data_models.annotate_datafile'] = is_authenticated & (is_staff
+                                                             | CanManageProjectContainingDataFile()
+                                                             | CanAnnotateProjectContainingDataFile()
+                                                             | CanManageDeploymentContainingDataFile()
+                                                             | CanAnnotateDeploymentContainingDataFile()
+                                                             | CanManageDeviceContainingDataFile()
+                                                             | CanAnnotateDeviceContainingDataFile()
+
+                                                             ) & is_active
+
 
 # should check if a user can view a deployment at that site
 perms['data_models.view_site'] = is_authenticated & is_active
