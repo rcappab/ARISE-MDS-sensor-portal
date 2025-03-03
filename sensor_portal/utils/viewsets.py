@@ -12,3 +12,17 @@ class OptionalPaginationViewSet(ModelViewSet):
                 and queryset.count() < settings.REST_FRAMEWORK['MAX_PAGE_SIZE']:
             return None
         return super().paginate_queryset(queryset)
+
+
+class AddOwnerViewSet(ModelViewSet):
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
+
+class CheckFormViewSet(ModelViewSet):
+    def get_serializer_context(self):
+        context = super(CheckFormViewSet, self).get_serializer_context()
+
+        context.update(
+            {'form': 'multipart/form-data' in self.request.content_type})
+        return context

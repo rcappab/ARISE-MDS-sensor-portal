@@ -144,17 +144,15 @@ class SSH_client():
 
             return -1, stdout, stderr
 
-    def mkdir_p(self, remote, is_dir=False):
+    def mkdir_p(self, remote_path: str, is_dir: bool = True):
         """
         emulates mkdir_p if required.
-        sftp - is a valid sftp object
-        remote - remote path to create.
         """
         dirs_ = []
         if is_dir:
-            dir_ = remote
+            dir_ = remote_path
         else:
-            dir_, basename = split(remote)
+            dir_, basename = split(remote_path)
         while len(dir_) > 1:
             dirs_.append(dir_)
             dir_, _ = split(dir_)
@@ -162,8 +160,9 @@ class SSH_client():
             dirs_.append(dir_)  # For a remote path like y/x.txt
         while len(dirs_):
             dir_ = dirs_.pop()
+            print(dir_)
             try:
                 self.ftp_sftp.stat(dir_)
             except FileNotFoundError:
-                print("making ... dir",  dir_)
+                print(f"making {dir_}",)
                 self.ftp_sftp.mkdir(dir_)
