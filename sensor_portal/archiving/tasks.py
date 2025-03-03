@@ -5,8 +5,11 @@ from posixpath import join as posixjoin
 from celery import chord, group, shared_task
 from data_models.models import DataFile, TarFile
 from django.conf import settings
+from django.utils import timezone as djtimezone
 from utils.general import divide_chunks
 from utils.task_functions import TooManyTasks, check_simultaneous_tasks
+
+from sensor_portal.celery import app
 
 from .exceptions import TAROffline
 from .models import Archive
@@ -47,33 +50,76 @@ def check_archive_upload_task(archive_pk: int):
 
 @shared_task
 def get_files_from_archive_task(file_pks, callback=None):
-    file_objs = DataFile.objects.filter(pk__in=file_pks)
+    file_objs = DataFile.objects.filter(pk__in=file_pks, archived=True)
 
     # Get unique TAR files
-    tar_file_pks = list(TarFile.objects.filter(
-        pk__in=file_objs.values_list('tar_file__pk').distinct()))
+    tar_file_objs = TarFile.objects.filter(
+        pk__in=file_objs.values_list('tar_file__pk', flat=True).distinct())
+    tar_file_pks = list(tar_file_objs.values_list('pk', flat=True))
 
     all_tasks = []
     # For each TAR create job to retrieve files
     for tar_file_pk in tar_file_pks:
-        target_file_pks = list(file_objs.filter(tar_file__pk=tar_file_pk))
+        target_file_pks = list(file_objs.filter(
+            tar_file__pk=tar_file_pk).values_list('pk', flat=True))
         all_tasks.append(get_files_from_archived_tar_task.si(
             tar_file_pk, target_file_pks))
 
     task_group = group(all_tasks)
+
+    post_tasks = [post_get_file_from_archive_task.s()]
     if callback is not None:
-        task_group = chord(task_group, callback)
-    task_group.apply_async()
+        post_tasks.append(callback)
+    post_task_group = group(post_tasks)
+    task_chord = chord(task_group, post_task_group)
+    task_chord.apply_async()
+
+
+@shared_task
+def post_get_file_from_archive_task(all_file_pks):
+    # flatten list of lists
+
+    all_file_pks_flat = [item for items in all_file_pks for item in items]
+    # schedule post download tasks
+    file_objs = DataFile.objects.filter(pk__in=all_file_pks_flat)
+    # get unique sensor models
+    device_models = file_objs.values_list(
+        "deployment__device__model", flat=True).distinct()
+    # for each sensor model
+
+    for device_model in device_models:
+        sensor_model_file_objs = file_objs.filter(
+            deployment__device__model=device_model)
+        data_handler = settings.DATA_HANDLERS.get_handler(
+            device_model.type.name, device_model.name)
+        # get unique file formats
+        device_file_formats = sensor_model_file_objs.values_list(
+            "file_format", flat=True).distinct()
+
+        for device_file_format in device_file_formats:
+            # get files with this sensor model ,this file format
+            device_model_format_file_objs = sensor_model_file_objs.filter(
+                file_format=device_file_format)
+            device_model_format_file_file_names = list(
+                device_model_format_file_objs.values_list("file_name", flat=True))
+            task_name = data_handler.get_post_download_task(
+                device_file_format, False)
+            if task_name is not None:
+                new_task = app.signature(
+                    task_name, [device_model_format_file_file_names], immutable=True)
+                # submit jobs
+                new_task.apply_async()
 
 
 @shared_task(autoretry_for=(TooManyTasks, TAROffline),
              max_retries=None,
              retry_backoff=2*60,
              retry_backoff_max=5 * 60,
-             retry_jitter=True)
+             retry_jitter=True,
+             bind=True)
 def get_files_from_archived_tar_task(self, tar_file_pk, target_file_pks):
 
-    check_simultaneous_tasks()
+    check_simultaneous_tasks(self, 4)
 
     tar_file_obj = TarFile.objects.get(pk=tar_file_pk)
     file_objs = DataFile.objects.filter(pk__in=target_file_pks)
@@ -127,10 +173,17 @@ def get_files_from_archived_tar_task(self, tar_file_pk, target_file_pks):
     else:
         initial_offline = False
 
+    temp_path = posixjoin(tar_file_obj.path, "temp", self.request.id)
+    ftp_connection_success = ssh_client.connect_to_ftp()
+    if not ftp_connection_success:
+        raise Exception("Unable to connect to FTP")
+
+    ssh_client.mkdir_p(temp_path)
+
     status_code, stdout, stderr = ssh_client.send_ssh_command(
         f"tar tvf {tar_path}", return_strings=False)
 
-    print(f"{tar_path}: List TAR files")
+    print(f"{tar_path}: List files in TAR")
 
     in_tar_file_paths = []
     in_tar_found_files = []
@@ -154,11 +207,8 @@ def get_files_from_archived_tar_task(self, tar_file_pk, target_file_pks):
         raise Exception(f"{tar_path}: No files found in TAR")
     else:
         missing_files = [x for x in file_names if x not in in_tar_found_files]
-        if missing_files > 0:
+        if len(missing_files) > 0:
             print(f"{tar_path}: Files not found: {missing_files}")
-
-    temp_path = posixjoin(tar_file_obj.path, "temp", self.id)
-    ssh_client.mkdir_p(temp_path, is_dir=True)
 
     chunked_in_tar_file_paths = [
         x for x in divide_chunks(in_tar_file_paths, 500)]
@@ -174,6 +224,7 @@ def get_files_from_archived_tar_task(self, tar_file_pk, target_file_pks):
 
     ssh_client.connect_to_scp()
     file_objs_to_update = []
+    all_pks = []
     for idx, in_tar_file_path in enumerate(in_tar_file_paths):
         try:
             full_file_name = os.path.split(in_tar_file_path)[1]
@@ -190,13 +241,20 @@ def get_files_from_archived_tar_task(self, tar_file_pk, target_file_pks):
                 ssh_client.scp_c.get(
                     temp_file_path, local_file_path, preserve_times=True)
 
+            file_obj.modified_on = djtimezone.now()
             file_obj.local_path = settings.FILE_STORAGE_ROOT
             file_obj.local_storage = True
             file_objs_to_update.append(file_obj)
+            all_pks.append(file_obj.pk)
         except Exception as e:
             print(f"{tar_path}: Error retrieving file: {repr(e)}")
     print(f"{tar_path}: Update database")
-    DataFile.objects.bulk_update(file_objs_to_update)
+    DataFile.objects.bulk_update(file_objs_to_update, fields=[
+                                 "local_path", "local_storage", "modified_on"])
     print(f"{tar_path}: Clear temporary files")
     status_code, stdout, stderr = ssh_client.send_ssh_command(
-        f"rm - rf {temp_path}")
+        f"rm -rf {temp_path}")
+
+    ssh_client.close_connection()
+
+    return all_pks

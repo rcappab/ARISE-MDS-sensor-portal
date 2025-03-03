@@ -1,7 +1,9 @@
-from data_handlers.base_data_handler_class import DataTypeHandler
 from datetime import datetime
 from typing import Tuple
-from data_handlers.functions import open_exif, check_exif_keys, get_image_recording_dt
+
+from data_handlers.base_data_handler_class import DataTypeHandler
+from data_handlers.functions import (check_exif_keys, get_image_recording_dt,
+                                     open_exif)
 
 
 class DefaultImageHandler(DataTypeHandler):
@@ -28,8 +30,6 @@ class DefaultImageHandler(DataTypeHandler):
         recording_dt, extra_data, data_type, task = super().handle_file(
             file, recording_dt, extra_data, data_type)
 
-        task = "data_handler_generate_thumbnails"
-
         image_exif = open_exif(file)
         recording_dt = get_image_recording_dt(image_exif)
 
@@ -40,3 +40,7 @@ class DefaultImageHandler(DataTypeHandler):
         extra_data.update(new_extra_data)
 
         return recording_dt, extra_data, data_type, task
+
+    def get_post_download_task(self, file_extension: str, first_time: bool = True):
+        # Always generate a thumbnail
+        return "data_handler_generate_thumbnails"

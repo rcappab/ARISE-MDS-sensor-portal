@@ -36,7 +36,8 @@ python-magic==0.4.27
 numpy==1.26.4
 pandas==1.4.2
 plotly==5.9.0
-
+thefuzz==0.20.0
+requests==2.32.3
 
 # testing
 pytest==8.3.3

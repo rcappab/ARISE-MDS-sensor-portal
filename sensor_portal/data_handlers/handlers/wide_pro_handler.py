@@ -1,12 +1,14 @@
-from data_handlers.handlers.default_image_handler import DataTypeHandler
+import io
+import os
 from datetime import datetime
 from typing import Any, List, Tuple
-from data_handlers.functions import open_exif, check_exif_keys, get_image_recording_dt
-import os
+
 import dateutil.parser
-from celery import shared_task
 import pandas as pd
-import io
+from celery import shared_task
+from data_handlers.functions import (check_exif_keys, get_image_recording_dt,
+                                     open_exif)
+from data_handlers.handlers.default_image_handler import DataTypeHandler
 from django.core.files import File
 
 
@@ -48,7 +50,7 @@ class Snyper4GHandler(DataTypeHandler):
             extra_data["daily_report"] = True
 
             data_type = "report"
-            task = "snyper4G_convert_daily_report"
+
         else:
             split_image_filename = split_filename[0].split("-")
 
@@ -76,6 +78,15 @@ class Snyper4GHandler(DataTypeHandler):
         return recording_dt, extra_data, data_type, task
 
 
+def get_post_download_task(self, file_extension: str, first_time: bool = True):
+    task = None
+    if file_extension == ".txt" and first_time:
+        task = "snyper4G_convert_daily_report"
+    elif file_extension.lower() in [".jpeg", ".jpeg"]:
+        task = "data_handler_generate_thumbnails"
+    return task
+
+
 def parse_report_file(file):
     report_dict = {}
     # Should extract date time from file
@@ -93,9 +104,9 @@ def parse_report_file(file):
 
 
 @shared_task(name="snyper4G_convert_daily_report")
-def convert_daily_report_task(file_pks: List[int]):
+def convert_daily_report_task(file_names: List[str]):
     from data_handlers.post_upload_task_handler import post_upload_task_handler
-    post_upload_task_handler(file_pks, convert_daily_report)
+    post_upload_task_handler(file_names, convert_daily_report)
 
 
 def convert_daily_report(data_file) -> Tuple[Any | None, List[str] | None]:

@@ -377,7 +377,7 @@ class Deployment(BaseModel):
         super().save(*args, **kwargs)
 
     def get_combo_project(self):
-        if self.project.all().exists:
+        if self.project.all().exists():
             all_proj_id = list(
                 self.project.all().values_list("project_ID", flat=True))
             all_proj_id.sort()

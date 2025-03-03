@@ -104,6 +104,7 @@ def create_tar_file(file_objs, name_suffix=0):
     relative_metadata_dir_path = os.path.relpath(
         metadata_dir_path, settings.FILE_STORAGE_ROOT)
 
+    print(f"{tar_name}: generating bagit data")
     # Generate bagit metadata
     all_metadata_paths = bag_info_from_files(file_objs, metadata_dir_path)
 
@@ -128,10 +129,10 @@ def create_tar_file(file_objs, name_suffix=0):
     os.removedirs(metadata_dir_path)
 
     if not success:
-        print("Error creating TAR")
+        print(f"{tar_name}: Error creating TAR")
         print(output)
         return False, tar_name, None
-
+    print(f"{tar_name}: succesfully created")
     return True, tar_name, full_tar_path
 
 

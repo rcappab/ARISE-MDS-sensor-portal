@@ -1,7 +1,8 @@
 import importlib
 import os
-from typing import Callable, Tuple
 from datetime import datetime
+from typing import Callable, Tuple
+
 from .tasks import *
 
 
@@ -35,7 +36,12 @@ class DataTypeHandler():
         if extra_data is None:
             extra_data = {}
 
-        return recording_dt, extra_data, data_type, None
+        file_format = os.path.splitext(file.name)[1]
+
+        return recording_dt, extra_data, data_type, self.get_post_download_task(file_format)
+
+    def get_post_download_task(self, file_extension: str, first_time: bool = True):
+        return None
 
 
 class DataTypeHandlerCollection():
@@ -96,7 +102,7 @@ class DataTypeHandlerCollection():
 
         return self.data_type_handlers[data_type].get(device_model)
 
-    def get_handler(self, data_type, device_model) -> type[DataTypeHandler]:
+    def get_handler(self, data_type, device_model) -> DataTypeHandler:
         device_model = self.set_default_model(data_type, device_model)
         if device_model is None:
             return None

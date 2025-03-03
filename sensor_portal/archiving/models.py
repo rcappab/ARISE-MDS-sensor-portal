@@ -1,4 +1,5 @@
 import os
+from posixpath import join as posixjoin
 
 from django.conf import settings
 from django.db import models
@@ -54,6 +55,7 @@ class TarFile(BaseModel):
         return self.name
 
     def clean_tar(self, delete_obj=False):
+
         if self.local_storage:
             tar_name = self.name
             if ".tar.gz" not in tar_name:
@@ -69,9 +71,34 @@ class TarFile(BaseModel):
             if not delete_obj:
                 self.local_storage = False
                 self.save()
+        elif not self.local_storage and delete_obj:
+            if not all(self.files.values_list("local_storage", flat=True)):
+                raise (
+                    Exception(f"{self.name}: Some files contained in this TAR are no longer stored locally.\
+                              The remote TAR cannot be deleted."))
+                # deletes the attached file form data storage
+            self.files.update(archived=False)
+            ssh_client = self.archive.init_ssh_client()
+            ssh_connect_success = ssh_client.connect_to_ssh()
+            if not ssh_connect_success:
+                return
+            remote_path = posixjoin(self.path, self.name+".tar.gz")
+            status_code, stdout, stderr = ssh_client.send_ssh_command(
+                f"rm {remote_path}")
+            if status_code != 0:
+                remote_path = posixjoin(self.path, self.name)
+                status_code, stdout, stderr = ssh_client.send_ssh_command(
+                    f"rm {remote_path}")
+            if status_code != 0:
+                raise (
+                    Exception(f"{self.name}: Cannot remove remote TAR. {stdout}"))
+            else:
+
+                print(f"{self.name}: Remote TAR removed.")
+                status_code, stdout, stderr = ssh_client.send_ssh_command(
+                    f"find {self.path} -type d -empty -delete")
 
 
 @receiver(pre_delete, sender=TarFile)
 def pre_remove_tar(sender, instance, **kwargs):
-    # deletes the attached file form data storage
     instance.clean_tar(True)

@@ -1,4 +1,5 @@
 import os
+import traceback
 
 from celery import chord, group
 from data_models.models import DataFile
@@ -60,18 +61,20 @@ def check_archive_upload(archive: Archive):
     tars_to_upload = archive.tar_files.filter(archived=False, uploading=False)
 
     archive_ssh = archive.init_ssh_client()
-
+    connect_ftp_success = archive_ssh.connect_to_ftp()
     connect_scp_success = archive_ssh.connect_to_scp()
-    if not connect_scp_success:
+    if not connect_scp_success or not connect_ftp_success:
         return
 
     for tar_obj in tars_to_upload:
+
         if tar_obj.uploading or tar_obj.archived:
             continue
+        print(f"{tar_obj.name} uploading")
         tar_obj.uploading = True
         tar_obj.save()
 
-        tar_full_name = tar_obj.name+"tar.gz"
+        tar_full_name = tar_obj.name+".tar.gz"
 
         upload_path = os.path.join(archive.root_folder,
                                    os.path.relpath(tar_obj.path,
@@ -94,16 +97,22 @@ def check_archive_upload(archive: Archive):
         except SCPException as e:
             print("SCP error:")
             print(repr(e))
+            traceback.print_exc()
 
         except Exception as e:
             print(repr(e))
+            traceback.print_exc()
 
         tar_obj.uploading = False
         if success:
+            print(f"{tar_obj.name} uploading succesful")
+            tar_obj.clean_tar()
             tar_obj.archived = True
             tar_obj.path = upload_path
             tar_obj.files.update(archived=True)
-            tar_obj.clean_tar()
+
+        else:
+            print(f"{tar_obj.name} uploading failed")
         tar_obj.save()
 
         archive_ssh.close_connection()
