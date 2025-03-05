@@ -9,7 +9,8 @@ from django.utils import timezone as djtimezone
 from user_management.factories import UserFactory
 
 from .general_functions import create_image
-from .models import DataFile, DataType, Deployment, Device, DeviceModel, Project, Site
+from .models import (DataFile, DataType, Deployment, Device, DeviceModel,
+                     Project, Site)
 
 
 class DataTypeFactory(factory.django.DjangoModelFactory):
@@ -90,7 +91,10 @@ class DeploymentFactory(factory.django.DjangoModelFactory):
         if not create:
             # Simple build do nothing.
             return
-        if extracted is None:
+        if extracted:
+            for current_project in extracted:
+                self.project.add(current_project)
+        elif extracted is None:
             for i in range(sample(range(3), 1)[0]):
                 self.project.add(ProjectFactory())
 

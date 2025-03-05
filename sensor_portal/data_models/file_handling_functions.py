@@ -16,7 +16,7 @@ from .general_functions import check_dt
 
 
 def create_file_objects(files, check_filename=False, recording_dt=None, extra_data=None, deployment_object=None,
-                        device_object=None, request_user=None):
+                        device_object=None, data_types=None, request_user=None):
     from data_models.models import DataFile, DataType
 
     invalid_files = []
@@ -24,7 +24,6 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
     uploaded_files = []
     if extra_data is None:
         extra_data = [{}]
-    data_types = []
 
     print(files)
 

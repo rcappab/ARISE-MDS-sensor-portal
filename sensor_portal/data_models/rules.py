@@ -96,7 +96,7 @@ class CanViewDeploymentInProject(R):
             # view
             accumulated_q = Q(project__viewers=user)
             accumulated_q = accumulated_q | Q(
-                project_annotators=user)
+                project__annotators=user)
             # manage
             accumulated_q = accumulated_q | Q(
                 project__managers=user)
@@ -278,7 +278,8 @@ class CanViewDeployedDevice(R):
         else:
             # can view/manage/own a deployment within project
             # view
-            accumulated_q = Q(device__viewers=user) | Q(device_annotators=user)
+            accumulated_q = Q(device__viewers=user) | Q(
+                device__annotators=user)
 
         return final_query(accumulated_q)
 

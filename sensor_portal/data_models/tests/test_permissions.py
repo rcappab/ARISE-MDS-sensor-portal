@@ -4,15 +4,10 @@ from datetime import datetime as dt
 from io import BytesIO
 
 import pytest
-from data_models.factories import (
-    DataFileFactory,
-    DeploymentFactory,
-    DeviceFactory,
-    ProjectFactory,
-    SiteFactory,
-)
+from data_models.factories import (DataFileFactory, DeploymentFactory,
+                                   DeviceFactory, ProjectFactory, SiteFactory)
 from data_models.general_functions import create_image
-from data_models.models import DataFile
+from data_models.models import DataFile, Deployment
 from data_models.serializers import DeploymentSerializer
 from user_management.factories import UserFactory
 
@@ -41,6 +36,11 @@ def test_deploy_non_managed_device(api_client_with_credentials):
         api_url, data=not_allowed_payload, format="json")
     print(response_create_not_allowed.data)
     assert response_create_not_allowed.status_code == 403
+
+    # If viewset mixins are resolved in the wrong order, the object can still be created despite receiving a 403
+    # Check object was not created.
+    assert not Deployment.objects.filter(
+        deployment_ID=not_allowed_payload["deployment_ID"]).exists()
 
     allowed_deployment = DeploymentFactory.build(
         device=device_owned, site=site)
@@ -91,6 +91,9 @@ def test_deploy_to_non_managed_project(api_client_with_credentials):
         api_url, data=not_allowed_payload, format="json")
     print(response_create_not_allowed.data)
     assert response_create_not_allowed.status_code == 403
+    # If viewset mixins are resolved in the wrong order, the object can still be created despite receiving a 403
+    assert not Deployment.objects.filter(
+        deployment_ID=not_allowed_payload["deployment_ID"]).exists()
 
     new_deployment = DeploymentFactory.build(
         device=device_owned, site=site)
@@ -363,6 +366,8 @@ def test_device_manager_upload_files(api_client_with_credentials):
     print(f"Response: {response_create_fail_json}")
     assert response_create_fail.status_code == 403
 
+    device.viewers.remove(user)
+
     device.managers.add(user)
 
     temp = BytesIO()
@@ -387,7 +392,8 @@ def test_device_manager_upload_files(api_client_with_credentials):
     file_object = DataFile.objects.get(
         file_name=response_create_success_json["uploaded_files"][0]["file_name"])
     object_url = f"{api_url}{file_object.pk}/"
-    # Test being able to view the file
+
+    # Test being able to view the file when no longer manager
     device.managers.remove(user)
 
     response_get_fail = api_client_with_credentials.get(

@@ -9,8 +9,9 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework_gis import filters as filters_gis
-from utils.viewsets import (AddOwnerViewSet, CheckFormViewSet,
-                            OptionalPaginationViewSet)
+from utils.viewsets import (AddOwnerViewSetMixIn, CheckAttachmentViewSetMixIn,
+                            CheckFormViewSetMixIn,
+                            OptionalPaginationViewSetMixIn)
 
 from .file_handling_functions import create_file_objects
 from .filtersets import *
@@ -23,7 +24,7 @@ from .serializers import (DataFileSerializer, DataFileUploadSerializer,
                           ProjectSerializer, SiteSerializer)
 
 
-class DeploymentViewSet(AddOwnerViewSet, CheckFormViewSet, OptionalPaginationViewSet):
+class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, CheckFormViewSetMixIn, OptionalPaginationViewSetMixIn):
     search_fields = ['deployment_device_ID',
                      'device__name', 'device__device_ID']
     ordering_fields = ordering = [
@@ -51,10 +52,6 @@ class DeploymentViewSet(AddOwnerViewSet, CheckFormViewSet, OptionalPaginationVie
         file_metric_dicts = get_all_file_metric_dicts(data_files)
         return Response(file_metric_dicts, status=status.HTTP_200_OK)
 
-    def perform_update(self, serializer):
-        self.check_attachment(serializer)
-        super(DeploymentViewSet, self).perform_update(serializer)
-
     def check_attachment(self, serializer):
         project_objects = serializer.validated_data.get('project')
         if project_objects is not None:
@@ -70,7 +67,7 @@ class DeploymentViewSet(AddOwnerViewSet, CheckFormViewSet, OptionalPaginationVie
                     f"You don't have permission to deploy {device_object.device_ID}")
 
 
-class ProjectViewSet(AddOwnerViewSet, OptionalPaginationViewSet):
+class ProjectViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
     serializer_class = ProjectSerializer
     queryset = Project.objects.all().distinct()
     filterset_class = ProjectFilter
@@ -88,7 +85,7 @@ class ProjectViewSet(AddOwnerViewSet, OptionalPaginationViewSet):
         return Response(file_metric_dicts, status=status.HTTP_200_OK)
 
 
-class DeviceViewSet(AddOwnerViewSet, OptionalPaginationViewSet):
+class DeviceViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
     serializer_class = DeviceSerializer
     queryset = Device.objects.all().distinct()
     filterset_class = DeviceFilter
@@ -106,7 +103,7 @@ class DeviceViewSet(AddOwnerViewSet, OptionalPaginationViewSet):
         return Response(file_metric_dicts, status=status.HTTP_200_OK)
 
 
-class DataFileViewSet(OptionalPaginationViewSet):
+class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixIn):
 
     queryset = DataFile.objects.all().distinct()
     filterset_class = DataFileFilter
@@ -136,10 +133,6 @@ class DataFileViewSet(OptionalPaginationViewSet):
             return Response({}, status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_403_FORBIDDEN)
-
-    def perform_update(self, serializer):
-        self.check_attachment(serializer)
-        super(DataFileViewSet, self).perform_update(serializer)
 
     def check_attachment(self, serializer):
         deployment_object = serializer.validated_data.get(

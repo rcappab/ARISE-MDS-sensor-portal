@@ -633,7 +633,7 @@ class DataFile(BaseModel):
 
 @receiver(post_save, sender=DataFile)
 def post_save_file(sender, instance, created, **kwargs):
-    instance.deployment.set_thumb_url(instance)
+    instance.deployment.set_thumb_url()
     instance.deployment.save()
 
 
