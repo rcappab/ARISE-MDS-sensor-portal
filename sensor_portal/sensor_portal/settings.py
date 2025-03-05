@@ -86,7 +86,8 @@ INSTALLED_APPS = [
     'user_management',
     'external_storage_import',
     'utils',
-    'archiving'
+    'archiving',
+    'observation_editor'
 
 ]
 
@@ -253,3 +254,5 @@ MAX_ARCHIVE_SIZE_GB = 10
 if DEVMODE:
     MIN_ARCHIVE_SIZE_GB = 0.01
     MAX_ARCHIVE_SIZE_GB = 0.025
+
+HUMAN_TAXON_CODE = 2436436
