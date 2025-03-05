@@ -132,7 +132,7 @@ def GBIF_get_or_create_taxon_object_from_taxon_code(taxon_code):
         species_name=species_data.get("canonicalName"),
         species_common_name=species_data.get("vernacularName", ""),
         taxon_source=1,
-        taxon_id=all_taxon_codes[0][0],
+        taxon_code=all_taxon_codes[0][0],
         taxonomic_level=all_taxon_codes[0][1]
     )
     return taxon_obj, created
