@@ -55,10 +55,6 @@ const DetailDisplayFile = ({ fileData }: Props) => {
 		}
 	}, []);
 
-	useEffect(() => {
-		console.log(tempObsData);
-	}, [tempObsData]);
-
 	const handleStartEditBoundingBox = useCallback((index) => {
 		setBboxEditMode({
 			edit: true,
@@ -76,7 +72,6 @@ const DetailDisplayFile = ({ fileData }: Props) => {
 
 	const getDataFunc = async () => {
 		let apiURL = `observation/?data_files=${fileData["id"]}`;
-		console.log(apiURL);
 		let response_json = await getData(apiURL, authTokens.access);
 		setTempObsData(response_json);
 		return response_json;

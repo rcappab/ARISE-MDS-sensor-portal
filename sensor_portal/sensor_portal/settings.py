@@ -47,6 +47,7 @@ if DEVMODE:
         os.path.join(BASE_DIR, 'static_files'),
     ]
     STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+    CSRF_USE_SESSIONS = True
     CORS_ALLOW_ALL_ORIGINS = True
     CSRF_COOKIE_DOMAIN = '127.0.0.1'
 
@@ -92,10 +93,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -203,9 +204,11 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 50,
     'MAX_PAGE_SIZE': 100,
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.TokenAuthentication',
-        'rest_framework_simplejwt.authentication.JWTAuthentication'
+        'rest_framework.authentication.SessionAuthentication',
+
+
     ],
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',

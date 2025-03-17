@@ -33,7 +33,7 @@ const SpeciesSelector = ({
 		if ("results" in response_json) {
 			response_json = response_json["results"];
 		}
-		console.log(response_json);
+
 		return response_json;
 	};
 
@@ -195,7 +195,6 @@ const ObservationFormRow = ({
 
 	const handleStartEditBoundingBox = useCallback(
 		function () {
-			console.log(index);
 			onEditBoundingBox(index);
 		},
 		[index, onEditBoundingBox]
@@ -367,7 +366,6 @@ const ObservationForm = ({
 			obsData = getNewRow(obsData);
 			obsData = { ...obsData, index: index };
 			onEdit(obsData);
-			console.log(obsData);
 		}
 
 		return (
@@ -446,7 +444,7 @@ const ObservationForm = ({
 
 	const newPATCH = async function (x: { apiURL: string; newData: object }) {
 		let response_json = await patchData(x.apiURL, authTokens.access, x.newData);
-		//console.log(response_json);
+
 		return response_json;
 	};
 
@@ -457,7 +455,7 @@ const ObservationForm = ({
 
 	const newPOST = async function (x: { apiURL: string; newData: object }) {
 		let response_json = await postData(x.apiURL, authTokens.access, x.newData);
-		//console.log(response_json);
+
 		return response_json;
 	};
 
@@ -495,14 +493,12 @@ const ObservationForm = ({
 				// make sure succesfully edited rows are no longer flagged as edited
 				let obsData = getNewRow(response);
 				obsData = { ...obsData, index: index };
-				console.log(index, action, "succesful");
-				console.log(obsData);
+
 				onEdit(obsData);
 			} else if (index !== undefined && action === "deleted") {
 				//make sure succesfully deleted rows don't get submitted for deletion again
 				let obsData = { ...allObsData[index], edited: false, index: index };
-				console.log(index, "delete succesful");
-				console.log(obsData);
+
 				onEdit(obsData);
 			}
 			return true;
@@ -539,7 +535,6 @@ const ObservationForm = ({
 			return;
 		}
 
-		console.log("edit");
 		//edit
 		for (const formData of toEdit) {
 			const toastId = startLoadingToast();
@@ -555,7 +550,7 @@ const ObservationForm = ({
 			);
 			successArray.push(success);
 		}
-		console.log("create");
+
 		//create
 		for (const formData of toCreate) {
 			const toastId = startLoadingToast();
@@ -574,7 +569,7 @@ const ObservationForm = ({
 		}
 
 		//delete
-		console.log("delete");
+
 		for (const formData of toDelete) {
 			const toastId = startLoadingToast();
 			const response = await deleteData(
