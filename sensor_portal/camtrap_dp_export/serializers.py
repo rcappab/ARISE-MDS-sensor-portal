@@ -17,6 +17,7 @@ class DeploymentSerializerCTDP(serializers.Serializer):
         source="deployment_start", format="%Y-%m-%dT%H:%M:%S%z")
     deploymentEnd = serializers.DateTimeField(
         source="deployment_start", format="%Y-%m-%dT%H:%M:%S%z")
+    setupBy = serializers.CharField()
     cameraID = serializers.CharField()
     cameraModel = serializers.CharField()
     coordinateUncertainty = serializers.FloatField()

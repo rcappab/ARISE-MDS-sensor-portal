@@ -40,6 +40,11 @@ def get_ctdp_deployment_qs(qs):
         )
     )
 
+    qs = qs.annotate(setupBy=Case(When(owner__isnull=False,
+                                  then=Concat(F('owner__first_name'), Value(
+                                      ' '), F('owner__last_name'))),
+                     default=Value(''), output_field=CharField()))
+
     qs = qs.annotate(
         coordinateUncertainty=Case(
             When(extra_data__coordinateUncertainty__isnull=False, then=Cast(KeyTextTransform('coordinateUncertainty', 'extra_data'),
@@ -166,11 +171,6 @@ def get_ctdp_media_qs(qs):
             Value("T")
         )
     )
-
-    qs = qs.annotate(setupBy=When(owner__isnull=False,
-                                  then=Concat(F('owner__first_name'), Value(
-                                      ' '), F('owner__last_name'))),
-                     default=Value(''), output_field=CharField())
 
     qs = qs.annotate(
         deploymentID=F('deployment__deployment_device_ID')
