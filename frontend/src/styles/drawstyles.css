@@ -1,0 +1,60 @@
+.rectdraw-container {
+	width: fit-content;
+	height: fit-content;
+	place-self: center;
+	position: relative;
+
+	.rectdraw {
+		position: absolute;
+		top: 0;
+		left: 0;
+		height: 100%;
+		width: 100%;
+	}
+
+	.rectdraw.enabled {
+		border: 1px solid #000000;
+		cursor: crosshair;
+	}
+
+	.rectangle {
+		fill: rgba(255, 255, 255, 0);
+		stroke-width: 3;
+		stroke: rgb(250, 0, 0);
+	}
+
+	.label {
+		fill: rgb(250, 0, 0);
+	}
+
+	.rectangle.edit {
+		stroke-dasharray: 5, 5;
+	}
+
+	.rectangle.highlight {
+		stroke: lightgray;
+		stroke-width: 8;
+	}
+
+	.label.highlight {
+		fill: lightgray;
+		stroke: lightgray;
+		stroke-width: 3;
+	}
+
+	.rectangle.ai-observation {
+		stroke: rgb(0, 0, 250);
+	}
+
+	.label.ai-observation {
+		fill: rgb(0, 0, 250);
+	}
+
+	.rectangle.uncertain {
+		stroke: orange;
+	}
+
+	.label.uncertain {
+		fill: orange;
+	}
+}

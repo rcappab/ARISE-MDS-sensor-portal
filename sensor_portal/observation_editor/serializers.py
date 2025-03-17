@@ -30,6 +30,12 @@ class EvenShorterTaxonSerialier(serializers.ModelSerializer):
         model = Taxon
         fields = ["id", "species_name", "species_common_name", "taxon_source"]
 
+    def to_representation(self, instance):
+        initial_rep = super(EvenShorterTaxonSerialier,
+                            self).to_representation(instance)
+        initial_rep["full_string"] = f"{initial_rep.get('species_name')} - {initial_rep.get('species_common_name')}"
+        return initial_rep
+
 
 class ObservationSerializer(OwnerMixIn, CreatedModifiedMixIn, CheckFormMixIn, serializers.ModelSerializer):
     taxon_obj = ShortTaxonSerializer(source='taxon', read_only=True)
@@ -69,6 +75,12 @@ class ObservationSerializer(OwnerMixIn, CreatedModifiedMixIn, CheckFormMixIn, se
 
         else:
             initial_rep.update(original_taxon_obj)
+
+        if instance.owner:
+            initial_rep["annotated_by"] = f"{instance.owner.first_name} {instance.owner.last_name}"
+        else:
+            initial_rep["annotated_by"] = None
+
         return initial_rep
 
     def validate(self, data):

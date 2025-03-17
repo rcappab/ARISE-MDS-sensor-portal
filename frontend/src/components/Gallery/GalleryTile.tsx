@@ -19,7 +19,6 @@ const GalleryTile = ({
 	onClick = (int) => {},
 }: Props) => {
 	const getImage = function () {
-		console.log(cardImageURL);
 		if (cardImageURL !== null && cardImageURL !== "") {
 			return (
 				<img

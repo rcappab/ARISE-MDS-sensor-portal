@@ -13,6 +13,8 @@ import toast from "react-hot-toast";
 
 import DetailModal from "../Detail/DetailModal.tsx";
 
+import { ObsEditModeContext } from "../../context/ObsModeContext.jsx";
+
 const Gallery = () => {
 	const { fromID, fromObject, objectType, nameKey } = useOutletContext();
 	const defaultPageSize = 28;
@@ -23,6 +25,7 @@ const Gallery = () => {
 		Number(searchParams.get("page_size")) || defaultPageSize
 	);
 	const { authTokens, user } = useContext(AuthContext);
+	const [obsEditMode, setObsEditMode] = useState(false);
 
 	let additionalOrdering;
 	let defaultOrdering = nameKey;
@@ -160,42 +163,57 @@ const Gallery = () => {
 		setOrderBy(defaultOrdering);
 	};
 
-	const removeSearchParameters = function (key) {
-		let oldSearchParams = searchParams;
-		oldSearchParams.delete(key);
-		setSearchParams(oldSearchParams);
-	};
+	const removeSearchParameters = useCallback(
+		function (key) {
+			let oldSearchParams = searchParams;
+			oldSearchParams.delete(key);
+			setSearchParams(oldSearchParams);
+		},
+		[searchParams, setSearchParams]
+	);
 
 	const onSubmit = function () {
 		setPageNum(1);
 	};
 
-	const changePage = function (newPage) {
+	const changePage = useCallback(function (newPage) {
 		console.log(newPage);
 		setPageNum(newPage);
-	};
+	}, []);
 
-	const openDetail = function (index) {
-		updateSearchParameters("detail", index);
-	};
+	const openDetail = useCallback(
+		function (index) {
+			updateSearchParameters("detail", index);
+		},
+		[updateSearchParameters]
+	);
 
-	const closeDetail = function () {
-		console.log("close detail");
-		removeSearchParameters("detail");
-	};
+	const closeDetail = useCallback(
+		function () {
+			console.log("close detail");
+			removeSearchParameters("detail");
+		},
+		[removeSearchParameters]
+	);
 
-	const setEdit = function (editOn = true) {
-		if (editOn) {
-			updateSearchParameters("edit", editOn);
-		} else {
-			removeSearchParameters("edit");
-		}
-	};
+	const setEdit = useCallback(
+		function (editOn = true) {
+			if (editOn) {
+				updateSearchParameters("edit", editOn);
+			} else {
+				removeSearchParameters("edit");
+			}
+		},
+		[removeSearchParameters, updateSearchParameters]
+	);
 
-	const addNew = function () {
-		setEdit(true);
-		openDetail(-1);
-	};
+	const addNew = useCallback(
+		function () {
+			setEdit(true);
+			openDetail(-1);
+		},
+		[openDetail, setEdit]
+	);
 
 	const showGallery = function () {
 		if (isLoading || isPending || isRefetching) {
@@ -223,6 +241,7 @@ const Gallery = () => {
 					// change itemsperpage callback
 					// change result ordering callback
 				/>
+
 				<div
 					id="display-container"
 					className={`${isPlaceholderData ? "opacity-50" : ""} container`}
@@ -280,20 +299,22 @@ const Gallery = () => {
 				Search {fromID === undefined ? "" : `${fromObject} ${fromID} `}
 				{objectType}s
 			</h3>
-			<DetailModal
-				data={data}
-				closeDetail={closeDetail}
-				onDetailCancel={handleDetailModalCancel}
-				openDetail={openDetail}
-				changePage={changePage}
-				setEdit={setEdit}
-				deleteItem={deleteItem}
-				onDetailSubmit={onDetailSubmit}
-				nameKey={nameKey}
-				pageNum={pageNum}
-				objectType={objectType}
-				isLoading={isLoading || isPending ? true : false}
-			/>
+			<ObsEditModeContext.Provider value={{ obsEditMode, setObsEditMode }}>
+				<DetailModal
+					data={data}
+					closeDetail={closeDetail}
+					onDetailCancel={handleDetailModalCancel}
+					openDetail={openDetail}
+					changePage={changePage}
+					setEdit={setEdit}
+					deleteItem={deleteItem}
+					onDetailSubmit={onDetailSubmit}
+					nameKey={nameKey}
+					pageNum={pageNum}
+					objectType={objectType}
+					isLoading={isLoading || isPending ? true : false}
+				/>
+			</ObsEditModeContext.Provider>
 			<GalleryForm
 				onSubmit={onSubmit}
 				onReset={handleReset}

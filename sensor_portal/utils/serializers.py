@@ -43,7 +43,8 @@ class OwnerMixIn(serializers.ModelSerializer):
             'owner',
         ]
         if self.context.get('request'):
-            initial_rep["user_is_owner"] = instance.owner == self.context['request'].user
+            initial_rep["user_is_owner"] = self.context['request'].user.is_superuser or (
+                instance.owner == self.context['request'].user)
 
         [initial_rep.pop(field, '') for field in fields_to_pop]
         return initial_rep

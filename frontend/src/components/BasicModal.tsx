@@ -38,7 +38,7 @@ const BasicModal = ({
 					role="dialog"
 					onClick={onBackGroundClick}
 				>
-					<div className="modal-dialog modal-lg detail-modal">
+					<div className="modal-dialog modal-xl detail-modal">
 						<div className="modal-content shadow">
 							{getHeader()}
 							<div className="modal-body py-1">{children}</div>

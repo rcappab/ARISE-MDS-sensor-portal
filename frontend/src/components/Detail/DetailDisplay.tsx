@@ -5,6 +5,7 @@ import DetailDisplayParents from "./DetailDisplayParents.tsx";
 import DetailDisplayFile from "./DetailDisplayFile.tsx";
 import FavouriteButton from "./FavouriteButton.tsx";
 import DetailDisplayMetrics from "./DetailDisplayMetrics.tsx";
+import ObservationContainer from "../ObservationContainer.tsx";
 
 interface Props {
 	objectType: string;
@@ -78,17 +79,7 @@ const DetailDisplay = ({ objectType, selectedData }: Props) => {
 	return (
 		<div>
 			{objectType === "datafile" ? (
-				<>
-					<DetailDisplayFile
-						fileName={selectedData["file_name"]}
-						fileURL={"/" + selectedData["file_url"]}
-						fileFormat={selectedData["file_format"]}
-					/>
-					<FavouriteButton
-						id={selectedData["id"]}
-						favourite={selectedData["favourite"]}
-					/>
-				</>
+				<DetailDisplayFile fileData={selectedData} />
 			) : (
 				<DetailDisplayMetrics
 					id={selectedData["id"]}

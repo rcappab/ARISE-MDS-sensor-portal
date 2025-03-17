@@ -1,0 +1,62 @@
+.observation-form {
+	width: 100%;
+
+	.form-control-sm {
+		border-width: thin;
+	}
+	.date-time-input {
+		max-width: 9rem;
+		input {
+			width: 100%;
+		}
+	}
+	.species-selector {
+		max-width: 9rem;
+	}
+	.number-input {
+		/* Chrome, Safari, Edge, Opera */
+		input::-webkit-outer-spin-button,
+		input::-webkit-inner-spin-button {
+			-webkit-appearance: none;
+			margin: 0;
+		}
+
+		/* Firefox */
+		input[type="number"] {
+			-moz-appearance: textfield;
+		}
+
+		max-width: 2rem;
+		input {
+			width: 100%;
+		}
+	}
+	.text-input {
+		max-width: 6rem;
+		input {
+			width: 100%;
+		}
+	}
+	.button-column {
+		width: 5rem;
+		max-width: 5rem;
+		button {
+			width: 100%;
+			font-size: 0.8rem;
+		}
+	}
+}
+
+.highlight {
+	background-color: darkgrey;
+	td {
+		background-color: transparent !important;
+	}
+}
+
+.uncertain {
+	background-color: orange;
+	td {
+		background-color: transparent !important;
+	}
+}

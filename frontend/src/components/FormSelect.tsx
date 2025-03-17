@@ -16,6 +16,7 @@ interface Props {
 	isClearable?: boolean;
 	handleChange?: (string) => void;
 	handleCreate?: (string) => void;
+	handleInput?: (input) => void;
 	valid?: boolean;
 	required?: boolean;
 }
@@ -33,6 +34,7 @@ const FormSelect = ({
 	isClearable = true,
 	handleChange = (x) => {},
 	handleCreate = (x) => {},
+	handleInput = (x) => {},
 	valid = true,
 	required = false,
 }: Props) => {
@@ -176,6 +178,7 @@ const FormSelect = ({
 					isMulti={multiple}
 					onChange={handleSelectionChange}
 					onCreateOption={handleOptionCreate}
+					onInputChange={handleInput}
 				/>
 			);
 		} else {
@@ -196,6 +199,7 @@ const FormSelect = ({
 					isMulti={multiple}
 					onChange={handleSelectionChange}
 					value={objFromValue(choices, value)}
+					onInputChange={handleInput}
 				/>
 			);
 		}

@@ -1,38 +1,10 @@
 import django_filters.rest_framework
+from utils.filtersets import ExtraDataFilterMixIn, GenericFilterMixIn
 
-from .models import DataFile, Deployment, Device, Project, DataType
-
-
-class GenericFilter(django_filters.FilterSet):
-    created_after = django_filters.DateFilter(
-        field_name='created_on', lookup_expr='gt')
-    created_before = django_filters.DateFilter(
-        field_name='created_on', lookup_expr='lte')
-    modified_after = django_filters.DateFilter(
-        field_name='modified_on', lookup_expr='gt')
-    modified_before = django_filters.DateFilter(
-        field_name='modified_on', lookup_expr='lte')
-
-    class Meta:
-        fields = {
-            'id': ['exact', 'in']
-        }
+from .models import DataFile, DataType, Deployment, Device, Project
 
 
-class ExtraDataFilterMixIn(django_filters.FilterSet):
-    extra_data = django_filters.CharFilter(method='extra_data_filter')
-
-    def extra_data_filter(self, queryset, name, value):
-        # unpack value
-        newvalue = value.split("__")[-1]
-        newname = "__".join(value.split("__")[:-1])
-        newname = name + "__" + newname
-        return queryset.filter(**{
-            newname: newvalue,
-        })
-
-
-class DataTypeFilter(GenericFilter):
+class DataTypeFilter(GenericFilterMixIn):
     file_type = django_filters.BooleanFilter(
         method='is_file_type', label="file_type")
     device_type = django_filters.BooleanFilter(
@@ -46,11 +18,11 @@ class DataTypeFilter(GenericFilter):
             return queryset.filter(device_models__isnull=not value)
 
 
-class DeploymentFilter(GenericFilter, ExtraDataFilterMixIn):
+class DeploymentFilter(GenericFilterMixIn, ExtraDataFilterMixIn):
 
     class Meta:
         model = Deployment
-        fields = GenericFilter.get_fields().copy()
+        fields = GenericFilterMixIn.get_fields().copy()
         fields.update({
             'deployment_device_ID': ['exact', 'icontains', 'in'],
             'is_active': ['exact'],
@@ -69,14 +41,14 @@ class DeploymentFilter(GenericFilter, ExtraDataFilterMixIn):
         })
 
 
-class ProjectFilter(GenericFilter):
+class ProjectFilter(GenericFilterMixIn):
 
     is_active = django_filters.BooleanFilter(
         field_name="deployments__is_active")
 
     class Meta:
         model = Project
-        fields = GenericFilter.Meta.fields.copy()
+        fields = GenericFilterMixIn.get_fields().copy()
         fields.update({
             'project_ID': ['exact', 'icontains', 'in'],
             'name': ['exact', 'icontains', 'in'],
@@ -84,7 +56,7 @@ class ProjectFilter(GenericFilter):
         })
 
 
-class DeviceFilter(GenericFilter, ExtraDataFilterMixIn):
+class DeviceFilter(GenericFilterMixIn, ExtraDataFilterMixIn):
     is_active = django_filters.BooleanFilter(
         field_name="deployments__is_active")
 
@@ -95,7 +67,7 @@ class DeviceFilter(GenericFilter, ExtraDataFilterMixIn):
 
     class Meta:
         model = Device
-        fields = GenericFilter.Meta.fields.copy()
+        fields = GenericFilterMixIn.get_fields().copy()
         fields.update({
             'type': ['exact', 'in'],
             'type__name': ['exact', 'icontains', 'in'],
@@ -104,7 +76,7 @@ class DeviceFilter(GenericFilter, ExtraDataFilterMixIn):
         })
 
 
-class DataFileFilter(GenericFilter, ExtraDataFilterMixIn):
+class DataFileFilter(GenericFilterMixIn, ExtraDataFilterMixIn):
     is_favourite = django_filters.BooleanFilter(field_name='favourite_of',
                                                 exclude=True,
                                                 lookup_expr='isnull',
@@ -119,7 +91,7 @@ class DataFileFilter(GenericFilter, ExtraDataFilterMixIn):
 
     class Meta:
         model = DataFile
-        fields = GenericFilter.Meta.fields.copy()
+        fields = GenericFilterMixIn.get_fields().copy()
         fields.update({
             'deployment': ['exact', 'in'],
             'deployment__deployment_device_ID': ['exact', 'in', 'icontains'],
