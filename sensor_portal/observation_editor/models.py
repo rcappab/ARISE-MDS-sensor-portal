@@ -6,8 +6,11 @@ from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from utils.models import BaseModel
 
-from .GBIF_functions import (GBIF_get_species, GBIF_taxoncode_from_search,
-                             GBIF_to_avibase)
+from .GBIF_functions import (
+    GBIF_get_species,
+    GBIF_taxoncode_from_search,
+    GBIF_to_avibase,
+)
 from .tasks import create_taxon_parents
 
 # Create your models here.
@@ -155,6 +158,7 @@ class Observation(BaseModel):
     source = models.CharField(max_length=100, default="human")
     number = models.IntegerField(default=1)
     bounding_box = models.JSONField(default=dict, blank=True)
+    confidence = models.FloatField(default=None, null=True, blank=True)
     extra_data = models.JSONField(default=dict, blank=True)
 
     sex = models.CharField(max_length=10, blank=True)

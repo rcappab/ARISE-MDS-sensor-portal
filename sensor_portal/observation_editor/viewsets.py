@@ -1,8 +1,13 @@
+from camtrap_dp_export.querysets import get_ctdp_obs_qs
+from camtrap_dp_export.serializers import ObservationSerializerCTDP
 from rest_framework import pagination, status, viewsets
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
-from utils.viewsets import (AddOwnerViewSetMixIn, CheckAttachmentViewSetMixIn,
-                            OptionalPaginationViewSetMixIn)
+from utils.viewsets import (
+    AddOwnerViewSetMixIn,
+    CheckAttachmentViewSetMixIn,
+    OptionalPaginationViewSetMixIn,
+)
 
 from .filtersets import ObservationFilter
 from .GBIF_functions import GBIF_species_search
@@ -23,7 +28,16 @@ class ObservationViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, Opti
             qs = qs.get_taxonomic_level(target_taxon_level).filter(
                 parent_taxon_pk__isnull=False)
 
+        if 'CTDP' in self.request.GET.keys():
+            qs = get_ctdp_obs_qs(qs)
+
         return qs
+
+    def get_serializer_class(self):
+        if 'CTDP' in self.request.GET.keys():
+            return ObservationSerializerCTDP
+        else:
+            return ObservationSerializer
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

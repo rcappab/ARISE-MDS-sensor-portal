@@ -1,5 +1,10 @@
 import os
 
+from camtrap_dp_export.querysets import get_ctdp_deployment_qs, get_ctdp_media_qs
+from camtrap_dp_export.serializers import (
+    DataFileSerializerCTDP,
+    DeploymentSerializerCTDP,
+)
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
@@ -9,19 +14,28 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework_gis import filters as filters_gis
-from utils.viewsets import (AddOwnerViewSetMixIn, CheckAttachmentViewSetMixIn,
-                            CheckFormViewSetMixIn,
-                            OptionalPaginationViewSetMixIn)
+from utils.viewsets import (
+    AddOwnerViewSetMixIn,
+    CheckAttachmentViewSetMixIn,
+    CheckFormViewSetMixIn,
+    OptionalPaginationViewSetMixIn,
+)
 
 from .file_handling_functions import create_file_objects
 from .filtersets import *
 from .models import DataFile, DataType, Deployment, Device, Project, Site
 from .permissions import perms
 from .plotting_functions import get_all_file_metric_dicts
-from .serializers import (DataFileSerializer, DataFileUploadSerializer,
-                          DataTypeSerializer, DeploymentSerializer,
-                          DeploymentSerializer_GeoJSON, DeviceSerializer,
-                          ProjectSerializer, SiteSerializer)
+from .serializers import (
+    DataFileSerializer,
+    DataFileUploadSerializer,
+    DataTypeSerializer,
+    DeploymentSerializer,
+    DeploymentSerializer_GeoJSON,
+    DeviceSerializer,
+    ProjectSerializer,
+    SiteSerializer,
+)
 
 
 class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, CheckFormViewSetMixIn, OptionalPaginationViewSetMixIn):
@@ -34,10 +48,17 @@ class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, Check
     filter_backends = viewsets.ModelViewSet.filter_backends + \
         [filters_gis.InBBoxFilter]
 
+    def get_queryset(self):
+        qs = Deployment.objects.all().distinct()
+        if 'CTDP' in self.request.GET.keys():
+            qs = get_ctdp_deployment_qs(qs)
+        return qs
+
     def get_serializer_class(self):
         if 'geoJSON' in self.request.GET.keys():
-
             return DeploymentSerializer_GeoJSON
+        elif 'CTDP' in self.request.GET.keys():
+            return DeploymentSerializerCTDP
         else:
             return DeploymentSerializer
 
@@ -105,13 +126,17 @@ class DeviceViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
 
 class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixIn):
 
-    queryset = DataFile.objects.all().distinct()
-    filterset_class = DataFileFilter
     search_fields = ['file_name',
                      'deployment__deployment_device_ID',
                      'deployment__device__name',
                      'deployment__device__device_ID',
                      '=tag']
+
+    def get_queryset(self):
+        qs = DataFile.objects.all().distinct()
+        if 'CTDP' in self.request.GET.keys():
+            qs = get_ctdp_media_qs(qs)
+        return qs
 
     @action(detail=False, methods=['get'])
     def test(self, request, *args, **kwargs):
@@ -145,7 +170,10 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
         if self.action == 'create':
             return DataFileUploadSerializer
         else:
-            return DataFileSerializer
+            if 'CTDP' in self.request.GET.keys():
+                return DataFileSerializerCTDP
+            else:
+                return DataFileSerializer
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
