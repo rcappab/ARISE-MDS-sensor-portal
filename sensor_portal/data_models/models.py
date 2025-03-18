@@ -16,6 +16,7 @@ from django.db import models
 from django.db.models import (BooleanField, Case, DateTimeField,
                               ExpressionWrapper, F, Max, Min, Q, Sum, Value,
                               When)
+from django.db.models.functions import Concat
 from django.db.models.signals import (m2m_changed, post_delete, post_save,
                                       pre_delete)
 from django.dispatch import receiver
@@ -471,25 +472,15 @@ def update_project(sender, instance, action, reverse, *args, **kwargs):
 
 class DataFileQuerySet(models.QuerySet):
     def full_paths(self):
-        file_path_components = self.values(
-            "local_path", "path", "file_name", "file_format")
-        all_full_paths = [os.path.join(
-            x["local_path"], x["path"], x["file_name"]+x["file_format"]) for x in file_path_components]
-        return all_full_paths
+        self = self.relative_paths()
+        return self.annotate(full_path=Concat(F('local_path'), Value(os.sep), F('relative_path')))
 
     def relative_paths(self):
-        file_path_components = self.values(
-            "path", "file_name", "file_format")
-        all_relative_paths = [os.path.join(
-            x["path"], x["file_name"]+x["file_format"]) for x in file_path_components]
-        return all_relative_paths
+        self = self.full_names()
+        return self.annotate(relative_path=Concat(F('path'), Value(os.sep), F('full_name')))
 
     def full_names(self):
-        file_name_components = self.values(
-            "file_name", "file_format")
-        all_names = [x["file_name"]+x["file_format"]
-                     for x in file_name_components]
-        return all_names
+        return self.annotate(full_name=Concat(F('file_name'), F('file_format')))
 
     def file_size(self, unit=""):
         total_file_size = self.aggregate(total_file_size=Sum("file_size"))[

@@ -98,7 +98,7 @@ def create_tar_file(file_objs, name_suffix=0):
     os.makedirs(tar_path, exist_ok=True)
     full_tar_path = os.path.join(tar_path, tar_name_format)
     # get list of file paths
-    relative_paths = file_objs.relative_paths()
+    relative_paths = file_objs.relative_paths().values_list("relative_path", flat=True)
 
     metadata_dir_path = os.path.join(tar_path, tar_name)
     relative_metadata_dir_path = os.path.relpath(

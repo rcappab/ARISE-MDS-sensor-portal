@@ -123,7 +123,7 @@ def get_files_from_archived_tar_task(self, tar_file_pk, target_file_pks):
 
     tar_file_obj = TarFile.objects.get(pk=tar_file_pk)
     file_objs = DataFile.objects.filter(pk__in=target_file_pks)
-    file_names = file_objs.full_names()
+    file_names = file_objs.full_names().values_list("full_name", flat=True)
     # Connect to archive
     archive_obj = tar_file_obj.archive
     ssh_client = archive_obj.init_ssh_client()

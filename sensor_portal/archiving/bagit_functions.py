@@ -1,4 +1,5 @@
 import os
+
 from data_models.models import DataFile
 from utils.general import get_md5
 
@@ -28,9 +29,10 @@ def bag_info_from_files(file_objs: DataFile, output_path: str) -> list[str]:
         f.writelines(bagit_txt_lines)
 
     # manifest-md5.txt
+    file_objs = file_objs.full_paths()
 
-    all_full_paths = file_objs.full_paths()
-    all_relative_paths = file_objs.relative_paths()
+    all_full_paths = file_objs.values_list("full_path", flat=True)
+    all_relative_paths = file_objs.values_list("relative_path", flat=True)
 
     manifest_lines = [f"{get_md5(x)}  {os.path.join('data',y)}\n" for x, y in zip(
         all_full_paths, all_relative_paths)]
