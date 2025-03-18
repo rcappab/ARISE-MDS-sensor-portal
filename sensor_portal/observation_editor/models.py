@@ -6,14 +6,26 @@ from django.db.models.signals import m2m_changed, post_save
 from django.dispatch import receiver
 from utils.models import BaseModel
 
-from .GBIF_functions import (
-    GBIF_get_species,
-    GBIF_taxoncode_from_search,
-    GBIF_to_avibase,
-)
+from .GBIF_functions import (GBIF_get_species, GBIF_taxoncode_from_search,
+                             GBIF_to_avibase)
 from .tasks import create_taxon_parents
 
 # Create your models here.
+
+source_choice = (
+    (0, 'custom'),
+    (1, 'GBIF'),
+)
+
+taxonomic_level_choice = (
+    (0, 'species'),
+    (1, 'genus'),
+    (2, 'family'),
+    (3, 'order'),
+    (4, 'class'),
+    (5, 'phylum'),
+    (6, 'kingdom'),
+)
 
 
 class TaxonQuerySet(models.QuerySet):
@@ -32,21 +44,6 @@ class Taxon(BaseModel):
     species_common_name = models.CharField(
         max_length=100, unique=False, blank=True)
     taxon_code = models.CharField(max_length=100, blank=True)
-
-    source_choice = (
-        (0, 'custom'),
-        (1, 'GBIF'),
-    )
-
-    taxonomic_level_choice = (
-        (0, 'species'),
-        (1, 'genus'),
-        (2, 'family'),
-        (3, 'order'),
-        (4, 'class'),
-        (5, 'phylum'),
-        (6, 'kingdom'),
-    )
 
     taxon_source = models.IntegerField(choices=source_choice, default=0)
     extra_data = models.JSONField(default=dict, blank=True)

@@ -20,7 +20,7 @@ def metadata_json_from_files(file_objs: QuerySet[DataFile], output_path: str):
     return metadata_json_path
 
 
-def create_metadata_dict(file_objs: QuerySet[DataFile]) -> list[dict]:
+def create_metadata_dict(file_objs: QuerySet[DataFile]) -> dict:
     """_summary_
 
     Args:
