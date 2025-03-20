@@ -12,9 +12,13 @@ from observation_editor.metadata_functions import \
 from observation_editor.models import Observation
 
 
-def create_zip(zip_name, file_objs, metadata_type):
-    bundle_path = os.path.join(settings.STORAGE, settings.BUNDLE_PATH)
-    os.makedirs(bundle_path, exist_ok=True)
+def create_zip(zip_name, file_objs, metadata_type, includes_files):
+    if includes_files:
+        file_objs = file_objs.filter(local_storage=True)
+
+    package_path = os.path.join(
+        settings.FILE_STORAGE_ROOT, settings.PACKAGE_PATH)
+    os.makedirs(package_path, exist_ok=True)
 
     if ".zip" not in zip_name:
         zip_name = f"{zip_name}.zip"
@@ -23,23 +27,30 @@ def create_zip(zip_name, file_objs, metadata_type):
 
     match metadata_type:
         case 0:
-            file_objs.annotate(zip_path=Concat(
+            file_objs = file_objs.annotate(zip_path=Concat(
                 Value('data'), Value(os.sep), F('relative_path')))
         case 1:
-            file_objs.annotate(
+            file_objs = file_objs.annotate(
                 zip_path=Concat(Value('media'), Value(os.sep), F('relative_path')))
+
         case _:
             return False, ""
 
-    with ZipFile(os.path.join(bundle_path, zip_name), 'w') as zip_file:
-        for file_obj in file_objs:
-            zip_file.write(file_obj.full_path, file_obj.new_path)
+    with ZipFile(os.path.join(package_path, zip_name), 'w') as zip_file:
+
+        if (includes_files):
+
+            for file_obj in file_objs:
+                zip_file.write(file_obj.full_path, file_obj.zip_path)
 
         match metadata_type:
             case 0:
                 metadata_dict = create_metadata_dict(file_objs)
                 observation_dict = create_obs_metadata_dict(
                     Observation.objects.filter(data_files__in=file_objs))
+
+                metadata_dict["data_files"] = [
+                    {**x, "path": os.path.join("data", x["path"])} for x in metadata_dict["data_files"]]
 
                 with zip_file.open("metadata.json", "w") as f:
                     f.write(json.dumps(metadata_dict, indent=2).encode("utf-8"))
@@ -49,8 +60,13 @@ def create_zip(zip_name, file_objs, metadata_type):
                             indent=2).encode("utf-8"))
 
             case 1:
+                uuid = zip_name.split("_")[0]
                 file_df, observation_df, deploy_df, event_df, metadata = create_camtrap_dp_metadata(
-                    file_objs, "", zip_name)
+                    file_objs, uuid, zip_name)
+
+                file_df["filePath"] = [os.path.join(
+                    "media", x) for x in file_df["filePath"]]
+
                 with zip_file.open("media.csv", "w") as df:
                     file_df.to_csv(df, index=False)
 
@@ -69,4 +85,4 @@ def create_zip(zip_name, file_objs, metadata_type):
             case _:
                 return False, ""
 
-    return True, bundle_path
+    return True, package_path

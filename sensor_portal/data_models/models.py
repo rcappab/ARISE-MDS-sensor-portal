@@ -411,7 +411,7 @@ class Deployment(BaseModel):
 
     def set_thumb_url(self):
 
-        last_file = self.files.filter(thumb_url__isnull=False).order_by(
+        last_file = self.files.filter(thumb_url__isnull=False, has_human=False).order_by(
             'recording_dt').last()
         if last_file is not None:
             self.last_image = last_file
@@ -530,6 +530,8 @@ class DataFile(BaseModel):
     file_url = models.CharField(max_length=500, null=True, blank=True)
     tag = models.CharField(max_length=250, null=True, blank=True)
 
+    has_human = models.BooleanField(default=False)
+
     objects = DataFileQuerySet.as_manager()
 
     def __str__(self):
@@ -570,6 +572,17 @@ class DataFile(BaseModel):
                                                            self.path, self.file_name+"_THUMB.jpg"))
         else:
             self.thumb_url = None
+
+    def check_human(self):
+        old_has_human = self.has_human
+        new_has_human = self.observations.filter(
+            taxon__taxon_code=settings.HUMAN_TAXON_CODE).exists()
+        print(new_has_human)
+        if old_has_human != new_has_human:
+            self.has_human = new_has_human
+            self.save()
+            self.deployment.set_thumb_url()
+            self.deployment.save()
 
     def clean_file(self, delete_obj=False):
         print(f"clean {delete_obj}")

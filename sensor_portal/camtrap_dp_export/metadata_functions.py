@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import datetime
 
 import pandas as pd
@@ -7,18 +8,10 @@ from django.conf import settings
 from django.contrib.gis.geos import MultiPoint
 from observation_editor.models import Observation
 
-from .querysets import (
-    get_ctdp_deployment_qs,
-    get_ctdp_media_qs,
-    get_ctdp_obs_qs,
-    get_ctdp_seq_qs,
-)
-from .serializers import (
-    DataFileSerializerCTDP,
-    DeploymentSerializerCTDP,
-    ObservationSerializerCTDP,
-    SequenceSerializer,
-)
+from .querysets import (get_ctdp_deployment_qs, get_ctdp_media_qs,
+                        get_ctdp_obs_qs, get_ctdp_seq_qs)
+from .serializers import (DataFileSerializerCTDP, DeploymentSerializerCTDP,
+                          ObservationSerializerCTDP, SequenceSerializer)
 
 
 def create_camtrap_dp_metadata(file_qs, uuid="", title=""):

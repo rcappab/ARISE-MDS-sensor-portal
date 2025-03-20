@@ -1,4 +1,5 @@
 from bridgekeeper.rules import R
+from django.conf import settings
 from django.db.models import Q
 from utils.rules import check_super, final_query, query_super
 
@@ -518,5 +519,22 @@ class CanViewDeviceContainingDataFile(R):
             # can view/manage/own a deployment within project
             # view
             accumulated_q = Q(deployment__device__viewers=user)
+
+        return final_query(accumulated_q)
+
+
+class CanViewHuman(R):
+    def check(self, user, instance=None):
+        user.is_superuser | (not instance.has_human)
+        return user.is_superuser | (not instance.has_human)
+
+    def query(self, user):
+
+        accumulated_q = query_super(user)
+
+        if accumulated_q is not None:
+            return accumulated_q
+        else:
+            accumulated_q = Q(has_human=False)
 
         return final_query(accumulated_q)

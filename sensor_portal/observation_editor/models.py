@@ -2,7 +2,7 @@ from data_models.models import DataFile
 from django.conf import settings
 from django.db import models
 from django.db.models import Case, F, Min, Q, Value, When
-from django.db.models.signals import m2m_changed, post_save
+from django.db.models.signals import m2m_changed, post_delete, post_save
 from django.dispatch import receiver
 from utils.models import BaseModel
 
@@ -192,9 +192,21 @@ class Observation(BaseModel):
 
         super().save(*args, **kwargs)
 
+    def check_data_files_human(self):
+        for data_file in self.data_files.all():
+            data_file.check_human()
+
 
 @receiver(m2m_changed, sender=Observation.data_files.through)
 def update_observation_data_files(sender, instance, action, reverse, *args, **kwargs):
 
     if (action == 'post_add' or action == 'post_remove'):
         instance.save()
+
+
+@receiver(post_delete, sender=Observation)
+@receiver(post_save, sender=Observation)
+def check_human(sender, instance, created, **kwargs):
+
+    if instance.taxon.taxon_code == settings.HUMAN_TAXON_CODE:
+        instance.check_data_files_human()

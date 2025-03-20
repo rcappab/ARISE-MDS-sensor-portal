@@ -16,4 +16,4 @@ class TaxonAdmin(GenericAdmin):
 @admin.register(Observation)
 class ObservationAdmin(AddOwnerAdmin):
     model = Observation
-    raw_id_fields = ["data_files", "taxon"]
+    raw_id_fields = ["data_files", "taxon", "validation_of"]

@@ -88,7 +88,8 @@ INSTALLED_APPS = [
     'external_storage_import',
     'utils',
     'archiving',
-    'observation_editor'
+    'observation_editor',
+    'data_packages'
 
 ]
 
@@ -258,4 +259,6 @@ if DEVMODE:
     MIN_ARCHIVE_SIZE_GB = 0.01
     MAX_ARCHIVE_SIZE_GB = 0.025
 
-HUMAN_TAXON_CODE = 2436436
+HUMAN_TAXON_CODE = "2436436"
+
+PACKAGE_PATH = "data_packages"

@@ -1,5 +1,6 @@
 from bridgekeeper import perms
-from bridgekeeper.rules import is_active, is_authenticated, is_staff
+from bridgekeeper.rules import (is_active, is_authenticated, is_staff,
+                                is_superuser)
 from utils.rules import IsOwner
 
 from .rules import (CanAnnotateDeploymentContainingDataFile,
@@ -11,7 +12,7 @@ from .rules import (CanAnnotateDeploymentContainingDataFile,
                     CanManageProjectContainingDataFile,
                     CanManageProjectContainingDeployment,
                     CanViewDeployedDevice, CanViewDeploymentContainingDataFile,
-                    CanViewDeviceContainingDataFile,
+                    CanViewDeviceContainingDataFile, CanViewHuman,
                     CanViewProjectContainingDataFile,
                     CanViewProjectContainingDeployment,
                     CanViewProjectContainingDevice, IsAnnotator, IsManager,
@@ -33,12 +34,12 @@ perms['data_models.view_project'] = is_authenticated & (is_staff
 
 # DEVICE
 perms['data_models.add_device'] = is_authenticated & is_active
-perms['data_models.change_device'] = is_authenticated & (is_staff
+perms['data_models.change_device'] = is_authenticated & (is_superuser
                                                          | IsOwner()
                                                          | IsManager()) & is_active  # must be deployment owner OR manager
-perms['data_models.delete_device'] = is_authenticated & (is_staff
+perms['data_models.delete_device'] = is_authenticated & (is_superuser
                                                          | IsOwner()) & is_active  # must be deployment owner
-perms['data_models.view_device'] = is_authenticated & (is_staff
+perms['data_models.view_device'] = is_authenticated & (is_superuser
                                                        | IsOwner()
                                                        | IsManager()
                                                        | IsAnnotator()
@@ -48,18 +49,18 @@ perms['data_models.view_device'] = is_authenticated & (is_staff
 
 # DEPLOYMENT
 perms['data_models.add_deployment'] = is_authenticated & is_active
-perms['data_models.change_deployment'] = is_authenticated & (is_staff
+perms['data_models.change_deployment'] = is_authenticated & (is_superuser
                                                              | IsOwner()
                                                              | IsManager()
                                                              | CanManageDeployedDevice()
                                                              | CanManageProjectContainingDeployment()
                                                              ) & is_active  # must be device owner OR manager
-perms['data_models.delete_deployment'] = is_authenticated & (is_staff
+perms['data_models.delete_deployment'] = is_authenticated & (is_superuser
                                                              | IsOwner()
                                                              | CanManageProjectContainingDeployment()
                                                              | CanManageDeployedDevice()
                                                              ) & is_active  # must be device owner OR manager
-perms['data_models.view_deployment'] = is_authenticated & (is_staff
+perms['data_models.view_deployment'] = is_authenticated & (is_superuser
                                                            | IsOwner()
                                                            | IsManager()
                                                            | IsAnnotator()
@@ -72,25 +73,25 @@ perms['data_models.view_deployment'] = is_authenticated & (is_staff
 
 # DATAFILES
 perms['data_models.add_datafile'] = is_authenticated & is_active
-perms['data_models.change_datafile'] = is_authenticated & (is_staff
+perms['data_models.change_datafile'] = is_authenticated & (is_superuser
                                                            | CanManageProjectContainingDataFile()
                                                            | CanManageDeploymentContainingDataFile()
                                                            | CanManageDeviceContainingDataFile()) & is_active
-perms['data_models.delete_datafile'] = is_authenticated & (is_staff
+perms['data_models.delete_datafile'] = is_authenticated & (is_superuser
                                                            | CanManageProjectContainingDataFile()
                                                            | CanManageDeploymentContainingDataFile()
                                                            | CanManageDeviceContainingDataFile()) & is_active
-perms['data_models.view_datafile'] = is_authenticated & (is_staff
-                                                         | CanManageProjectContainingDataFile()
-                                                         | CanManageDeploymentContainingDataFile()
-                                                         | CanManageDeviceContainingDataFile()
-                                                         | CanAnnotateDeploymentContainingDataFile()
-                                                         | CanAnnotateDeviceContainingDataFile()
-                                                         | CanAnnotateProjectContainingDataFile()
-                                                         | CanViewProjectContainingDataFile()
-                                                         | CanViewDeploymentContainingDataFile()
-                                                         | CanViewDeviceContainingDataFile()) & is_active
-perms['data_models.annotate_datafile'] = is_authenticated & (is_staff
+perms['data_models.view_datafile'] = is_authenticated & CanViewHuman() & (is_superuser
+                                                                          | CanManageProjectContainingDataFile()
+                                                                          | CanManageDeploymentContainingDataFile()
+                                                                          | CanManageDeviceContainingDataFile()
+                                                                          | CanAnnotateDeploymentContainingDataFile()
+                                                                          | CanAnnotateDeviceContainingDataFile()
+                                                                          | CanAnnotateProjectContainingDataFile()
+                                                                          | CanViewProjectContainingDataFile()
+                                                                          | CanViewDeploymentContainingDataFile()
+                                                                          | CanViewDeviceContainingDataFile()) & is_active
+perms['data_models.annotate_datafile'] = is_authenticated & (is_superuser
                                                              | CanManageProjectContainingDataFile()
                                                              | CanAnnotateProjectContainingDataFile()
                                                              | CanManageDeploymentContainingDataFile()
@@ -104,10 +105,10 @@ perms['data_models.annotate_datafile'] = is_authenticated & (is_staff
 # should check if a user can view a deployment at that site
 perms['data_models.view_site'] = is_authenticated & is_active
 perms['data_models.add_site'] = is_authenticated & is_active
-perms['data_models.change_site'] = is_authenticated & is_staff
-perms['data_models.delete_site'] = is_authenticated & is_staff
+perms['data_models.change_site'] = is_authenticated & is_superuser
+perms['data_models.delete_site'] = is_authenticated & is_superuser
 
 perms['data_models.view_datatype'] = is_authenticated & is_active
 perms['data_models.add_datatype'] = is_authenticated & is_active
-perms['data_models.change_datatype'] = is_authenticated & is_staff
-perms['data_models.delete_datatype'] = is_authenticated & is_staff
+perms['data_models.change_datatype'] = is_authenticated & is_superuser
+perms['data_models.delete_datatype'] = is_authenticated & is_superuser
