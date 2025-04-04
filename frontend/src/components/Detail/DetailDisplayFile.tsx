@@ -133,7 +133,7 @@ const DetailDisplayFile = ({ fileData }: Props) => {
 					{canAnnotate ? (
 						<button
 							className={`btn ${
-								obsEditMode ? "btn-outline-danger" : "btn-outline-primary"
+								obsEditMode ? "btn-outline-danger" : "btn-outline-primary w-100"
 							}`}
 							onClick={() => {
 								handleSetEditMode(!obsEditMode);

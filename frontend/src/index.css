@@ -27,3 +27,7 @@ code {
 	padding-right: revert;
 	background-image: revert;
 }
+
+.form-switch {
+	place-content: center;
+}

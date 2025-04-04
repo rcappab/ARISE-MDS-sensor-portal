@@ -247,18 +247,28 @@ CELERY_ENABLE_UTC = False
 CELERY_BEAT_SCHEDULE = {}
 
 # SENSOR-PORTAL SETTINGS
-# name of the global project all deployments will be added to
+# name of the global project all deployments will be added to.
 GLOBAL_PROJECT_ID = "GLOBAL"
 
+# Automatically generated collection of data handlers.
 DATA_HANDLERS = DataTypeHandlerCollection()
 
+# Maximum number of files that can be submitted to a job through the start_job API endpoint.
+MAX_JOB_SIZE = 5000
+
+# Minimum TAR size in GB when archiving.
 MIN_ARCHIVE_SIZE_GB = 1
+
+# Maximum TAR size in GB when archiving.
 MAX_ARCHIVE_SIZE_GB = 10
 
 if DEVMODE:
+    # Smaller values for testing
     MIN_ARCHIVE_SIZE_GB = 0.01
     MAX_ARCHIVE_SIZE_GB = 0.025
 
+# Taxon code which will be used when determining if a file has a human present from the file's observations.
 HUMAN_TAXON_CODE = "2436436"
 
+# path in FILE_STORAGE_ROOT where data packages will be saved
 PACKAGE_PATH = "data_packages"

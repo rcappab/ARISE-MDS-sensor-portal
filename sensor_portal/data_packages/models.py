@@ -38,6 +38,20 @@ class DataPackage(BaseModel):
     metadata_type = models.IntegerField(
         choices=metadata_type, default=0)
     includes_files = models.BooleanField(default=True)
+    file_url = models.CharField(max_length=500, blank=True, null=True)
+
+    def set_file_url(self):
+        if self.status == 3:
+            zip_name = self.name
+            if "zip" not in zip_name:
+                zip_name += ".zip"
+            self.file_url = os.path.normpath(
+                os.path.join(settings.FILE_STORAGE_URL,
+                             settings.PACKAGE_PATH,
+                             zip_name)
+            ).replace("\\", "/")
+        else:
+            self.file_url = None
 
     def __str__(self):
         return self.name
@@ -47,6 +61,10 @@ class DataPackage(BaseModel):
                    self.metadata_type, self.includes_files)
         self.status = 3
         self.save()
+
+    def save(self, *args, **kwargs):
+        self.set_file_url()
+        super().save(*args, **kwargs)
 
     def clean_data_package(self):
         if self.status == 3:

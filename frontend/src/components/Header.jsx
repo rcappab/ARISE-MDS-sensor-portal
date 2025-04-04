@@ -111,6 +111,14 @@ const Header = () => {
 									</Link>
 									<ul className="dropdown-menu dropdown-menu-end">
 										<li className="dropdown-item">
+											<NavLink
+												className="nav-link"
+												to="/datapackages"
+											>
+												Data packages
+											</NavLink>
+										</li>
+										<li className="dropdown-item">
 											<Link
 												onClick={logoutUser}
 												className="nav-link"

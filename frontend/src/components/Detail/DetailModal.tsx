@@ -65,6 +65,8 @@ const DetailModal = ({
 
 	return (
 		<BasicModal
+			modalId="detail-modal"
+			className="modal-xl detail-modal"
 			modalShow={modalShow}
 			onClose={closeDetail}
 			headerChildren={

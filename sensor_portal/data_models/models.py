@@ -13,10 +13,10 @@ from django.contrib.gis.geos import Point
 from django.core.exceptions import (MultipleObjectsReturned,
                                     ObjectDoesNotExist, ValidationError)
 from django.db import models
-from django.db.models import (BooleanField, Case, DateTimeField,
+from django.db.models import (BooleanField, Case, Count, DateTimeField,
                               ExpressionWrapper, F, Max, Min, Q, Sum, Value,
                               When)
-from django.db.models.functions import Concat
+from django.db.models.functions import Cast, Concat
 from django.db.models.signals import (m2m_changed, post_delete, post_save,
                                       pre_delete)
 from django.dispatch import receiver
@@ -55,7 +55,7 @@ class DataType(BaseModel):
 
 class Project(BaseModel):
     # Metadata
-    project_ID = models.CharField(max_length=10, unique=True, blank=True)
+    project_ID = models.CharField(max_length=20, unique=True, blank=True)
     name = models.CharField(max_length=50)
 
     objectives = models.CharField(max_length=500, blank=True)
@@ -482,11 +482,17 @@ class DataFileQuerySet(models.QuerySet):
     def full_names(self):
         return self.annotate(full_name=Concat(F('file_name'), F('file_format')))
 
-    def file_size(self, unit=""):
+    def file_size_unit(self, unit=""):
         total_file_size = self.aggregate(total_file_size=Sum("file_size"))[
             "total_file_size"]
         converted_file_size = convert_unit(total_file_size, unit)
         return converted_file_size
+
+    def file_count(self):
+        return self.aggregate(total_file_size=Cast(Sum("file_size"), models.FloatField())/Cast(Value(1024*1024*1024), models.FloatField()),
+                              file_n=Count("pk"),
+                              archived_file_n=Sum(Case(When(local_storage=False, archived=True, then=Value(1)),
+                                                       default=Value(0))))
 
     def min_date(self):
         return self.aggregate(min_date=Min("recording_dt"))["min_date"]

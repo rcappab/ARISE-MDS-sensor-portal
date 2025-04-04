@@ -1,12 +1,11 @@
 
-from django.utils import timezone as djtimezone
-from django.conf import settings
 import os
-from datetime import datetime as dt
+import random
+
 import dateutil.parser
 import pytz
 from django.conf import settings
-import random
+from django.utils import timezone as djtimezone
 from PIL import Image
 
 

@@ -5,6 +5,7 @@ import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
 import reportWebVitals from "./reportWebVitals";
 import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
+import DataPackagePage from "./pages/DataPackagePage.tsx";
 import { AuthProvider } from "./context/AuthContext";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import ProtectedRoute from "./utils/ProtectedRoute.jsx";
@@ -24,6 +25,10 @@ const router = createBrowserRouter([
 			{
 				element: <ProtectedRoute />,
 				children: [{ path: "/", element: <HomePage /> }],
+			},
+			{
+				element: <ProtectedRoute />,
+				children: [{ path: "/datapackages", element: <DataPackagePage /> }],
 			},
 			{
 				element: <ProtectedRoute />,

@@ -2,17 +2,21 @@ import React, { ReactElement } from "react";
 import "../styles/detailmodal.css";
 
 interface Props {
-	modalShow: boolean;
-	children: ReactElement;
-	headerChildren: ReactElement | string;
-	onClose: () => void;
+	modalId?: string;
+	modalShow?: boolean;
+	children?: ReactElement;
+	headerChildren?: ReactElement | string;
+	onClose?: () => void;
+	className?: string;
 }
 
 const BasicModal = ({
-	modalShow,
+	modalId = "",
+	modalShow = false,
 	children,
-	headerChildren,
-	onClose,
+	headerChildren = "",
+	onClose = () => {},
+	className = "",
 }: Props) => {
 	//$el.scrollTo({top: 0, behavior: 'instant'}
 
@@ -33,12 +37,12 @@ const BasicModal = ({
 		if (modalShow) {
 			return (
 				<div
-					id="detail-modal"
+					id={modalId}
 					className="modal"
 					role="dialog"
 					onClick={onBackGroundClick}
 				>
-					<div className="modal-dialog modal-xl detail-modal">
+					<div className={`modal-dialog ${className}`}>
 						<div className="modal-content shadow">
 							{getHeader()}
 							<div className="modal-body py-1">{children}</div>

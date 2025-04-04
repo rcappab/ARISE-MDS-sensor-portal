@@ -1,10 +1,9 @@
 import os
 
-from camtrap_dp_export.querysets import get_ctdp_deployment_qs, get_ctdp_media_qs
-from camtrap_dp_export.serializers import (
-    DataFileSerializerCTDP,
-    DeploymentSerializerCTDP,
-)
+from camtrap_dp_export.querysets import (get_ctdp_deployment_qs,
+                                         get_ctdp_media_qs)
+from camtrap_dp_export.serializers import (DataFileSerializerCTDP,
+                                           DeploymentSerializerCTDP)
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
@@ -14,28 +13,20 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework_gis import filters as filters_gis
-from utils.viewsets import (
-    AddOwnerViewSetMixIn,
-    CheckAttachmentViewSetMixIn,
-    CheckFormViewSetMixIn,
-    OptionalPaginationViewSetMixIn,
-)
+from utils.viewsets import (AddOwnerViewSetMixIn, CheckAttachmentViewSetMixIn,
+                            CheckFormViewSetMixIn,
+                            OptionalPaginationViewSetMixIn)
 
 from .file_handling_functions import create_file_objects
 from .filtersets import *
+from .job_handling_functions import start_job_from_name
 from .models import DataFile, DataType, Deployment, Device, Project, Site
 from .permissions import perms
 from .plotting_functions import get_all_file_metric_dicts
-from .serializers import (
-    DataFileSerializer,
-    DataFileUploadSerializer,
-    DataTypeSerializer,
-    DeploymentSerializer,
-    DeploymentSerializer_GeoJSON,
-    DeviceSerializer,
-    ProjectSerializer,
-    SiteSerializer,
-)
+from .serializers import (DataFileSerializer, DataFileUploadSerializer,
+                          DataTypeSerializer, DeploymentSerializer,
+                          DeploymentSerializer_GeoJSON, DeviceSerializer,
+                          ProjectSerializer, SiteSerializer)
 
 
 class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, CheckFormViewSetMixIn, OptionalPaginationViewSetMixIn):
@@ -126,6 +117,8 @@ class DeviceViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
 
 class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixIn):
 
+    filterset_class = DataFileFilter
+
     search_fields = ['file_name',
                      'deployment__deployment_device_ID',
                      'deployment__device__name',
@@ -139,12 +132,26 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
         return qs
 
     @action(detail=False, methods=['get'])
-    def test(self, request, *args, **kwargs):
+    def queryset_count(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-        # is this also filtering by permissions?
-        print(self.filterset_class)
-        print(queryset.count())
-        return Response({queryset.count()}, status=status.HTTP_200_OK)
+        return Response(queryset.file_count(), status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path=r'start_job/(?P<job_name>\w+)')
+    def start_job(self, request, job_name, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        if (job_size := queryset.count()) > settings.MAX_JOB_SIZE:
+            return Response({"detail":
+                             f"Requested job of {job_size} exceeds maximum job size of {settings.MAX_JOB_SIZE}"},
+                            status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
+
+        print(request.data)
+
+        user_pk = request.user.pk
+        file_pks = list(queryset.values_list('pk', flat=True))
+        job_args = request.data
+        start_job_from_name(job_name, user_pk, file_pks, job_args)
+
+        return Response({"detail": f"{job_name} submitted"}, status=status.HTTP_202_ACCEPTED)
 
     @action(detail=True, methods=['post'], permission_classes=['data_models.view_datafile'])
     def favourite_file(self, request):

@@ -12,8 +12,11 @@ from user_management.models import User
 from .models import DataPackage
 
 
-@shared_task
+@shared_task(name="create_data_package")
 def start_make_data_package_task(file_pks, user_pk, metadata_type=0, include_files=True):
+
+    print(file_pks, user_pk)
+
     file_objs = DataFile.objects.filter(pk__in=file_pks)
     user = User.objects.get(pk=user_pk)
 

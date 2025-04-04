@@ -12,6 +12,7 @@ interface Props {
 	fromID?: string;
 	onSubmit: () => void;
 	addNew: () => void;
+	handleStartJob: () => void;
 	setFormKeys: (val: string[]) => void;
 	orderBy: string;
 	pageSize: number;
@@ -22,6 +23,7 @@ interface Props {
 function GalleryForm({
 	onSubmit,
 	addNew,
+	handleStartJob,
 	setFormKeys,
 	orderBy,
 	pageSize,
@@ -83,6 +85,21 @@ function GalleryForm({
 		setDeviceType(null);
 
 		//call reset callback
+	};
+
+	const doJobButton = function () {
+		if (objectType !== "datafile") {
+			return null;
+		}
+		return (
+			<button
+				type="button"
+				className="btn btn-secondary btn-lg ms-lg-2"
+				onClick={handleStartJob}
+			>
+				Export data
+			</button>
+		);
 	};
 
 	const activeField = function () {
@@ -258,7 +275,7 @@ function GalleryForm({
 						"datafile",
 					])}
 
-					<div className="d-grid gap-2 d-md-block mt-2 pt-1 col-lg-4">
+					<div className="d-grid gap-2 d-md-block mt-2 pt-1 col-lg-5">
 						<button
 							type="submit"
 							className="btn btn-primary btn-lg me-lg-2"
@@ -281,6 +298,8 @@ function GalleryForm({
 						>
 							Add new
 						</button>
+
+						{doJobButton()}
 					</div>
 				</div>
 

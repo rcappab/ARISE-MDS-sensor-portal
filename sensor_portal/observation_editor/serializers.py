@@ -7,12 +7,19 @@ from .models import Observation, Taxon
 
 
 class TaxonSerializer(CreatedModifiedMixIn, serializers.ModelSerializer):
+    taxonomic_level_name = serializers.CharField(
+        source="get_taxonomic_level_display", read_only=True)
+
     class Meta:
         model = Taxon
         exclude = []
 
 
 class ShortTaxonSerializer(serializers.ModelSerializer):
+
+    taxonomic_level_name = serializers.CharField(
+        source="get_taxonomic_level_display", read_only=True)
+
     class Meta:
         model = Taxon
         exclude = ["id", "created_on", "modified_on", "parents"]
@@ -26,6 +33,7 @@ class ShortTaxonSerializer(serializers.ModelSerializer):
 
 
 class EvenShorterTaxonSerialier(serializers.ModelSerializer):
+
     class Meta:
         model = Taxon
         fields = ["id", "species_name", "species_common_name", "taxon_source"]

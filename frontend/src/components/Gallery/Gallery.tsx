@@ -14,6 +14,8 @@ import toast from "react-hot-toast";
 import DetailModal from "../Detail/DetailModal.tsx";
 
 import { ObsEditModeContext } from "../../context/ObsModeContext.jsx";
+import BasicModal from "../BasicModal.tsx";
+import JobModal from "../JobModal.tsx";
 
 const Gallery = () => {
 	const { fromID, fromObject, objectType, nameKey } = useOutletContext();
@@ -26,6 +28,7 @@ const Gallery = () => {
 	);
 	const { authTokens, user } = useContext(AuthContext);
 	const [obsEditMode, setObsEditMode] = useState(false);
+	const [showJobModal, setShowJobModal] = useState(false);
 
 	let additionalOrdering;
 	let defaultOrdering = nameKey;
@@ -176,10 +179,13 @@ const Gallery = () => {
 		setPageNum(1);
 	};
 
-	const changePage = useCallback(function (newPage) {
-		console.log(newPage);
-		setPageNum(newPage);
-	}, []);
+	const changePage = useCallback(
+		function (newPage) {
+			console.log(newPage);
+			setPageNum(newPage);
+		},
+		[setPageNum]
+	);
 
 	const openDetail = useCallback(
 		function (index) {
@@ -299,6 +305,12 @@ const Gallery = () => {
 				Search {fromID === undefined ? "" : `${fromObject} ${fromID} `}
 				{objectType}s
 			</h3>
+			<JobModal
+				show={showJobModal}
+				onClose={() => {
+					setShowJobModal(false);
+				}}
+			/>
 			<ObsEditModeContext.Provider value={{ obsEditMode, setObsEditMode }}>
 				<DetailModal
 					data={data}
@@ -323,7 +335,9 @@ const Gallery = () => {
 				orderBy={orderBy ? orderBy : ""}
 				setFormKeys={setFormKeys}
 				addNew={addNew}
-				nameKey={nameKey}
+				handleStartJob={() => {
+					setShowJobModal(true);
+				}}
 				objectType={objectType}
 				fromObject={fromObject}
 				fromID={fromID}

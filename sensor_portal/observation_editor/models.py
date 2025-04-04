@@ -4,6 +4,7 @@ from django.db import models
 from django.db.models import Case, F, Min, Q, Value, When
 from django.db.models.signals import m2m_changed, post_delete, post_save
 from django.dispatch import receiver
+from requests.exceptions import ConnectionError, ConnectTimeout
 from utils.models import BaseModel
 
 from .GBIF_functions import (GBIF_get_species, GBIF_taxoncode_from_search,
@@ -94,7 +95,12 @@ class Taxon(BaseModel):
             self.taxon_source = 0
 
     def save(self, *args, **kwargs):
-        self.get_taxon_code()
+        try:
+            self.get_taxon_code()
+        except ConnectionError or ConnectTimeout as e:
+            print(e)
+            pass
+
         try:
             existing = Taxon.objects.get(
                 species_name__iexact=self.species_name.lower())

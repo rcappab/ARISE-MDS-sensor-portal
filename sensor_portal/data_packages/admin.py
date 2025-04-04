@@ -10,3 +10,4 @@ from .models import DataPackage
 class ObservationAdmin(AddOwnerAdmin):
     model = DataPackage
     raw_id_fields = ["data_files"]
+    readonly_fields = ["file_url"]

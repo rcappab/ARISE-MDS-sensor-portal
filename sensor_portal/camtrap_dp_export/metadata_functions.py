@@ -144,10 +144,10 @@ def create_camtrap_dp_metadata(file_qs, uuid="", title=""):
                 }
             ],
             "profile": "https://raw.githubusercontent.com/tdwg/camtrap-dp/1.0/camtrap-dp-profile.json",
-            "name": taxon_ID,
+            "name": title,
             "id": uuid,
             "created": datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ'),
-            "title": title,
+            "title": "Camtrap DP dataset",
             "contributors": all_contributors_distinct_title,
             "description": "",
             "version": "1.0",
