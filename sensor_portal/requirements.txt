@@ -18,6 +18,8 @@ django-filter==22.1
 django-sizefield==2.1.0
 django-timezone-field==7.1
 django-encrypted-model-fields==0.6.5
+drf-recaptcha==4.0.2
+django-rest-passwordreset==1.5.0
 
 # celery
 celery==5.2.7
@@ -30,12 +32,13 @@ django-celery-results==2.5.1
 paramiko==2.11.0
 scp==0.14.4
 
+
+
 # Other packages
 pytz==2022.1
 python-magic==0.4.27
 numpy==1.26.4
 pandas==1.4.2
-plotly==5.9.0
 thefuzz==0.20.0
 requests==2.32.3
 

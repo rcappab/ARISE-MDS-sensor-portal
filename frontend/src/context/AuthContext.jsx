@@ -22,7 +22,7 @@ export const AuthProvider = () => {
 
 	const navigate = useNavigate();
 
-	const loginUserFunction = async (username, password) => {
+	const loginUserFunction = async (username, password, recaptchaToken) => {
 		console.log("bar");
 		const response = await fetch(
 			`/${process.env.REACT_APP_API_BASE_URL}/token/`,
@@ -31,7 +31,11 @@ export const AuthProvider = () => {
 				headers: {
 					"Content-Type": "application/json",
 				},
-				body: JSON.stringify({ username: username, password: password }),
+				body: JSON.stringify({
+					username: username,
+					password: password,
+					recaptcha: recaptchaToken,
+				}),
 			}
 		);
 		let data = await response.json();
@@ -47,16 +51,16 @@ export const AuthProvider = () => {
 	};
 
 	const doLogIn = useMutation({
-		mutationFn: ({ username, password }) =>
-			loginUserFunction(username, password),
+		mutationFn: ({ username, password, recaptcha }) =>
+			loginUserFunction(username, password, recaptcha),
 	});
 
-	let loginUser = async (e) => {
-		e.preventDefault();
+	let loginUser = async (username, password, recaptchaToken) => {
 		console.log("foo");
 		doLogIn.mutate({
-			username: e.target.username.value,
-			password: e.target.password.value,
+			username: username,
+			password: password,
+			recaptcha: recaptchaToken,
 		});
 	};
 

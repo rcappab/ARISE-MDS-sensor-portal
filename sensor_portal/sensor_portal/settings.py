@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
+import json
 import os
 from datetime import timedelta
 from pathlib import Path
@@ -56,6 +57,8 @@ if DEVMODE:
     ALLOWED_HOSTS = ['localhost']
     CORS_ORIGINS_WHITELIST = [
         'http://localhost:8080', 'https://localhost:8080']
+
+    # DRF_RECAPTCHA_TESTING=True
 print("Reading settings!")
 
 # Application definition
@@ -68,6 +71,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.gis',
+    'django.contrib.sites',
     'django_filters',
     'django.contrib.postgres',
     "rest_framework",
@@ -82,6 +86,8 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework_simplejwt.token_blacklist',
     'encrypted_model_fields',
+    'django_rest_passwordreset',
+    'drf_recaptcha',
     # my apps
     'data_models',
     'user_management',
@@ -184,6 +190,8 @@ DATETIME_FORMAT = 'c'
 TIME_FORMAT = "H:i:s e"
 SHORT_DATETIME_FORMAT = 'Y-n-j G:i:s'
 
+SITE_ID = 1
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
@@ -217,6 +225,8 @@ REST_FRAMEWORK = {
         'utils.api.BrowsableAPIRendererWithoutForms',
     ),
 }
+DRF_RECAPTCHA_SECRET_KEY = os.environ.get(
+    'DRF_RECAPTCHA_SECRET_KEY', None)
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=10),
@@ -272,3 +282,18 @@ HUMAN_TAXON_CODE = "2436436"
 
 # path in FILE_STORAGE_ROOT where data packages will be saved
 PACKAGE_PATH = "data_packages"
+
+try:
+    with open("/media/secrets/mail_secrets", "r") as mail_secrets_file:
+        mail_secrets = json.load(mail_secrets_file)
+
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+    EMAIL_HOST = mail_secrets.get("EMAIL_HOST")
+    EMAIL_HOST_USER = mail_secrets.get("EMAIL_HOST_USER")
+    EMAIL_HOST_PASSWORD = mail_secrets.get(
+        "EMAIL_HOST_PASSWORD")
+    EMAIL_PORT = 465
+    EMAIL_USE_SSL = True
+
+except Exception as e:
+    print(e)

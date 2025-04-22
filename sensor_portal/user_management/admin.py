@@ -1,8 +1,9 @@
 from django.contrib import admin
-from .models import User, DeviceUser
 from django.contrib.auth.admin import UserAdmin
-from rest_framework.authtoken.models import Token, TokenProxy
 from rest_framework.authtoken.admin import TokenAdmin
+from rest_framework.authtoken.models import Token, TokenProxy
+
+from .models import DeviceUser, User
 
 TokenAdmin.raw_id_fields = ['user']
 
@@ -19,6 +20,10 @@ class InlineUserAdmin(UserAdmin):
                     'last_name', 'is_active', 'date_joined')
     list_filter = ('is_active', 'is_staff', 'is_superuser', 'groups')
     search_fields = ('username', 'first_name', 'last_name')
+
+    fieldsets = UserAdmin.fieldsets + (
+        ('Profile', {'fields': ('organisation', 'bio')}),
+    )
 
     inlines = [
         TokenInline,
@@ -38,14 +43,28 @@ class InlineUserAdmin(UserAdmin):
         obj.from_admin_site = True
         super().save_model(request, obj, form, change)
 
+    add_fieldsets = (
+        (
+            None,
+            {
+                'classes': ('wide',),
+                'fields': ('email', 'first_name', 'last_name', 'username', 'password1', 'password2'),
+            },
+        ),
+    )
+
 
 admin.site.register(User, InlineUserAdmin)
 
 
-class DeviceUserAdmin(UserAdmin):
-    list_display = ('username',)
+class DeviceUserAdmin(admin.ModelAdmin):
+    list_display = ('username', 'device', 'email')
     list_filter = ()
     search_fields = ('username',)
+    exclude = ['first_name', 'last_name',
+               'is_staff', 'is_active', 'is_superuser', 'groups', 'date_joined', 'last_login', 'user_permissions',
+               'password', 'organisation', 'bio', ]
+    readonly_fields = ["username", "device", 'email']
 
     inlines = [
         TokenInline,
@@ -63,21 +82,3 @@ class DeviceUserAdmin(UserAdmin):
 
 
 admin.site.register(DeviceUser, DeviceUserAdmin)
-
-
-# class GroupProfileInline(admin.StackedInline):
-#     model = GroupProfile
-
-
-# class GroupAdmin(GroupAdmin):
-#     inlines = [
-#         GroupProfileInline,
-#     ]
-
-#     def save_model(self, request, obj, form, change):
-#         obj.from_admin_site = True
-#         super().save_model(request, obj, form, change)
-
-
-# admin.site.unregister(Group)
-# admin.site.register(Group, GroupAdmin)

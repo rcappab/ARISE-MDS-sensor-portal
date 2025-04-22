@@ -4,6 +4,7 @@ import "./index.css";
 import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
 import reportWebVitals from "./reportWebVitals";
 import LoginPage from "./pages/LoginPage";
+import RegistrationPage from "./pages/RegistrationPage.tsx";
 import HomePage from "./pages/HomePage";
 import DataPackagePage from "./pages/DataPackagePage.tsx";
 import { AuthProvider } from "./context/AuthContext";
@@ -15,6 +16,11 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import DetailPage from "./components/Detail/DetailPage.tsx";
 import Error404page from "./pages/Error404page.jsx";
 import ObjectTypeCheck from "./components/ObjectTypeCheck.tsx";
+import { GoogleReCaptchaProvider } from "react-google-recaptcha-v3";
+import ReCaptchaContainer from "./utils/ReCaptchaContainer.tsx";
+import RequestResetPassword from "./pages/RequestResetPassword.tsx";
+import PostResetPassword from "./pages/PostResetPassword.tsx";
+import DoResetPassword from "./pages/DoResetPassword.tsx";
 
 const queryClient = new QueryClient();
 
@@ -59,7 +65,23 @@ const router = createBrowserRouter([
 					},
 				],
 			},
-			{ path: "/login", element: <LoginPage />, children: [] },
+			{ path: "/login", element: <LoginPage /> },
+			{ path: "/register", element: <RegistrationPage /> },
+			{
+				path: "/reset-password",
+
+				children: [
+					{ path: "", element: <RequestResetPassword /> },
+					{
+						path: "success",
+						element: <PostResetPassword />,
+					},
+					{
+						path: "confirm",
+						element: <DoResetPassword />,
+					},
+				],
+			},
 			{
 				path: "*",
 				element: <Error404page />,
@@ -70,10 +92,15 @@ const router = createBrowserRouter([
 
 ReactDOM.createRoot(document.getElementById("root")).render(
 	<React.StrictMode>
-		<Toaster />
-		<QueryClientProvider client={queryClient}>
-			<RouterProvider router={router} />
-		</QueryClientProvider>
+		<GoogleReCaptchaProvider
+			reCaptchaKey={process.env.REACT_APP_CAPTCHA_SITE_KEY}
+			useEnterprise={false}
+		>
+			<Toaster />
+			<QueryClientProvider client={queryClient}>
+				<RouterProvider router={router} />
+			</QueryClientProvider>
+		</GoogleReCaptchaProvider>
 	</React.StrictMode>
 );
 

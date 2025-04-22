@@ -1,13 +1,8 @@
 import os
-import traceback
-from datetime import datetime, time, timedelta, timezone
-from threading import local
-from unittest import TextTestRunner
+from datetime import timedelta
 
 from archiving.models import Archive, TarFile
-from bridgekeeper import perms
 from django.conf import settings
-from django.contrib.auth.models import Group
 from django.contrib.gis.db import models as gis_models
 from django.contrib.gis.geos import Point
 from django.core.exceptions import (MultipleObjectsReturned,
@@ -17,9 +12,6 @@ from django.db.models import (BooleanField, Case, Count, DateTimeField,
                               ExpressionWrapper, F, Max, Min, Q, Sum, Value,
                               When)
 from django.db.models.functions import Cast, Concat
-from django.db.models.signals import (m2m_changed, post_delete, post_save,
-                                      pre_delete)
-from django.dispatch import receiver
 from django.urls import reverse
 from django.utils import timezone as djtimezone
 from encrypted_model_fields.fields import EncryptedCharField
@@ -97,25 +89,6 @@ class Project(BaseModel):
         if self.project_ID == "" or self.project_ID is None:
             self.project_ID = self.name[0:10]
         return super().save(*args, **kwargs)
-
-# @receiver(post_save, sender=Project)
-# def post_save_project(sender, instance, created, **kwargs):
-#     if created:
-#         if instance.short_name == "":
-#             instance.short_name = instance.name[:10]
-#             instance.save()
-
-        # viewer_groupname = f"{instance.projectID}_project_viewers"
-        # viewer_usergroup = create_user_group(viewer_groupname)
-        # viewer_usergroup_profile = viewer_usergroup.profile
-        # viewer_usergroup_profile.project.add(instance)
-        # viewer_usergroup_profile.save()
-
-        # annotator_groupname = f"{instance.projectID}_project_annotators"
-        # annotator_usergroup = create_user_group(annotator_groupname)
-        # annotator_usergroup_profile = annotator_usergroup.profile
-        # annotator_usergroup_profile.project.add(instance)
-        # annotator_usergroup_profile.save()
 
 
 class DeviceModel(BaseModel):
@@ -265,22 +238,6 @@ class Device(BaseModel):
         return list(overlapping_deploys.values_list('deployment_device_ID', flat=True))
 
 
-# @receiver(post_save, sender=Device)
-# def post_save_device(sender, instance, created, **kwargs):
-#     if created:
-#         viewer_groupname = f"{instance.projectID}_device_viewers"
-#         viewer_usergroup = create_user_group(viewer_groupname)
-#         viewer_usergroup_profile = viewer_usergroup.profile
-#         viewer_usergroup_profile.project.add(instance)
-#         viewer_usergroup_profile.save()
-
-#         annotator_groupname = f"{instance.projectID}_device_annotators"
-#         annotator_usergroup = create_user_group(annotator_groupname)
-#         annotator_usergroup_profile = annotator_usergroup.profile
-#         annotator_usergroup_profile.project.add(instance)
-#         annotator_usergroup_profile.save()
-
-
 class Deployment(BaseModel):
     deployment_device_ID = models.CharField(
         max_length=100, blank=True, editable=False, unique=True)
@@ -420,55 +377,6 @@ class Deployment(BaseModel):
             self.last_image = None
             self.thumb_url = None
 
-
-@receiver(post_save, sender=Deployment)
-def post_save_deploy(sender, instance, created, **kwargs):
-    # if created:
-    #     print("doing created stuff")
-    #     viewer_groupname = f"{instance.projectID}_deployment_viewers"
-    #     viewer_usergroup = create_user_group(viewer_groupname)
-    #     viewer_usergroup_profile = viewer_usergroup.profile
-    #     viewer_usergroup_profile.project.add(instance)
-    #     viewer_usergroup_profile.save()
-
-    #     annotator_groupname = f"{instance.projectID}_deployment_annotators"
-    #     annotator_usergroup = create_user_group(annotator_groupname)
-    #     annotator_usergroup_profile = annotator_usergroup.profile
-    #     annotator_usergroup_profile.project.add(instance)
-    #     annotator_usergroup_profile.save()
-
-    global_project, added = Project.objects.get_or_create(
-        name=settings.GLOBAL_PROJECT_ID)
-    # print(global_project)
-    # print(instance.project.all())
-    if global_project not in instance.project.all():
-        instance.project.add(global_project)
-        print("add global project")
-        # RefreshDeploymentCache()
-        # print("Clear deployment cache")
-        # cache.delete_many(["allowed_deployments_{0}".format(x) for x in User.objects.all().values_list("username",flat=True)])
-
-
-@receiver(m2m_changed, sender=Deployment.project.through)
-def update_project(sender, instance, action, reverse, *args, **kwargs):
-
-    if (action == 'post_add' or action == 'post_remove') and not reverse:
-        instance.save()
-
-
-# @receiver(post_delete, sender=Device)
-# @receiver(post_delete, sender=Deployment)
-# @receiver(post_delete, sender=Project)
-# def clear_user_groups(sender, instance, **kwargs):
-#     all_groups = Group.objects.all()
-#     all_groups = all_groups.annotate(
-#         all_is_null=ExpressionWrapper(
-#             (Q(Q(profile__project=None) & Q(profile__device=None)
-#              & Q(profile__deployment=None))),
-#             output_field=BooleanField()
-#         )
-#     )
-#     all_groups.filter(all_is_null=True).delete()
 
 class DataFileQuerySet(models.QuerySet):
     def full_paths(self):
@@ -639,21 +547,3 @@ class DataFile(BaseModel):
         if not result:
             raise ValidationError(message)
         super(DataFile, self).clean()
-
-
-@receiver(post_save, sender=DataFile)
-def post_save_file(sender, instance, created, **kwargs):
-    instance.deployment.set_thumb_url()
-    instance.deployment.save()
-
-
-@receiver(pre_delete, sender=DataFile)
-def pre_remove_file(sender, instance, **kwargs):
-    # deletes the attached file form data storage
-    instance.clean_file(True)
-
-
-@receiver(post_delete, sender=DataFile)
-def post_remove_file(sender, instance, **kwargs):
-    instance.deployment.set_thumb_url()
-    instance.deployment.save()

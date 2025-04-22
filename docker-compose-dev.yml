@@ -32,6 +32,8 @@ services:
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
       - REACT_APP_API_BASE_URL=api
+      - REACT_APP_CAPTCHA_SECRET_KEY=${CAPTCHA_SECRET_KEY}
+      - REACT_APP_CAPTCHA_SITE_KEY=${CAPTCHA_SITE_KEY}
   sensor_portal_django:
     build:
       context: .
@@ -41,6 +43,7 @@ services:
     volumes:
       - ./file_storage:/media/file_storage
       - ./sensor_portal:/usr/src/sensor_portal
+      - ./secrets:/media/secrets
     ports:
       - "8000"
     environment:
@@ -51,7 +54,8 @@ services:
       - CELERY_BROKER=redis://sensor_portal_redis:6379/0
       - CELERY_BACKEND=redis://sensor_portal_redis:6379/0
       - DEV=True
-      - FIELD_ENCRYPTION_KEY=FrMHRMwLSdQytSjWRAIwaFPzzWC1R5XIPaH6HQbcryA=
+      - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
+      - DRF_RECAPTCHA_SECRET_KEY=${CAPTCHA_SECRET_KEY}
     depends_on:
       sensor_portal_db:
         condition: service_healthy
@@ -79,7 +83,8 @@ services:
       - CELERY_BROKER=redis://sensor_portal_redis:6379/0
       - CELERY_BACKEND=redis://sensor_portal_redis:6379/0
       - DEV=True
-      - FIELD_ENCRYPTION_KEY=FrMHRMwLSdQytSjWRAIwaFPzzWC1R5XIPaH6HQbcryA=
+      - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
+      - DRF_RECAPTCHA_SECRET_KEY=${CAPTCHA_SECRET_KEY}
     depends_on:
       sensor_portal_db:
         condition: service_healthy
@@ -108,7 +113,8 @@ services:
       - CELERY_BROKER=redis://sensor_portal_redis:6379/0
       - CELERY_BACKEND=redis://sensor_portal_redis:6379/0
       - DEV=True
-      - FIELD_ENCRYPTION_KEY=FrMHRMwLSdQytSjWRAIwaFPzzWC1R5XIPaH6HQbcryA=
+      - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
+      - DRF_RECAPTCHA_SECRET_KEY=${CAPTCHA_SECRET_KEY}
     depends_on:
       sensor_portal_db:
         condition: service_healthy
@@ -134,7 +140,8 @@ services:
       - CELERY_BROKER=redis://sensor_portal_redis:6379/0
       - CELERY_BACKEND=redis://sensor_portal_redis:6379/0
       - DEV=True
-      - FIELD_ENCRYPTION_KEY=FrMHRMwLSdQytSjWRAIwaFPzzWC1R5XIPaH6HQbcryA=
+      - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
+      - DRF_RECAPTCHA_SECRET_KEY=${CAPTCHA_SECRET_KEY}
     depends_on:
       sensor_portal_db:
         condition: service_healthy
