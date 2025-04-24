@@ -35,3 +35,4 @@ yarn-error.log*
 db_struct.erd
 /sensor_portal_database_2
 .env
+/sensor_portal_database_3

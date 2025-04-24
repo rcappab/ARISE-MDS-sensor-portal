@@ -1,8 +1,10 @@
 import factory
+from django.db.models.signals import post_save, pre_save
 
 from .models import User
 
 
+@factory.django.mute_signals(post_save, pre_save)
 class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = User
