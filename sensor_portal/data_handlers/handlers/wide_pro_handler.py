@@ -73,18 +73,16 @@ class Snyper4GHandler(DataTypeHandler):
                 "YResolution", "XResolution", "Software"])
 
             extra_data.update(new_extra_data)
-            task = "data_handler_generate_thumbnails"
 
         return recording_dt, extra_data, data_type, task
 
-
-def get_post_download_task(self, file_extension: str, first_time: bool = True):
-    task = None
-    if file_extension == ".txt" and first_time:
-        task = "snyper4G_convert_daily_report"
-    elif file_extension.lower() in [".jpeg", ".jpeg"]:
-        task = "data_handler_generate_thumbnails"
-    return task
+    def get_post_download_task(self, file_extension: str, first_time: bool = True):
+        task = None
+        if file_extension == ".txt" and first_time:
+            task = "snyper4G_convert_daily_report"
+        elif file_extension.lower() in [".jpeg", ".jpeg", ".jpg"]:
+            task = "data_handler_generate_thumbnails"
+        return task
 
 
 def parse_report_file(file):

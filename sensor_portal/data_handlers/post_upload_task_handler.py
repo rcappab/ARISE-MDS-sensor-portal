@@ -1,9 +1,10 @@
-from data_models.models import DataFile
-from typing import Callable, Tuple, List
 import traceback
+from typing import Callable, List, Tuple
+
+from data_models.models import DataFile
 
 
-def post_upload_task_handler(file_names: List[str],
+def post_upload_task_handler(file_pks: List[int],
                              task_function: Callable[[DataFile], Tuple[DataFile | None, List[str] | None]]) -> None:
     """
 Wrapper function to handle applying post upload functions on files. Will lock any files being operated on, return them to their initial lock state when done.
@@ -17,7 +18,7 @@ Args:
 
     # get datafiles
     data_file_objs = DataFile.objects.filter(
-        file_name__in=file_names).order_by("created_on")
+        pk__in=file_pks).order_by("created_on")
     # save initial do_not_delete state of files
 
     print(

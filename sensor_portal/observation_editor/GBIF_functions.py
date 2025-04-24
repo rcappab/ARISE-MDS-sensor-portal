@@ -116,6 +116,10 @@ def GBIF_to_avibase(species_key):
                                      'datasetKey': '4fa7b334-ce0d-4e88-aaae-2e0c138d049e'
                                  }
                                  )
+    if gbif_response.status_code != 200:
+        print("GBIF to avibase failed:",
+              gbif_response.status_code, gbif_response.text)
+        return None
     gbif_data = gbif_response.json()['results']
     if len(gbif_data) > 0:
         avibase = gbif_data[0]['taxonConceptID']

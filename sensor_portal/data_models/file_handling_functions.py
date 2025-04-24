@@ -2,7 +2,7 @@ import itertools
 import os
 from datetime import datetime as dt
 
-from celery import chord
+from celery import chain, chord
 from data_handlers.base_data_handler_class import DataTypeHandlerCollection
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -17,7 +17,7 @@ from .general_functions import check_dt
 
 def create_file_objects(files, check_filename=False, recording_dt=None, extra_data=None, deployment_object=None,
                         device_object=None, data_types=None, request_user=None):
-    from data_models.models import DataFile, DataType
+    from data_models.models import DataFile, DataType, ProjectJob
 
     invalid_files = []
     existing_files = []
@@ -55,7 +55,7 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
     if device_object is None and deployment_object:
         device_object = deployment_object.device
 
-    tasks = None
+    handler_tasks = None
 
     if device_object:
         device_model_object = device_object.model
@@ -117,7 +117,7 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
             recording_dt = new_recording_dt
             extra_data = new_extra_data
             data_types = new_data_types
-            tasks = new_tasks
+            handler_tasks = new_tasks
 
     else:
         invalid_files += [{x.name: {"message": "No linked device", "status": 400}}
@@ -166,8 +166,9 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
         if len(data_types) > 1:
             data_types = [x for x, y in zip(
                 data_types, file_valid) if y]
-
+    project_task_pks = []
     all_new_objects = []
+    all_handler_tasks = []
     for i in range(len(files)):
         file = files[i]
         filename = file.name
@@ -187,6 +188,8 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
             file_recording_dt = recording_dt[i]
         else:
             file_recording_dt = recording_dt[0]
+
+        file_handler_task = handler_tasks[i]
 
         # localise recording_dt to deployment tz or server tz
         file_recording_dt = check_dt(
@@ -257,23 +260,51 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
 
         new_datafile_obj.set_file_url()
         all_new_objects.append(new_datafile_obj)
+        file_deployment_tasks = list(file_deployment.project.all().values_list(
+            'automated_tasks__pk', flat=True))
+        file_deployment_tasks = [
+            x for x in file_deployment_tasks if x is not None]
+        all_handler_tasks.append(file_handler_task)
+        project_task_pks.append(file_deployment_tasks)
 
     final_status = status.HTTP_201_CREATED
     if len(all_new_objects) > 0:
-        uploaded_files = DataFile.objects.bulk_create(all_new_objects, update_conflicts=True, update_fields=[
-            "extra_data"], unique_fields=["file_name"])
+        uploaded_files = DataFile.objects.bulk_create(all_new_objects)
 
-        if tasks is not None:
-            # For unique tasks, fire off jobs to perform them
-            unique_tasks = list(set(tasks))
+        uploaded_files_pks = [x.pk for x in uploaded_files]
+        all_tasks = []
+
+        # For unique tasks, fire off jobs to perform them
+        unique_tasks = list(
+            set([x for x in handler_tasks if x is not None]))
+        if len(unique_tasks) > 0:
             for task_name in unique_tasks:
                 # get filenames for this task
-                task_file_names = [x.file_name for x,
-                                   y in zip(uploaded_files, tasks) if y == task_name]
+                task_file_pks = [x for x,
+                                 y in zip(uploaded_files_pks, handler_tasks) if y == task_name]
+                if len(task_file_pks) > 0:
+                    new_task = app.signature(
+                        task_name, [task_file_pks], immutable=True)
+                    all_tasks.append(new_task)
 
-                new_task = app.signature(
-                    task_name, [task_file_names], immutable=True)
-                new_task.apply_async()
+        # For unique tasks, fire off jobs to perform them
+        flat_project_task_pks = [
+            x for internal_list in project_task_pks for x in internal_list]
+
+        unique_project_task_pks = list(set(flat_project_task_pks))
+        if len(unique_project_task_pks) > 0:
+            for project_task_pk in unique_project_task_pks:
+                # get filenames for this task
+                task_file_pks = [x for x,
+                                 y in zip(uploaded_files_pks, project_task_pks) if project_task_pk in y]
+                if len(task_file_pks) > 0:
+                    # get signature from the db object
+                    task_obj = ProjectJob.objects.get(pk=project_task_pk)
+                    new_task = task_obj.get_job_signature(task_file_pks)
+                    all_tasks.append(new_task)
+
+        task_chain = chain(all_tasks)
+        task_chain.apply_async()
 
     else:
         final_status = status.HTTP_400_BAD_REQUEST

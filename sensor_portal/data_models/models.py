@@ -23,6 +23,7 @@ from utils.models import BaseModel
 
 from . import validators
 from .general_functions import check_dt
+from .job_handling_functions import get_job_from_name
 
 
 class Site(BaseModel):
@@ -59,7 +60,11 @@ class Project(BaseModel):
     data_storages = models.ManyToManyField(
         DataStorageInput, related_name="linked_projects", blank=True)
     archive = models.ForeignKey(
-        Archive, related_name="linked_projects", null=True, on_delete=models.SET_NULL)
+        Archive, related_name="linked_projects", null=True, blank=True, on_delete=models.SET_NULL)
+
+    automated_tasks = models.ManyToManyField(
+        "ProjectJob", related_name="linked_projects", blank=True
+    )
 
     def is_active(self):
         if self.id:
@@ -547,3 +552,15 @@ class DataFile(BaseModel):
         if not result:
             raise ValidationError(message)
         super(DataFile, self).clean()
+
+
+class ProjectJob(BaseModel):
+    job_name = models.CharField(max_length=50)
+    celery_job_name = models.CharField(max_length=50)
+    job_args = models.JSONField(default=dict)
+
+    def __str__(self):
+        return self.job_name
+
+    def get_job_signature(self, file_pks):
+        return get_job_from_name(self.celery_job_name, None, file_pks, self.job_args)

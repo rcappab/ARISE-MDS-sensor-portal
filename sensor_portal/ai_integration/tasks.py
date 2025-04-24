@@ -1,0 +1,135 @@
+from celery import chain, chord, group, shared_task, signature
+from data_models.models import DataFile
+from django.db.models import CharField
+from django.db.models.functions import Lower
+from observation_editor.models import Observation, Taxon
+
+from sensor_portal.celery import app
+
+CharField.register_lookup(Lower)
+
+
+@shared_task
+def do_ultra_inference(file_pks, model_name, target_labels=None, chunksize=500, chunksize2=100, exclude_done=False, parallel=False):
+    valid_formats = [".jpg", ".jpeg", ".png"]  # should be setting from env
+    target_queue_name = "ultralytics"  # should be setting from env
+    queue_names = [x[0]['name']
+                   for x in app.control.inspect().active_queues().values()]
+
+    if target_queue_name not in queue_names:
+        print(f"No {target_queue_name} queue available")
+        return
+
+    if type(file_pks) is not list:
+        file_pks = [file_pks]
+    if target_labels is not None and type(target_labels) is not list:
+        target_labels = [target_labels]
+
+    file_objs = DataFile.objects.filter(
+        pk__in=file_pks, file_format__lower__in=valid_formats)
+
+    if exclude_done or not parallel:
+        file_objs = file_objs.exclude(observations__source=model_name)
+        file_pks = list(file_objs.values_list('pk', flat=True))
+
+    if len(file_pks) == 0:
+        print("No files to analyse")
+        return
+
+    file_pks_chunks = [file_pks[i:i + chunksize]
+                       for i in range(0, len(file_pks), chunksize)]
+
+    for i, file_pks_chunk in enumerate(file_pks_chunks):
+        file_objs_chunk = file_objs.filter(pk__in=file_pks_chunk).full_paths()
+        file_pks_job_chunks = [file_pks_chunk[i:i + chunksize2]
+                               for i in range(0, len(file_pks_chunk), chunksize2)]
+
+        all_tasks = []
+
+        for file_pk_job_chunk in file_pks_job_chunks:
+
+            job_qs = file_objs_chunk.filter(pk__in=file_pk_job_chunk)
+            file_paths = list(
+                job_qs.values_list("full_path", flat=True))
+
+            all_tasks.append(app.signature('AnalysisTask', [
+                file_paths, model_name, target_labels], queue="ultralytics", immutable=True))
+
+        task_chord = chord(all_tasks, handle_ultra_results.s(
+            target_labels).set(queue="main_worker"))
+
+        if not parallel:
+            task_chain = chain(task_chord,
+                               do_ultra_inference.si(file_pks, model_name, target_labels, chunksize, chunksize2, True, False).set(queue="main_worker"))
+            print(task_chain)
+            task_chain.apply_async()
+            return
+
+        else:
+            task_chord.apply_async()
+
+
+@shared_task
+def handle_ultra_results(all_results, target_labels=None):
+    through_class = Observation.data_files.through
+    if target_labels is not None and type(target_labels) is not list:
+        target_labels = [target_labels]
+
+    objs_to_create = []
+    file_objs_pks = []
+
+    for results in all_results:
+        source = results.get('source')
+        for file_name, file_results in results.get('files').items():
+            file_obj = DataFile.objects.get(file_name=file_name)
+            num_results = 0
+            if len(file_results) > 0:
+                for result in file_results:
+                    prediction = result.get('prediction')
+                    if target_labels is None or prediction in target_labels:
+                        num_results += 1
+                        bounding_box = result.get("bbox")
+                        extra_data = {}
+
+                        if bounding_box is not None:
+                            bbox_keys = ["x1", "y1", "x2", "y2"]
+                            bounding_box = {k: v for k, v in zip(
+                                bbox_keys, bounding_box)}
+                        confidence = result.get('confidence')
+                        if result.get('orig_shape') is not None:
+                            extra_data["orig_shape"] = result.get('orig_shape')
+
+                        new_observation_object = Observation(
+                            label=f"{prediction}_{file_obj.file_name}",
+                            taxon=Taxon.objects.get_or_create(
+                                species_name=prediction)[0],
+                            bounding_box=bounding_box,
+                            confidence=confidence,
+                            extra_data=extra_data,
+                            source=source
+                        )
+
+                        objs_to_create.append(new_observation_object)
+                        file_objs_pks.append(file_obj.pk)
+
+            if len(file_results) == 0 or num_results == 0:
+                new_observation_object = Observation(
+                    label=f"No_dectection_{file_obj.file_name}",
+                    taxon=Taxon.objects.get_or_create(
+                        species_name="No detection")[0],
+                    extra_data={},
+                    source=source
+                )
+                objs_to_create.append(new_observation_object)
+                file_objs_pks.append(file_obj.pk)
+    new_observations = Observation.objects.bulk_create(
+        objs_to_create, batch_size=500)
+    new_obervation_pks = [x.pk for x in new_observations]
+    all_through_objs = []
+    for obs_pk, file_pk in zip(new_obervation_pks, file_objs_pks):
+        new_through_obj = through_class.objects.create(
+            observation_id=obs_pk, datafile_id=file_pk)
+        all_through_objs.append(new_through_obj)
+    through_class.objects.bulk_create(
+        all_through_objs, batch_size=500, ignore_conflicts=True)
+    print(f"Created {len(new_observations)} observations")

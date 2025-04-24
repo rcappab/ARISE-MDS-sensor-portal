@@ -1,10 +1,10 @@
-from .models import DataFile, DataType, Deployment, Device, DeviceModel, Project, Site
 from django.conf import settings
 from django.contrib import admin
+from utils.admin import AddOwnerAdmin, GenericAdmin
 
 from .forms import DeviceForm
-
-from utils.admin import GenericAdmin, AddOwnerAdmin
+from .models import (DataFile, DataType, Deployment, Device, DeviceModel,
+                     Project, ProjectJob, Site)
 
 # Register your models here.
 
@@ -70,3 +70,9 @@ class FileAdmin(GenericAdmin):
     list_filter = ['archived', 'local_storage', 'file_type']
     readonly_fields = GenericAdmin.readonly_fields + \
         ["upload_dt", "original_name", "local_path", "path", "file_url", "thumb_url"]
+
+
+@admin.register(ProjectJob)
+class JobAdmin(GenericAdmin):
+    list_display = ["job_name", "celery_job_name"]
+    search_fields = ["job_name", "celery_job_name"]

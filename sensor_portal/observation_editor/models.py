@@ -211,8 +211,12 @@ def update_observation_data_files(sender, instance, action, reverse, *args, **kw
 
 
 @receiver(post_delete, sender=Observation)
-@receiver(post_save, sender=Observation)
-def check_human(sender, instance, created, **kwargs):
+def check_human_delete(sender, instance, **kwargs):
+    if instance.taxon.taxon_code == settings.HUMAN_TAXON_CODE:
+        instance.check_data_files_human()
 
+
+@receiver(post_save, sender=Observation)
+def check_human_save(sender, instance, created, **kwargs):
     if instance.taxon.taxon_code == settings.HUMAN_TAXON_CODE:
         instance.check_data_files_human()
