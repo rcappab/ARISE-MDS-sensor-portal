@@ -103,6 +103,7 @@ def handle_ultra_results(all_results, target_labels=None):
                             label=f"{prediction}_{file_obj.file_name}",
                             taxon=Taxon.objects.get_or_create(
                                 species_name=prediction)[0],
+                            obs_dt=file_obj.recording_dt,
                             bounding_box=bounding_box,
                             confidence=confidence,
                             extra_data=extra_data,
@@ -117,6 +118,7 @@ def handle_ultra_results(all_results, target_labels=None):
                     label=f"No_dectection_{file_obj.file_name}",
                     taxon=Taxon.objects.get_or_create(
                         species_name="No detection")[0],
+                    obs_dt=file_obj.recording_dt,
                     extra_data={},
                     source=source
                 )
