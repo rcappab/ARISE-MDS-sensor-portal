@@ -1,16 +1,24 @@
 from celery import chain, chord, group, shared_task, signature
+from celery.app import Celery
 from data_models.models import DataFile
+from django.conf import settings
 from django.db.models import CharField
 from django.db.models.functions import Lower
 from observation_editor.models import Observation, Taxon
 
-from sensor_portal.celery import app
+# While we are using django_results as a backend, the ultralytics worker cannot access this to trigger the callback.
+# Therefore we set up an app using redis as a backend
+app = Celery(broker_url=settings.CELERY_BROKER_URL,
+             result_backend=settings.CELERY_BROKER_URL)
+
 
 CharField.register_lookup(Lower)
 
 
 @shared_task
-def do_ultra_inference(file_pks, model_name, target_labels=None, chunksize=500, chunksize2=100, exclude_done=False, parallel=False):
+def do_ultra_inference(file_pks, model_name, target_labels=None, chunksize=500, chunksize2=100,
+                       exclude_done=False, parallel=False):
+
     valid_formats = [".jpg", ".jpeg", ".png"]  # should be setting from env
     target_queue_name = "ultralytics"  # should be setting from env
     queue_names = [x[0]['name']
@@ -60,7 +68,11 @@ def do_ultra_inference(file_pks, model_name, target_labels=None, chunksize=500, 
 
         if not parallel:
             task_chain = chain(task_chord,
-                               do_ultra_inference.si(file_pks, model_name, target_labels, chunksize, chunksize2, True, False).set(queue="main_worker"))
+                               do_ultra_inference.si(file_pks,
+                                                     model_name,
+                                                     target_labels,
+                                                     chunksize,
+                                                     chunksize2, True, False).set(queue="main_worker"))
             print(task_chain)
             task_chain.apply_async()
             return
