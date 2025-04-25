@@ -18,5 +18,3 @@ class BrowsableAPIRendererWithoutForms(BrowsableAPIRenderer):
         rendered HTML, so let's simply return an empty string.
         """
         return ""
-
-

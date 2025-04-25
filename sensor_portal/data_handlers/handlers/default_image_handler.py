@@ -12,10 +12,15 @@ class DefaultImageHandler(DataTypeHandler):
     safe_formats = [".jpg", ".jpeg", ".png"]
     full_name = "Default image handler"
     description = """Data handler for image files."""
-    validity_description = """<ul>
+    validity_description =\
+        """
+    <ul>
     <li>Image format must be in available formats.</li>
-    </ul>"""
-    handling_description = """<ul>
+    </ul>
+    """
+    handling_description = \
+        """
+    <ul>
     <li>Recording datetime is extracted from exif.</li>
     <li><strong>Extra metadata attached:</strong>
     <ul>
@@ -24,7 +29,8 @@ class DefaultImageHandler(DataTypeHandler):
     <li> Aperture value: attempt to extract from exif</li>
     </ul>
     </li>
-    </ul>"""
+    </ul>
+    """
 
     def handle_file(self, file, recording_dt: datetime = None, extra_data: dict = None, data_type: str = None) -> Tuple[datetime, dict, str]:
         recording_dt, extra_data, data_type, task = super().handle_file(

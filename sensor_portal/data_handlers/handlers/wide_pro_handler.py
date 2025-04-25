@@ -18,20 +18,25 @@ class Snyper4GHandler(DataTypeHandler):
     safe_formats = [".jpg", ".jpeg", ".txt"]
     full_name = "Wide 4G handler"
     description = """Data handler for wide 4G wildlifecamera"""
-    validity_description = """<ul>
+    validity_description = \
+        """<ul>
     <li>File format must be in available formats.</li>
     <li>Image naming convention must be in the format []-[Image type (ME, TL, DR)]-[]., e.g '860946060409946-ME-27012025134802-SYPW1128' or '860946060409946-DR-27012025120154-SYPW1120'</li>
     <li>Text file must be in the structure of SOMETHING</li>
-    </ul>"""
-    handling_description = """<ul>
+    </ul>
+    """.replace("\n", "<br>")
+    handling_description = \
+        """<ul>
     <li>Recording datetime is extracted from exif.</li>
     <li><strong>Extra metadata attached:</strong>
     <ul>
     <li> YResolution, XResolutiom, Software: extracted from exif</li>
-    <li> 'daily_report': Added if the file is a daily report text file or image. Extracted from filename or format.
+    <li> 'daily_report': Added if the file is a daily report text file or image. Extracted from filename or format.</li>
     </ul>
     </li>
-    </ul>"""
+    <li>Thumbnails are generated.</li>
+    </ul>
+    """.replace("\n", "<br>")
 
     def handle_file(self, file, recording_dt: datetime = None, extra_data: dict = None, data_type: str = None) -> Tuple[datetime, dict, str]:
         recording_dt, extra_data, data_type, task = super().handle_file(

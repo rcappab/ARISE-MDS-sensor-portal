@@ -224,7 +224,7 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
         # 'rest_framework.renderers.BrowsableAPIRenderer'
-        'utils.api.BrowsableAPIRendererWithoutForms',
+        'utils.api_renderer.BrowsableAPIRendererWithoutForms',
     ),
 }
 DRF_RECAPTCHA_SECRET_KEY = os.environ.get(

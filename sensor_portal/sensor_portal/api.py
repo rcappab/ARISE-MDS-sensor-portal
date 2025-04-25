@@ -1,4 +1,5 @@
 from camtrap_dp_export.api import router as camtrap_dp_router
+from data_handlers.api import router as data_handlers_router
 from data_models.api import router as data_models_router
 from data_packages.api import router as data_package_router
 from observation_editor.api import router as observation_editor_router
@@ -11,4 +12,5 @@ router.registry.extend(user_management_router.registry)
 router.registry.extend(observation_editor_router.registry)
 router.registry.extend(camtrap_dp_router.registry)
 router.registry.extend(data_package_router.registry)
+router.registry.extend(data_handlers_router.registry)
 urlpatterns = router.urls

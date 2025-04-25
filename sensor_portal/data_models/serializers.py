@@ -2,6 +2,7 @@ from datetime import datetime as dt
 
 import magic
 from bridgekeeper import perms
+from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
 from django.utils import timezone as djtimezone
@@ -176,9 +177,23 @@ class ProjectSerializer(OwnerMixIn, ManagerMixIn, CreatedModifiedMixIn, serializ
 
 
 class DeviceModelSerializer(CreatedModifiedMixIn, OwnerMixIn, ManagerMixIn, serializers.ModelSerializer):
+
     class Meta:
         model = DeviceModel
         exclude = []
+
+    def to_representation(self, instance):
+        initial_rep = super(DeviceModelSerializer,
+                            self).to_representation(instance)
+        handler = settings.DATA_HANDLERS.get_handler(
+            instance.type.name, instance.name)
+        if handler:
+            initial_rep["data_handler"] = handler.full_name
+            initial_rep["data_handler_id"] = handler.id
+        else:
+            initial_rep["data_handler"] = None
+            initial_rep["data_handler_id"] = None
+        return initial_rep
 
 
 class DeviceSerializer(OwnerMixIn, ManagerMixIn, CreatedModifiedMixIn, CheckFormMixIn, serializers.ModelSerializer):
@@ -220,6 +235,16 @@ class DeviceSerializer(OwnerMixIn, ManagerMixIn, CreatedModifiedMixIn, CheckForm
             user_is_manager = False
         if not user_is_manager:
             [initial_rep.pop(field, '') for field in fields_to_pop]
+
+        handler = settings.DATA_HANDLERS.get_handler(
+            instance.type.name, instance.model.name)
+        if handler:
+            initial_rep["data_handler"] = handler.full_name
+            initial_rep["data_handler_id"] = handler.id
+        else:
+            initial_rep["data_handler"] = None
+            initial_rep["data_handler_id"] = None
+
         return initial_rep
 
     def validate(self, data):

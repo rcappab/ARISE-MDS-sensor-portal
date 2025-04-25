@@ -24,7 +24,8 @@ from . import api
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/", include(api)),
-    path('api/', include('user_management.urls'))
+    path('api/', include('user_management.urls')),
+    path('api/', include('utils.urls'))
 
     # re_path(r"^api-auth/", include("rest_framework.urls",
     #        namespace="rest_framework"))

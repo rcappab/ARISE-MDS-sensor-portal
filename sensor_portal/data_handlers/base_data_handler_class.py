@@ -14,6 +14,7 @@ class DataTypeHandler():
     description = "No description provided"
     validity_description = "No validity description provided"
     handling_description = "No handling description provided"
+    post_handling_description = "No post handling description provided"
 
     def format_check(self, file, device_label=None):
         return os.path.splitext(file.name)[1].lower() in self.safe_formats
@@ -47,6 +48,7 @@ class DataTypeHandler():
 class DataTypeHandlerCollection():
 
     data_type_handlers = {}
+    data_handler_list = []
 
     def __init__(self, root_path="") -> None:
         handler_dir = os.path.join(
@@ -59,12 +61,15 @@ class DataTypeHandlerCollection():
                 f"data_handlers.handlers.{handler_file}")
 
         all_handlers = DataTypeHandler.__subclasses__()
-        for handler in all_handlers:
+        for idx, handler in enumerate(all_handlers):
+            handler_instance = handler()
+            handler_instance.id = idx
+            self.data_handler_list.append(handler_instance)
             for data_type in handler.data_types:
                 if not self.data_type_handlers.get(data_type):
                     self.data_type_handlers[data_type] = {}
                 for model in handler.device_models:
-                    self.data_type_handlers[data_type][model] = handler()
+                    self.data_type_handlers[data_type][model] = handler_instance
 
     def set_default_model(self, data_type, device_model):
 
