@@ -20,13 +20,14 @@ from utils.viewsets import (AddOwnerViewSetMixIn, CheckAttachmentViewSetMixIn,
 from .file_handling_functions import create_file_objects
 from .filtersets import *
 from .job_handling_functions import start_job_from_name
-from .models import DataFile, DataType, Deployment, Device, Project, Site
+from .models import (DataFile, DataType, Deployment, Device, DeviceModel,
+                     Project, Site)
 from .permissions import perms
 from .plotting_functions import get_all_file_metric_dicts
 from .serializers import (DataFileSerializer, DataFileUploadSerializer,
                           DataTypeSerializer, DeploymentSerializer,
-                          DeploymentSerializer_GeoJSON, DeviceSerializer,
-                          ProjectSerializer, SiteSerializer)
+                          DeploymentSerializer_GeoJSON, DeviceModelSerializer,
+                          DeviceSerializer, ProjectSerializer, SiteSerializer)
 
 
 class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, CheckFormViewSetMixIn, OptionalPaginationViewSetMixIn):
@@ -217,8 +218,14 @@ class SiteViewSet(viewsets.ReadOnlyModelViewSet):
     search_fields = ['name', 'short_name']
 
 
-class DataTypeViewset(viewsets.ReadOnlyModelViewSet):
+class DataTypeViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = DataTypeSerializer
     queryset = DataType.objects.all().distinct()
     search_fields = ['name']
     filterset_class = DataTypeFilter
+
+
+class DeviceModelViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = DeviceModelSerializer
+    queryset = DeviceModel.objects.all().distinct()
+    search_fields = ['name']

@@ -176,7 +176,7 @@ class ProjectSerializer(OwnerMixIn, ManagerMixIn, CreatedModifiedMixIn, serializ
         super(ProjectSerializer, self).__init__(*args, **kwargs)
 
 
-class DeviceModelSerializer(CreatedModifiedMixIn, OwnerMixIn, ManagerMixIn, serializers.ModelSerializer):
+class DeviceModelSerializer(CreatedModifiedMixIn, OwnerMixIn, serializers.ModelSerializer):
 
     class Meta:
         model = DeviceModel
@@ -185,6 +185,7 @@ class DeviceModelSerializer(CreatedModifiedMixIn, OwnerMixIn, ManagerMixIn, seri
     def to_representation(self, instance):
         initial_rep = super(DeviceModelSerializer,
                             self).to_representation(instance)
+
         handler = settings.DATA_HANDLERS.get_handler(
             instance.type.name, instance.name)
         if handler:

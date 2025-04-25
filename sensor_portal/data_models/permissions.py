@@ -112,3 +112,13 @@ perms['data_models.view_datatype'] = is_authenticated & is_active
 perms['data_models.add_datatype'] = is_authenticated & is_active
 perms['data_models.change_datatype'] = is_authenticated & is_superuser
 perms['data_models.delete_datatype'] = is_authenticated & is_superuser
+
+perms['data_models.view_devicemodel'] = is_authenticated & is_active
+perms['data_models.add_devicemodel'] = is_authenticated & is_superuser
+perms['data_models.change_devicemodel'] = is_authenticated & is_superuser
+perms['data_models.delete_devicemodel'] = is_authenticated & is_superuser
+
+perms['data_models.view_projectjob'] = is_authenticated & is_active
+perms['data_models.add_projectjob'] = is_authenticated & is_superuser
+perms['data_models.change_projectjob'] = is_authenticated & is_superuser
+perms['data_models.delete_projectjob'] = is_authenticated & is_superuser

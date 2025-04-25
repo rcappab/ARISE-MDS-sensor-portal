@@ -88,6 +88,8 @@ INSTALLED_APPS = [
     'encrypted_model_fields',
     'django_rest_passwordreset',
     'drf_recaptcha',
+    'colorfield',
+    'django_icon_picker',
     # my apps
     'data_models',
     'user_management',
@@ -231,7 +233,7 @@ DRF_RECAPTCHA_SECRET_KEY = os.environ.get(
     'DRF_RECAPTCHA_SECRET_KEY', None)
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=10),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True
@@ -253,10 +255,13 @@ CELERY_RESULT_EXTENDED = True
 
 CELERY_TASK_DEFAULT_QUEUE = 'main_worker'
 
+
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_ENABLE_UTC = False
 
-CELERY_BEAT_SCHEDULE = {}
+CELERY_BEAT_SCHEDULE = {
+
+}
 
 # SENSOR-PORTAL SETTINGS
 # name of the global project all deployments will be added to.
@@ -299,3 +304,6 @@ try:
 
 except Exception as e:
     print(e)
+
+# Name of queue to use for ultralytics tasks.
+CELERY_ULTRALYTICS_QUEUE = 'ultralytics'

@@ -2,6 +2,7 @@ import os
 from datetime import timedelta
 
 from archiving.models import Archive, TarFile
+from colorfield.fields import ColorField
 from django.conf import settings
 from django.contrib.gis.db import models as gis_models
 from django.contrib.gis.geos import Point
@@ -14,6 +15,7 @@ from django.db.models import (BooleanField, Case, Count, DateTimeField,
 from django.db.models.functions import Cast, Concat
 from django.urls import reverse
 from django.utils import timezone as djtimezone
+from django_icon_picker.field import IconField
 from encrypted_model_fields.fields import EncryptedCharField
 from external_storage_import.models import DataStorageInput
 from sizefield.models import FileSizeField
@@ -41,6 +43,8 @@ class Site(BaseModel):
 
 class DataType(BaseModel):
     name = models.CharField(max_length=50)
+    colour = ColorField(default="#FFFFFF")
+    symbol = IconField(blank=True)
 
     def __str__(self):
         return self.name
@@ -103,6 +107,15 @@ class DeviceModel(BaseModel):
                              related_name="device_models")
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, related_name="owned_device_models",
                               on_delete=models.SET_NULL, null=True)
+    colour = ColorField(blank=True)
+    symbol = IconField(blank=True)
+
+    def save(self, *args, **kwargs):
+        if self.colour == "":
+            self.colour = self.type.colour
+        if self.symbol == "":
+            self.symbol = self.type.symbol
+        return super().save(*args, **kwargs)
 
     def __str__(self):
         return self.name

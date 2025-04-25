@@ -6,6 +6,7 @@ import FormDateTZSelect from "../FormDateTZSelect.tsx";
 import FormSelectAPI from "../FormSelectAPI.tsx";
 import UserSelector from "../UserSelector.tsx";
 import PermissionEditor from "../PermissionEditor.tsx";
+import { itemFromTimeZone } from "../../utils/timezoneFunctions.js";
 
 interface Props {
 	selectedData?: object | null;
@@ -73,6 +74,12 @@ const DetailEditDeployment = ({
 
 	const [extraInfo, setExtraInfo] = useState(
 		selectedData ? selectedData["extra_data"] : {}
+	);
+
+	const [timeZone, setTimeZone] = useState(
+		selectedData
+			? selectedData["time_zone"]
+			: itemFromTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone).label
 	);
 
 	const setLatLong = function (latlong) {
@@ -309,6 +316,15 @@ const DetailEditDeployment = ({
 					</div>
 				</div>
 				<div className="row py-1 px-3 mb-3 border rounded">
+					<div className="col-md-6 ps-md-0 pe-md-1">
+						<label htmlFor="post-time_zone">Deployment timezone</label>
+						<div className="form-text">
+							Time zone naive times will be localised to this timezone.
+							<div className="invalid-feedback">
+								{`${errorDict["deployment_start"]} ${errorDict["deployment_start_TZ"]} ${errorDict["deployment_start_dt"]}`}
+							</div>
+						</div>
+					</div>
 					<div className="col-md-6 ps-md-0 pe-md-1">
 						<label htmlFor="post-deployment_start">Deployment start</label>
 						<FormDateTZSelect

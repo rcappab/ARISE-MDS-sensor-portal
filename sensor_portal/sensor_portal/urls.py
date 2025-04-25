@@ -25,9 +25,10 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/", include(api)),
     path('api/', include('user_management.urls')),
-    path('api/', include('utils.urls'))
-
+    path('api/', include('utils.urls')),
+    path("icon_picker/", include("django_icon_picker.urls")),
     # re_path(r"^api-auth/", include("rest_framework.urls",
     #        namespace="rest_framework"))
-] + static(settings.FILE_STORAGE_URL, document_root=settings.FILE_STORAGE_ROOT) \
-    + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
+# + static(settings.FILE_STORAGE_URL, document_root=settings.FILE_STORAGE_ROOT) \
+#     + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

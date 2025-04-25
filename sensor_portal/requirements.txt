@@ -20,6 +20,8 @@ django-timezone-field==7.1
 django-encrypted-model-fields==0.6.5
 drf-recaptcha==4.0.2
 django-rest-passwordreset==1.5.0
+django-colorfield==0.13.0
+django-icon-picker==1.0.2
 
 # celery
 celery==5.2.7
