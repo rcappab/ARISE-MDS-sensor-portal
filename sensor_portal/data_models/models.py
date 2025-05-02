@@ -569,7 +569,6 @@ class DataFile(BaseModel):
 
 class ProjectJob(BaseModel):
     job_name = models.CharField(max_length=50)
-    obj_type = models.CharField(max_length=50)
     celery_job_name = models.CharField(max_length=50)
     job_args = models.JSONField(default=dict)
 
@@ -577,4 +576,5 @@ class ProjectJob(BaseModel):
         return self.job_name
 
     def get_job_signature(self, file_pks):
-        return get_job_from_name(self.celery_job_name, self.obj_type, None, file_pks, self.job_args)
+        # project level jobs always assumed to work on the file level, as they are fired by files being imported
+        return get_job_from_name(self.celery_job_name, "datafile", None, file_pks, self.job_args)
