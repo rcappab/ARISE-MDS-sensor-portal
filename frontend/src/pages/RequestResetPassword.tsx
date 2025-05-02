@@ -81,12 +81,13 @@ const RequestResetPassword = () => {
 			if (!response["ok"]) {
 				toast.error(
 					`Error in submission ${
-						response["detail"] ? ":" + response["detail"] : ""
+						response["email"] ? ":" + response["email"][0] : ""
 					}`,
 					{
 						id: toastId,
 					}
 				);
+				doPost.reset();
 			} else {
 				console.log(response);
 				toast.success("Password reset succesfully requested", {

@@ -53,6 +53,7 @@ const RectDraw = ({
 		// These states should be handled by the parent component
 
 		obsData[editIndex]["bounding_box"] = bbox;
+		obsData[editIndex]["edited"] = true;
 		onFinishEditing(obsData);
 	};
 
@@ -165,16 +166,14 @@ const RectDraw = ({
 
 	const getBoxes = (highlight = false) => {
 		if (editMode) {
-			return addRectangle()
-				? addRectangle()
-				: null;
-				  // <rect
-				  // 	className={"rectangle"}
-				  // 	x={rectx}
-				  // 	y={recty}
-				  // 	height={rectheight}
-				  // 	width={rectwidth}
-				  // />
+			return addRectangle() ? addRectangle() : null;
+			// <rect
+			// 	className={"rectangle"}
+			// 	x={rectx}
+			// 	y={recty}
+			// 	height={rectheight}
+			// 	width={rectwidth}
+			// />
 		} else {
 			return obsData.map((obsBbox, index) => {
 				return rectFromBBox(obsBbox, index, highlight);

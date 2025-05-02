@@ -29,10 +29,12 @@ const Gallery = () => {
 	const { authTokens, user } = useContext(AuthContext);
 	const [obsEditMode, setObsEditMode] = useState(false);
 	const [showJobModal, setShowJobModal] = useState(false);
+	const [jobName, setJobName] = useState("");
 
 	let additionalOrdering;
 	let defaultOrdering = nameKey;
 	let thumbKey = "";
+	let defaultTableMode = true;
 
 	if (objectType === "device") {
 		additionalOrdering = [{ value: "name", label: "Device name alphabetical" }];
@@ -40,15 +42,19 @@ const Gallery = () => {
 		additionalOrdering = [
 			{ value: "deploymentStart", label: "Deployment start time" },
 		];
+		defaultTableMode = false;
 	} else if (objectType === "datafile") {
 		defaultOrdering = "recording_dt";
 		additionalOrdering = [
 			{ value: "recording_dt", label: "Recording datetime ascending" },
 			{ value: "-recording_dt", label: "Recording datetime descending" },
 		];
-	} else {
+		defaultTableMode = false;
+	} else if (objectType === "project") {
 		additionalOrdering = [];
 	}
+
+	const [tableMode, setTableMode] = useState(defaultTableMode);
 
 	const [orderBy, setOrderBy] = useState(
 		searchParams.get("ordering")
@@ -145,25 +151,19 @@ const Gallery = () => {
 	].concat(additionalOrdering);
 
 	const handleReset = function (searchParams) {
-		for (let key of searchParams.keys()) {
-			if (key === "page") {
-				searchParams.set(key, (1).toString());
-			} else if (key === "page_size") {
-				// Do we need to reset this?
-				searchParams.set(key, defaultPageSize.toString());
-			} else {
-				searchParams.set(key, "");
-			}
-		}
+		// for (let key of searchParams.keys()) {
+		// 	if (key === "page") {
+		// 		searchParams.set(key, (1).toString());
+		// 	} else if (key === "page_size") {
+		// 		// Do we need to reset this?
+		// 		searchParams.set(key, defaultPageSize.toString());
+		// 	}
+		// }
+		setPageNum(1);
+		searchParams.set("page", (1).toString());
+
 		console.log(searchParams);
 		setSearchParams(searchParams);
-
-		setPageNum(1);
-
-		//perhaps we don't need to reset this?
-		setPageSize(defaultPageSize);
-		//perhaps we don't need to reset this?
-		setOrderBy(defaultOrdering);
 	};
 
 	const removeSearchParameters = useCallback(
@@ -241,9 +241,11 @@ const Gallery = () => {
 					maxPage={maxPage}
 					orderBy={orderBy ? orderBy : ""}
 					orderingChoices={orderingChoices}
+					tableMode={tableMode}
 					handleChangePage={changePage}
 					handleChangePageSize={setPageSize}
 					handleChangeOrdering={setOrderBy}
+					handleChangeTableDisplay={setTableMode}
 					// change itemsperpage callback
 					// change result ordering callback
 				/>
@@ -256,6 +258,7 @@ const Gallery = () => {
 						objectType={objectType}
 						data={data.results}
 						onTileClick={openDetail}
+						tableMode={tableMode}
 					/>
 				</div>
 			</div>
@@ -305,12 +308,16 @@ const Gallery = () => {
 				Search {fromID === undefined ? "" : `${fromObject} ${fromID} `}
 				{objectType}s
 			</h3>
-			<JobModal
-				show={showJobModal}
-				onClose={() => {
-					setShowJobModal(false);
-				}}
-			/>
+			{showJobModal && data && data.results && data.results.length > 0 ? (
+				<JobModal
+					jobName={jobName}
+					show={showJobModal}
+					onClose={() => {
+						setShowJobModal(false);
+					}}
+					key={jobName}
+				/>
+			) : null}
 			<ObsEditModeContext.Provider value={{ obsEditMode, setObsEditMode }}>
 				<DetailModal
 					data={data}
@@ -335,12 +342,15 @@ const Gallery = () => {
 				orderBy={orderBy ? orderBy : ""}
 				setFormKeys={setFormKeys}
 				addNew={addNew}
+				jobName={jobName}
+				onJobChange={setJobName}
 				handleStartJob={() => {
-					setShowJobModal(true);
+					if (jobName !== "") setShowJobModal(true);
 				}}
 				objectType={objectType}
 				fromObject={fromObject}
 				fromID={fromID}
+				key={`${objectType}-${fromObject}-${fromID}`}
 			/>
 			{showGallery()}
 		</div>

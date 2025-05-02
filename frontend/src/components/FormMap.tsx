@@ -23,7 +23,7 @@ const FormMap = ({
 				center={[0, 0]}
 				zoom={10}
 				scrollWheelZoom={false}
-				style={{ height: "75vh", width: "100%" }}
+				style={{ height: "20vh", width: "100%" }}
 			>
 				<TileLayer
 					attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

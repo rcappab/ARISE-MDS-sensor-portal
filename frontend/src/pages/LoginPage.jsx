@@ -4,6 +4,7 @@ import AuthContext from "../context/AuthContext";
 import ReCaptchaContainer from "../utils/ReCaptchaContainer.tsx";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { Link } from "react-router-dom";
+import CaptchaText from "../components/CaptchaText.tsx";
 
 const LoginPage = () => {
 	const { loginUser } = useContext(AuthContext);
@@ -84,17 +85,12 @@ const LoginPage = () => {
 					</button>
 				</form>
 				<div className="mt-3">
-					Forgot your password?{" "}
-					<Link
-						to={"/reset-password"}
-						target="_blank"
-					>
-						Click here
-					</Link>
+					Forgot your password? <Link to={"/reset-password"}>Click here</Link>
 					<div className="mt-3">
 						Don't have an account? <Link to={"/register"}>Register here</Link>
 					</div>
 				</div>
+				<CaptchaText />
 			</div>
 		</div>
 	);

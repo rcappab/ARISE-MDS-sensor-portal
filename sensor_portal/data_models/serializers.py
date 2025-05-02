@@ -178,6 +178,11 @@ class ProjectSerializer(OwnerMixIn, ManagerMixIn, CreatedModifiedMixIn, serializ
 
 class DeviceModelSerializer(CreatedModifiedMixIn, OwnerMixIn, serializers.ModelSerializer):
 
+    type = serializers.SlugRelatedField(
+        slug_field='name', queryset=DataType.objects.all(), required=False)
+    type_ID = serializers.PrimaryKeyRelatedField(source="type", queryset=DataType.objects.all(),
+                                                 required=False)
+
     class Meta:
         model = DeviceModel
         exclude = []
@@ -208,7 +213,7 @@ class DeviceSerializer(OwnerMixIn, ManagerMixIn, CreatedModifiedMixIn, CheckForm
                                                   required=False)
 
     username = serializers.CharField(required=False)
-    password = serializers.CharField(required=False)
+    password = serializers.CharField(required=False, write_only=True)
     is_active = serializers.BooleanField(
         read_only=True)
 

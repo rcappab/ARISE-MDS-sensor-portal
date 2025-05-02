@@ -1,7 +1,10 @@
 import django_filters.rest_framework
+from django.db.models import BooleanField, Case, ExpressionWrapper, F, Q, When
+from observation_editor.models import Observation
 from utils.filtersets import ExtraDataFilterMixIn, GenericFilterMixIn
 
-from .models import DataFile, DataType, Deployment, Device, Project
+from .models import (DataFile, DataType, Deployment, Device, DeviceModel,
+                     Project)
 
 
 class DataTypeFilter(GenericFilterMixIn):
@@ -60,7 +63,7 @@ class DeviceFilter(GenericFilterMixIn, ExtraDataFilterMixIn):
     is_active = django_filters.BooleanFilter(
         field_name="deployments__is_active")
 
-    device_type = django_filters.ModelChoiceFilter(field_name='device__type',
+    device_type = django_filters.ModelChoiceFilter(field_name='type',
                                                    queryset=DataType.objects.filter(
                                                        devices__isnull=False).distinct(),
                                                    label="device type")
@@ -89,6 +92,60 @@ class DataFileFilter(GenericFilterMixIn, ExtraDataFilterMixIn):
                                                        devices__isnull=False).distinct(),
                                                    label="device type")
 
+    has_observations = django_filters.BooleanFilter(
+        field_name="observations", lookup_expr="isnull", exclude=True, label="Has observations")
+
+    obs_type = django_filters.ChoiceFilter(
+        choices=[
+            ("no_obs", "No observations"),
+            ("no_human_obs", "No human observations"),
+            ("all_obs", "All observations"),
+            ("has_human", "Human observations"),
+            ("has_ai", "AI observations"),
+            ("human_only", "Human observations only"),
+            ("ai_only", "AI observations only"),
+        ],
+        method="filter_obs_type",
+        label="Observation type"
+    )
+
+    def filter_obs_type(self, queryset, name, value):
+        if value == "no_obs":
+            return queryset.filter(observations__isnull=True)
+        elif value == "no_human_obs":
+            return queryset.exclude(observations__source="human")
+        elif value == "all_obs":
+            return queryset.filter(observations__isnull=False)
+        elif value == "has_human":
+            return queryset.filter(observations__source="human")
+        elif value == "has_ai":
+            return queryset.filter(observations__in=Observation.objects.all().exclude(source="human"))
+        elif value == "ai_only":
+            return queryset.filter(observations__isnull=False).exclude(observations__source="human")
+        elif value == "human_only":
+            return queryset.filter(observations__source="human").exclude(observations__in=Observation.objects.all().exclude(source="human"))
+
+    uncertain = django_filters.ChoiceFilter(
+        choices=[
+            ("no_uncertain", "No uncertain observations"),
+            ("uncertain", "Uncertain observations"),
+            ("other_uncertain", "Other's uncertain observations"),
+            ("my_uncertain", "My uncertain observations"),
+        ],
+        method="filter_uncertain",
+        label="Uncertain observations"
+    )
+
+    def filter_uncertain(self, queryset, name, value):
+        if value == "no_uncertain":
+            return queryset.filter(Q(observations__isnull=True) | Q(observations__validation_requested=False))
+        elif value == "uncertain":
+            return queryset.filter(observations__validation_requested=True)
+        elif value == "my_uncertain":
+            return queryset.filter(observations__validation_requested=True, observations__owner=self.request.user)
+        elif value == "other_uncertain":
+            return queryset.filter(observations__validation_requested=True).exclude(observations__owner=self.request.user)
+
     class Meta:
         model = DataFile
         fields = GenericFilterMixIn.get_fields().copy()
@@ -106,5 +163,17 @@ class DataFileFilter(GenericFilterMixIn, ExtraDataFilterMixIn):
             'local_storage': ['exact'],
             'archived': ['exact'],
             'original_name': ['exact', 'icontains', 'in'],
-            'favourite_of': ['contains'],
+            'favourite_of': ['exact', 'contains'],
+        })
+
+
+class DeviceModelFilter(GenericFilterMixIn, ExtraDataFilterMixIn):
+
+    class Meta:
+        model = DeviceModel
+        fields = GenericFilterMixIn.get_fields().copy()
+        fields.update({
+            'type': ['exact', 'in'],
+            'type__name': ['exact', 'icontains', 'in'],
+            'name': ['exact', 'icontains', 'in'],
         })

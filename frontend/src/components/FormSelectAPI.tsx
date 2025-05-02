@@ -14,10 +14,11 @@ interface Props {
 	isSearchable?: boolean;
 	isClearable?: boolean;
 	apiURL: string;
-	valueKey: string;
-	labelKey: string;
+	valueKey?: string;
+	labelKey?: string;
 	multiple?: boolean;
 	creatable?: boolean;
+	refetchOnInput?: boolean;
 	handleChange?: (e) => void;
 	valid?: boolean;
 }
@@ -25,17 +26,18 @@ interface Props {
 const FormSelectAPI = ({
 	name,
 	id,
+	apiURL,
 	value = null,
 	label,
 	choices = [],
 	apiSearchKey = null,
 	isSearchable = true,
 	isClearable = true,
-	apiURL,
-	valueKey,
-	labelKey,
+	valueKey = undefined,
+	labelKey = undefined,
 	multiple = false,
 	creatable = false,
+	refetchOnInput = true,
 	handleChange = () => {},
 	valid = true,
 }: Props) => {
@@ -57,13 +59,17 @@ const FormSelectAPI = ({
 		if ("results" in response_json) {
 			response_json = response_json["results"];
 		}
-		console.log(response_json);
+		//console.log(response_json);
 
 		let newOptions = response_json.map((x) => {
-			return { value: x[valueKey], label: x[labelKey] };
+			if (valueKey !== undefined && labelKey !== undefined) {
+				return { value: x[valueKey], label: x[labelKey] };
+			} else {
+				return { value: x, label: x };
+			}
 		});
 		let allOptions = choices.concat(newOptions);
-		console.log(allOptions);
+		//console.log(allOptions);
 		return allOptions;
 	};
 
@@ -84,7 +90,9 @@ const FormSelectAPI = ({
 
 	const onInput = function (newValue) {
 		setSearchString(newValue);
-		refetch();
+		if (apiSearchKey && refetchOnInput) {
+			refetch();
+		}
 	};
 
 	const newPOST = async (inputValue) => {

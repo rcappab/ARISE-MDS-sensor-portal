@@ -8,9 +8,11 @@ interface Props {
 	pageSize: number;
 	orderBy: string;
 	orderingChoices: any;
+	tableMode: boolean;
 	handleChangePage: (number) => void;
 	handleChangeOrdering: (string) => void;
 	handleChangePageSize: (string) => void;
+	handleChangeTableDisplay: (bool) => void;
 }
 
 const GalleryPageControls = ({
@@ -19,9 +21,11 @@ const GalleryPageControls = ({
 	pageSize,
 	orderBy,
 	orderingChoices,
+	tableMode,
 	handleChangePage,
 	handleChangeOrdering,
 	handleChangePageSize,
+	handleChangeTableDisplay,
 }: Props) => {
 	const changePage = function (change) {
 		console.log("new page");
@@ -67,25 +71,42 @@ const GalleryPageControls = ({
 			id="page-controls"
 			className="row gallery-page-controls justify-content-center"
 		>
-			<div className="col col-lg-2 py-1 py-lg-0 order-lg-1">
-				<div className="input-group input-group-sm h-100">
-					<span className="input-group-text">Items per page: </span>
-					<input
-						className="form-control"
-						name="page_size"
-						type="number"
-						min="1"
-						max="100"
-						step="5"
-						value={pageSize}
-						onChange={(e) => {
-							setPage(1);
-							handleChangePageSize(e.target.value);
-						}}
-					/>
+			<div className="col row col-12 col-lg-4 py-1 py-lg-0 order-lg-1">
+				<div className="col col-6 table-control">
+					<div className="form-check form-switch">
+						<label htmlFor="set-tablemode">Table view</label>
+						<input
+							name="autoupdate"
+							className="form-check-input form-control"
+							id="set-tablemode"
+							checked={tableMode}
+							type="checkbox"
+							onChange={(e) => {
+								handleChangeTableDisplay(e.target.checked);
+							}}
+						/>
+					</div>
+				</div>
+				<div className="col col-6">
+					<div className="input-group input-group-sm h-100">
+						<span className="input-group-text">Items per page: </span>
+						<input
+							className="form-control"
+							name="page_size"
+							type="number"
+							min="1"
+							max="100"
+							step="5"
+							value={pageSize}
+							onChange={(e) => {
+								setPage(1);
+								handleChangePageSize(e.target.value);
+							}}
+						/>
+					</div>
 				</div>
 			</div>
-			<div className="col col-lg-3 py-1 py-lg-0 order-lg-3">
+			<div className="col col-lg-4 py-1 py-lg-0 order-lg-3">
 				<div className="input-group input-group-sm">
 					<span className="input-group-text">Order by: </span>
 					<FormSelect
@@ -101,7 +122,7 @@ const GalleryPageControls = ({
 					/>
 				</div>
 			</div>
-			<div className="col-12 col-lg-auto row justify-content-center gx-0 py-1 py-lg-0 order-lg-2 px-3">
+			<div className="col-12 col-lg-4 row justify-content-center gx-0 py-1 py-lg-0 order-lg-2 px-3">
 				<div className="col col-lg-auto">
 					<button
 						className={`btn btn-outline-primary button-left ${getEnabled(

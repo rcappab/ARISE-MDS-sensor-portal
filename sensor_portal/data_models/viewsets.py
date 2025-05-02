@@ -18,7 +18,8 @@ from utils.viewsets import (AddOwnerViewSetMixIn, CheckAttachmentViewSetMixIn,
                             OptionalPaginationViewSetMixIn)
 
 from .file_handling_functions import create_file_objects
-from .filtersets import *
+from .filtersets import (DataFileFilter, DataTypeFilter, DeploymentFilter,
+                         DeviceFilter, DeviceModelFilter, ProjectFilter)
 from .job_handling_functions import start_job_from_name
 from .models import (DataFile, DataType, Deployment, Device, DeviceModel,
                      Project, Site)
@@ -32,7 +33,7 @@ from .serializers import (DataFileSerializer, DataFileUploadSerializer,
 
 class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, CheckFormViewSetMixIn, OptionalPaginationViewSetMixIn):
     search_fields = ['deployment_device_ID',
-                     'device__name', 'device__device_ID']
+                     'device__name', 'device__device_ID', 'extra_data']
     ordering_fields = ordering = [
         'deployment_device_ID', 'created_on', 'device_type']
     queryset = Deployment.objects.all().distinct()
@@ -85,6 +86,18 @@ class ProjectViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
     queryset = Project.objects.all().distinct()
     filterset_class = ProjectFilter
     search_fields = ['project_ID', 'name', 'organization']
+
+    @action(detail=True, methods=['get'])
+    def species_list(self, request, pk=None):
+        project = self.get_object()
+        user = request.user
+        data_files = perms['data_models.view_datafile'].filter(
+            user, DataFile.objects.filter(deployment__project=project))
+        if not data_files.exists():
+            return Response({}, status=status.HTTP_200_OK)
+        species_list = list(data_files.values_list(
+            "observations__taxon__species_name", flat=True).distinct())
+        return Response(species_list, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['get'])
     def metrics(self, request, pk=None):
@@ -148,9 +161,9 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
         print(request.data)
 
         user_pk = request.user.pk
-        file_pks = list(queryset.values_list('pk', flat=True))
+        obj_pks = list(queryset.values_list('pk', flat=True))
         job_args = request.data
-        start_job_from_name(job_name, user_pk, file_pks, job_args)
+        start_job_from_name(job_name, "datafile", user_pk, obj_pks, job_args)
 
         return Response({"detail": f"{job_name} submitted"}, status=status.HTTP_202_ACCEPTED)
 
@@ -229,3 +242,4 @@ class DeviceModelViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = DeviceModelSerializer
     queryset = DeviceModel.objects.all().distinct()
     search_fields = ['name']
+    filterset_class = DeviceModelFilter

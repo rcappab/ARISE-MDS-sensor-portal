@@ -12,12 +12,12 @@ from user_management.models import User
 from .models import DataPackage
 
 
-@shared_task(name="create_data_package")
-def start_make_data_package_task(file_pks, user_pk, metadata_type=0, include_files=True):
+@shared_task(name="generic_task_-_datafile_-_create_data_package")
+def start_make_data_package_task(datafile_pks, user_pk, metadata_type=0, include_files=True):
 
-    print(file_pks, user_pk)
+    print(datafile_pks, user_pk)
 
-    file_objs = DataFile.objects.filter(pk__in=file_pks)
+    file_objs = DataFile.objects.filter(pk__in=datafile_pks)
     user = User.objects.get(pk=user_pk)
 
     file_objs = perms['data_models.view_datafile'].filter(user, file_objs)
@@ -53,7 +53,7 @@ def start_make_data_package_task(file_pks, user_pk, metadata_type=0, include_fil
             bundle_objs.update(status=1)
             archive_callback = make_data_package_task.si(all_package_pks).on_error(
                 fail_data_package_task.si(all_package_pks))
-            get_files_from_archive_task(file_pks, archive_callback)
+            get_files_from_archive_task(datafile_pks, archive_callback)
             return
         else:
             make_data_package_task(all_package_pks)

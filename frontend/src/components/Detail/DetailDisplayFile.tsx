@@ -36,6 +36,7 @@ const DetailDisplayFile = ({ fileData }: Props) => {
 	});
 	const [tempObsData, setTempObsData] = useState<object[]>([]);
 	const [hoverIndex, setHoverIndex] = useState(-1);
+	const [expanded, setExpanded] = useState(false);
 
 	const handleObservationEdit = useCallback((rowData, newRow = false) => {
 		if (newRow) {
@@ -123,6 +124,7 @@ const DetailDisplayFile = ({ fileData }: Props) => {
 							onEditBoundingBox={handleStartEditBoundingBox}
 							onEdit={handleObservationEdit}
 							onHover={handleRowHover}
+							onStopEdit={() => handleSetEditMode(false)}
 						/>
 					) : (
 						<ObservationTable
@@ -149,7 +151,13 @@ const DetailDisplayFile = ({ fileData }: Props) => {
 
 	return (
 		<div>
-			<div>
+			<div
+				onClick={() => {
+					if (isImage && !obsEditMode) {
+						setExpanded(!expanded);
+					}
+				}}
+			>
 				{isImage ? (
 					<div className={"rectdraw-container"}>
 						<img
@@ -158,7 +166,7 @@ const DetailDisplayFile = ({ fileData }: Props) => {
 							style={{
 								objectFit: "contain",
 								width: "100%",
-								maxHeight: "40rem",
+								maxHeight: expanded ? "100%" : "30rem",
 								userSelect: "none",
 							}}
 						/>

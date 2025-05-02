@@ -3,9 +3,7 @@ import DetailDisplayTable from "./DetailDisplayTable.tsx";
 import DetailDisplayRelated from "./DetailDisplayRelated.tsx";
 import DetailDisplayParents from "./DetailDisplayParents.tsx";
 import DetailDisplayFile from "./DetailDisplayFile.tsx";
-import FavouriteButton from "./FavouriteButton.tsx";
 import DetailDisplayMetrics from "./DetailDisplayMetrics.tsx";
-import ObservationContainer from "../ObservationContainer.tsx";
 
 interface Props {
 	objectType: string;

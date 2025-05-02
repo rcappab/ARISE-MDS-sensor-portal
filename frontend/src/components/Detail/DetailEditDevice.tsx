@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import DetailEditForm from "./DetailEditForm.tsx";
 import JSONInput from "../JSONInput.tsx";
 import FormSelectAPI from "../FormSelectAPI.tsx";
+import { set } from "date-fns";
+import DetailDisplayStorage from "./DetailDisplayStorage.tsx";
 
 interface Props {
 	selectedData?: object | null;
@@ -27,6 +29,15 @@ const DetailEditDevice = ({
 	const [typeID, setTypeID] = useState(
 		selectedData ? selectedData["type_ID"] : null
 	);
+
+	const [storageID, setStorageID] = useState(
+		selectedData ? selectedData["input_storage"] : null
+	);
+
+	const [modelID, setModelID] = useState(
+		selectedData ? selectedData["model_ID"] : null
+	);
+
 	const [deviceID, setDeviceID] = useState(
 		selectedData ? selectedData["device_ID"] : null
 	);
@@ -38,25 +49,40 @@ const DetailEditDevice = ({
 	);
 
 	const [autoUpdate, setAutoUpdate] = useState(
-		selectedData ? selectedData["autoupdate"] : true
+		selectedData ? selectedData["autoupdate"] : false
 	);
 
 	const [updateTime, setUpdateTime] = useState(
 		selectedData ? selectedData["update_time"] : 48
 	);
 
+	const [username, setUsername] = useState(
+		selectedData ? selectedData["username"] : null
+	);
+
+	const [password, setPassword] = useState(
+		selectedData ? selectedData["password"] : null
+	);
+
+	const onStorageChange = (value) => {
+		setStorageID(value);
+		setUsername("");
+		setPassword("");
+	};
+
 	const resetDetailData = function () {
 		onReset();
 		setDeviceID("");
 		setDeviceName("");
 		setTypeID(null);
+		setModelID(null);
 		setExtraData({});
 		setAutoUpdate(true);
 		setUpdateTime(48);
+		setStorageID(null);
+		setUsername("");
+		setPassword("");
 	};
-
-	console.log(selectedData);
-	console.log(typeID);
 
 	return (
 		<DetailEditForm
@@ -92,7 +118,7 @@ const DetailEditDevice = ({
 						/>
 
 						<div className="form-text">
-							Identifier for this device.
+							Unique identifier for this device.
 							<div className="invalid-feedback">{errorDict["device_ID"]}</div>
 						</div>
 					</div>
@@ -150,10 +176,147 @@ const DetailEditDevice = ({
 							<div className="invalid-feedback">{errorDict["type_ID"]}</div>
 						</div>
 					</div>
+					<div className="col-md-4">
+						<label htmlFor="post-model_ID">Device model</label>
+						<FormSelectAPI
+							id="post-model_ID"
+							name="model_ID"
+							label="Device model"
+							choices={[]}
+							value={modelID}
+							apiURL={typeID !== null ? `devicemodel/?type=${typeID}` : ""}
+							valueKey="id"
+							labelKey="name"
+							handleChange={setModelID}
+							isClearable={false}
+							valid={errorDict["model_ID"] === ""}
+						/>
+						<input
+							hidden
+							id="hidden-post-model_ID"
+							name="model_ID"
+							value={modelID ? modelID : ""}
+							required
+						></input>
+
+						<div className="form-text">
+							Device model.
+							<div className="invalid-feedback">{errorDict["model_ID"]}</div>
+						</div>
+					</div>
+				</div>
+
+				<div className="row px-1 py-1 mb-3 border rounded">
+					<div className="row">
+						<div className="col-md-4">
+							<label htmlFor="post-input_storage">Import storage</label>
+							<FormSelectAPI
+								id="post-input_storage"
+								name="input_storage"
+								label="Input storage"
+								choices={[]}
+								value={storageID}
+								apiURL="datastorageinput/"
+								valueKey="id"
+								labelKey="name"
+								apiSearchKey={"name"}
+								handleChange={onStorageChange}
+								isClearable={true}
+								valid={errorDict["input_storage"] === ""}
+							/>
+							<input
+								hidden
+								id="hidden-post-input_storage"
+								name="input_storage"
+								value={modelID ? modelID : ""}
+								required
+							></input>
+
+							<div className="form-text">
+								Storage to which device will transmit files.
+								<div className="invalid-feedback">
+									{errorDict["input_storage"]}
+								</div>
+							</div>
+						</div>
+						{storageID !== null &&
+						(!selectedData || selectedData["input_storage"] !== storageID) ? (
+							<>
+								<div className="col-md-4">
+									<label htmlFor="post-username">Username</label>
+									<input
+										name="username"
+										className={`form-control ${
+											wasValidated
+												? errorDict["username"]
+													? "is-invalid"
+													: "is-valid"
+												: ""
+										}`}
+										id="post-username"
+										value={username}
+										onChange={(e) => {
+											setUsername(e.target.value);
+										}}
+									/>
+
+									<div className="form-text">
+										Device username for storage.
+										<div className="invalid-feedback">
+											{errorDict["username"]}
+										</div>
+									</div>
+								</div>
+								<div className="col-md-4">
+									<label htmlFor="post-password">Password</label>
+									<input
+										name="password"
+										type="password"
+										className={`form-control ${
+											wasValidated
+												? errorDict["password"]
+													? "is-invalid"
+													: "is-valid"
+												: ""
+										}`}
+										id="post-password"
+										value={password}
+										onChange={(e) => {
+											setPassword(e.target.value);
+										}}
+									/>
+									<div className="form-text">
+										Device password for storage.
+										<div className="invalid-feedback">
+											{errorDict["password"]}
+										</div>
+									</div>
+								</div>
+							</>
+						) : null}
+					</div>
+
+					{storageID !== null ? (
+						<>
+							<br />
+							<DetailDisplayStorage selectedDataID={storageID} />
+							<div className="row">
+								<div className="form-text">
+									A username and password are required for the device to
+									transmit files to the storage. These will be used for the
+									device to log on to the storage. On initial setup, a user
+									account will be created for the device. Username and password
+									cannot be updated if the device is already set up with that
+									storage. If you need to change a device's username or
+									password, please contact your system administrator.
+								</div>
+							</div>
+						</>
+					) : null}
 				</div>
 				<div className="row px-1 py-1 mb-3 border rounded">
 					<div className="col-md-4">
-						<label htmlFor="post-autoupdate">Device auto updating</label>
+						<label htmlFor="post-autoupdate">Email alerts</label>
 						<div
 							className={`form-check form-switch form-control  ${
 								wasValidated
@@ -163,7 +326,7 @@ const DetailEditDevice = ({
 									: ""
 							}`}
 						>
-							<label htmlFor="post-autoupdate">Auto update</label>
+							<label htmlFor="post-autoupdate">Enable</label>
 							<input
 								name="autoupdate"
 								className="form-check-input form-control"
@@ -176,7 +339,7 @@ const DetailEditDevice = ({
 							/>
 						</div>
 						<div className="form-text">
-							Is device is expected to transmit files?
+							Alert managers if device does not transmit files in alloted time.
 							<div className="invalid-feedback">{errorDict["autoupdate"]}</div>
 						</div>
 					</div>
@@ -199,7 +362,7 @@ const DetailEditDevice = ({
 								min={1}
 							/>
 							<div className="form-text">
-								Expected update (hours)
+								Expected update time before alerting managers(hours)
 								<div className="invalid-feedback">
 									{errorDict["update_time"]}
 								</div>

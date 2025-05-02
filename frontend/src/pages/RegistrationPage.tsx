@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import CaptchaText from "../components/CaptchaText.tsx";
 
 const RegistraionPage = () => {
 	const [CaptchaToken, setCaptchaToken] = useState(null);
@@ -95,6 +96,7 @@ const RegistraionPage = () => {
 						id: toastId,
 					}
 				);
+				doPost.reset();
 			} else {
 				console.log(response);
 				toast.success(response["detail"], {
@@ -108,147 +110,150 @@ const RegistraionPage = () => {
 	};
 
 	return (
-		<div className="d-flex justify-content-center align-items-center">
-			<div className="w-50 m-3">
-				<h2 className="text-center mb-4">User Registration</h2>
-				<form onSubmit={handleSubmission}>
-					<div className="mb-3">
-						<label
-							htmlFor="email"
-							className="form-label"
-						>
-							Email
-						</label>
-						<input
-							type="email"
-							name="email"
-							id="email"
-							placeholder="Enter email"
-							className="form-control"
-							required
-						/>
-					</div>
-					<div className="mb-3">
-						<label
-							htmlFor="username"
-							className="form-label"
-						>
-							Username
-						</label>
-						<input
-							type="text"
-							name="username"
-							id="username"
-							placeholder="Enter username"
-							className="form-control"
-							required
-						/>
-					</div>
-					<div className="mb-3">
-						<label
-							htmlFor="password"
-							className="form-label"
-						>
-							Password
-						</label>
-						<input
-							type="password"
-							name="password"
-							id="password"
-							placeholder="Enter password"
-							className="form-control"
-							required
-						/>
-					</div>
-					<div className="mb-3">
-						<label
-							htmlFor="confirm_password"
-							className="form-label"
-						>
-							Confirm Password
-						</label>
-						<input
-							type="password"
-							name="confirm_password"
-							id="confirm_password"
-							placeholder="Confirm password"
-							className="form-control"
-							required
-						/>
-					</div>
-					<div className="row mb-3">
-						<div className="col">
+		<>
+			<div className="d-flex justify-content-center align-items-center">
+				<div className="w-50 m-3">
+					<h2 className="text-center mb-4">User Registration</h2>
+					<form onSubmit={handleSubmission}>
+						<div className="mb-3">
 							<label
-								htmlFor="first_name"
+								htmlFor="email"
 								className="form-label"
 							>
-								First Name
+								Email
 							</label>
 							<input
-								type="text"
-								name="first_name"
-								id="first_name"
-								placeholder="First name"
+								type="email"
+								name="email"
+								id="email"
+								placeholder="Enter email"
 								className="form-control"
 								required
 							/>
 						</div>
-						<div className="col">
+						<div className="mb-3">
 							<label
-								htmlFor="last_name"
+								htmlFor="username"
 								className="form-label"
 							>
-								Last Name
+								Username
 							</label>
 							<input
 								type="text"
-								name="last_name"
-								id="last_name"
-								placeholder="Last name"
+								name="username"
+								id="username"
+								placeholder="Enter username"
 								className="form-control"
 								required
 							/>
 						</div>
-					</div>
-					<div className="mb-3">
-						<label
-							htmlFor="organisation"
-							className="form-label"
+						<div className="mb-3">
+							<label
+								htmlFor="password"
+								className="form-label"
+							>
+								Password
+							</label>
+							<input
+								type="password"
+								name="password"
+								id="password"
+								placeholder="Enter password"
+								className="form-control"
+								required
+							/>
+						</div>
+						<div className="mb-3">
+							<label
+								htmlFor="confirm_password"
+								className="form-label"
+							>
+								Confirm Password
+							</label>
+							<input
+								type="password"
+								name="confirm_password"
+								id="confirm_password"
+								placeholder="Confirm password"
+								className="form-control"
+								required
+							/>
+						</div>
+						<div className="row mb-3">
+							<div className="col">
+								<label
+									htmlFor="first_name"
+									className="form-label"
+								>
+									First Name
+								</label>
+								<input
+									type="text"
+									name="first_name"
+									id="first_name"
+									placeholder="First name"
+									className="form-control"
+									required
+								/>
+							</div>
+							<div className="col">
+								<label
+									htmlFor="last_name"
+									className="form-label"
+								>
+									Last Name
+								</label>
+								<input
+									type="text"
+									name="last_name"
+									id="last_name"
+									placeholder="Last name"
+									className="form-control"
+									required
+								/>
+							</div>
+						</div>
+						<div className="mb-3">
+							<label
+								htmlFor="organisation"
+								className="form-label"
+							>
+								Organisation
+							</label>
+							<input
+								type="text"
+								name="organisation"
+								id="organisation"
+								placeholder="Organisation name"
+								className="form-control"
+							/>
+						</div>
+						<div className="mb-3">
+							<label
+								htmlFor="bio"
+								className="form-label"
+							>
+								Reason for Registration
+							</label>
+							<textarea
+								name="bio"
+								id="bio"
+								placeholder="Reason for registration"
+								className="form-control"
+								rows={4}
+							></textarea>
+						</div>
+						<button
+							type="submit"
+							className="btn btn-primary w-100"
 						>
-							Organisation
-						</label>
-						<input
-							type="text"
-							name="organisation"
-							id="organisation"
-							placeholder="Organisation name"
-							className="form-control"
-						/>
-					</div>
-					<div className="mb-3">
-						<label
-							htmlFor="bio"
-							className="form-label"
-						>
-							Reason for Registration
-						</label>
-						<textarea
-							name="bio"
-							id="bio"
-							placeholder="Reason for registration"
-							className="form-control"
-							rows={4}
-						></textarea>
-					</div>
-					<button
-						type="submit"
-						className="btn btn-primary w-100"
-					>
-						Register
-					</button>
-				</form>
+							Register
+						</button>
+					</form>
+				</div>
 			</div>
-		</div>
+			<CaptchaText />
+		</>
 	);
 };
 

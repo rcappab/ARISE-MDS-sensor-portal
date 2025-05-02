@@ -348,6 +348,7 @@ interface obsFormProps {
 	onEdit: (newObservation: object, newRow?: boolean) => void;
 	onEditBoundingBox: (index: number) => void;
 	onHover: (index: number) => void;
+	onStopEdit?: () => void;
 }
 
 const ObservationForm = ({
@@ -357,6 +358,7 @@ const ObservationForm = ({
 	onEdit = (newObservation, newRow) => {},
 	onEditBoundingBox = (index) => {},
 	onHover = (index) => {},
+	onStopEdit = () => {},
 }: obsFormProps) => {
 	const { authTokens } = useContext(AuthContext);
 
@@ -505,7 +507,7 @@ const ObservationForm = ({
 		}
 	};
 
-	const submitForms = async function () {
+	const submitForms = async function (stopEdit = false) {
 		let toDelete = [] as object[];
 		let toCreate = [] as object[];
 		let toEdit = [] as object[];
@@ -591,7 +593,11 @@ const ObservationForm = ({
 			})
 		) {
 			//only get data again if everything was succesful
-			onSubmit();
+			if (stopEdit) {
+				onStopEdit();
+			} else {
+				onSubmit();
+			}
 		}
 	};
 
@@ -631,7 +637,7 @@ const ObservationForm = ({
 			</button>
 			<button
 				className="btn btn-outline-primary"
-				onClick={submitForms}
+				onClick={() => submitForms(true)}
 			>
 				Save and finish annotating
 			</button>

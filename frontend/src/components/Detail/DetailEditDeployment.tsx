@@ -79,7 +79,7 @@ const DetailEditDeployment = ({
 	const [timeZone, setTimeZone] = useState(
 		selectedData
 			? selectedData["time_zone"]
-			: itemFromTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone).label
+			: Intl.DateTimeFormat().resolvedOptions()
 	);
 
 	const setLatLong = function (latlong) {
@@ -105,6 +105,7 @@ const DetailEditDeployment = ({
 		setDeployment_end(null);
 		setLatLong(null);
 		setExtraInfo({});
+		setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone);
 	};
 
 	useEffect(() => {
@@ -123,22 +124,14 @@ const DetailEditDeployment = ({
 			lng: selectedData ? selectedData["longitude"] : null,
 		});
 		setExtraInfo(selectedData ? selectedData["extra_data"] : {});
+		setTimeZone(
+			selectedData
+				? selectedData["time_zone"]
+				: Intl.DateTimeFormat().resolvedOptions().timeZone
+		);
 	}, [selectedData]);
 
-	// useEffect(() => {
-	// 	handleFormChange();
-	// }, [
-	// 	device_type_ID,
-	// 	project_ID,
-	// 	site_ID,
-	// 	device_ID,
-	// 	deployment_start,
-	// 	deployment_end,
-	// 	latitude,
-	// 	longitude,
-	// 	extraInfo,
-	// 	handleFormChange,
-	// ]);
+	console.log(errorDict);
 
 	return (
 		<DetailEditForm
@@ -300,6 +293,7 @@ const DetailEditDeployment = ({
 							valueKey="id"
 							labelKey="name"
 							creatable={true}
+							apiSearchKey={"name"}
 							handleChange={setSite_ID}
 							valid={errorDict["site_ID"] === ""}
 						/>
@@ -318,13 +312,31 @@ const DetailEditDeployment = ({
 				<div className="row py-1 px-3 mb-3 border rounded">
 					<div className="col-md-6 ps-md-0 pe-md-1">
 						<label htmlFor="post-time_zone">Deployment timezone</label>
+						<FormSelectAPI
+							id="post-time_zone"
+							name="time_zone"
+							label="Time zone"
+							choices={[]}
+							value={timeZone}
+							apiURL="timezones"
+							handleChange={setTimeZone}
+							isClearable={false}
+							valid={errorDict["time_zone"] === ""}
+						/>
+						<input
+							hidden
+							name="time_zone"
+							value={timeZone ? timeZone : ""}
+							required
+						></input>
 						<div className="form-text">
 							Time zone naive times will be localised to this timezone.
-							<div className="invalid-feedback">
-								{`${errorDict["deployment_start"]} ${errorDict["deployment_start_TZ"]} ${errorDict["deployment_start_dt"]}`}
-							</div>
+							<div className="invalid-feedback">{errorDict["time_zone"]}</div>
 						</div>
 					</div>
+				</div>
+
+				<div className="row py-1 px-3 mb-3 border rounded">
 					<div className="col-md-6 ps-md-0 pe-md-1">
 						<label htmlFor="post-deployment_start">Deployment start</label>
 						<FormDateTZSelect

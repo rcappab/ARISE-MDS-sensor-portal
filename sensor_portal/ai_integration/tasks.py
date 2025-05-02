@@ -15,8 +15,8 @@ app = Celery(broker_url=settings.CELERY_BROKER_URL,
 CharField.register_lookup(Lower)
 
 
-@shared_task
-def do_ultra_inference(file_pks, model_name, target_labels=None, chunksize=500, chunksize2=100,
+@shared_task(name="generic_task_-_datafile_-_do_ultra_inference")
+def do_ultra_inference(datafile_pks, model_name, target_labels=None, chunksize=500, chunksize2=100,
                        exclude_done=False, parallel=False):
 
     valid_formats = [".jpg", ".jpeg", ".png"]  # should be setting from env
@@ -28,24 +28,24 @@ def do_ultra_inference(file_pks, model_name, target_labels=None, chunksize=500, 
         print(f"No {target_queue_name} queue available")
         return
 
-    if type(file_pks) is not list:
-        file_pks = [file_pks]
+    if type(datafile_pks) is not list:
+        datafile_pks = [datafile_pks]
     if target_labels is not None and type(target_labels) is not list:
         target_labels = [target_labels]
 
     file_objs = DataFile.objects.filter(
-        pk__in=file_pks, file_format__lower__in=valid_formats)
+        pk__in=datafile_pks, file_format__lower__in=valid_formats)
 
     if exclude_done or not parallel:
         file_objs = file_objs.exclude(observations__source=model_name)
-        file_pks = list(file_objs.values_list('pk', flat=True))
+        datafile_pks = list(file_objs.values_list('pk', flat=True))
 
-    if len(file_pks) == 0:
+    if len(datafile_pks) == 0:
         print("No files to analyse")
         return
 
-    file_pks_chunks = [file_pks[i:i + chunksize]
-                       for i in range(0, len(file_pks), chunksize)]
+    file_pks_chunks = [datafile_pks[i:i + chunksize]
+                       for i in range(0, len(datafile_pks), chunksize)]
 
     for i, file_pks_chunk in enumerate(file_pks_chunks):
         file_objs_chunk = file_objs.filter(pk__in=file_pks_chunk).full_paths()
@@ -68,7 +68,7 @@ def do_ultra_inference(file_pks, model_name, target_labels=None, chunksize=500, 
 
         if not parallel:
             task_chain = chain(task_chord,
-                               do_ultra_inference.si(file_pks,
+                               do_ultra_inference.si(datafile_pks,
                                                      model_name,
                                                      target_labels,
                                                      chunksize,

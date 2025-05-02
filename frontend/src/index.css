@@ -31,3 +31,7 @@ code {
 .form-switch {
 	place-content: center;
 }
+
+.grecaptcha-badge {
+	visibility: hidden !important;
+}

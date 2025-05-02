@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { useEffect, useRef, useState } from "react";
 import { Form, useOutletContext, useParams } from "react-router-dom";
 import FormSelect from "../FormSelect.tsx";
@@ -12,6 +12,8 @@ interface Props {
 	fromID?: string;
 	onSubmit: () => void;
 	addNew: () => void;
+	jobName: string;
+	onJobChange: (string) => void;
 	handleStartJob: () => void;
 	setFormKeys: (val: string[]) => void;
 	orderBy: string;
@@ -23,6 +25,8 @@ interface Props {
 function GalleryForm({
 	onSubmit,
 	addNew,
+	jobName,
+	onJobChange,
 	handleStartJob,
 	setFormKeys,
 	orderBy,
@@ -45,60 +49,133 @@ function GalleryForm({
 		addNew();
 	};
 
-	const [isActive, setIsActive] = useState(searchParams.get("is_active"));
-	const [site, setSite] = useState(searchParams.get("site"));
-	const [deviceType, setDeviceType] = useState(searchParams.get("device_type"));
-	const [fileType, setFileType] = useState(searchParams.get("file_type"));
+	const defaults = React.useMemo(() => {
+		const baseDefaults = {
+			site: null,
+			device_type: null,
+			file_type: null,
+			obs_type: null,
+			uncertain: null,
+			archived: null,
+		};
+		if (objectType !== "datafile") {
+			baseDefaults["is_active"] = "True";
+		} else {
+			baseDefaults["is_active"] = null;
+		}
+		return baseDefaults;
+	}, [objectType]);
+
+	const [filterData, setFilterData] = useState({
+		search: searchParams.get("search") || "",
+		site: searchParams.get("site") || defaults["site"],
+		device_type: searchParams.get("device_type") || defaults["device_type"],
+		file_type: searchParams.get("file_type") || defaults["file_type"],
+		is_active: searchParams.get("is_active") || defaults["is_active"],
+		obs_type: searchParams.get("obs_type") || defaults["obs_type"],
+		uncertain: searchParams.get("uncertain") || defaults["uncertain"],
+		archived: searchParams.get("archived") || defaults["archived"],
+		recording_dt__gte: !searchParams.get("recording_dt__gte")
+			? ""
+			: (searchParams.get("recording_dt__gte") as string),
+		recording_dt__lte: !searchParams.get("recording_dt__lte")
+			? ""
+			: (searchParams.get("recording_dt__lte") as string),
+		deployment_start__gte: !searchParams.get("deployment_start__gte")
+			? ""
+			: (searchParams.get("deployment_start__gte") as string),
+		end_date: !searchParams.get("deployment_end__lte")
+			? ""
+			: (searchParams.get("deployment_end__lte") as string),
+	});
+
+	const handleChange = useCallback((e) => {
+		setFilterData((prevState) => {
+			return { ...prevState, [e.target.name]: e.target.value };
+		});
+	}, []);
+
+	const setNewDataValue = useCallback((key, value) => {
+		setFilterData((prevState) => {
+			return { ...prevState, [key]: value };
+		});
+	}, []);
+
+	const handleResetForm = function (e) {
+		e.preventDefault();
+		resetForm();
+	};
+
+	const handleFilterChange = useCallback(() => {
+		if (searchParams.size === 0) {
+			if (!formRef.current) return;
+
+			let formData = new FormData(formRef.current);
+			formData.delete("job_name");
+			setFormKeys(Array.from(formData.keys()));
+
+			let searchParams = new URLSearchParams(
+				formData as unknown as Record<string, string>
+			);
+			onReset(searchParams);
+		}
+	}, [searchParams.size, setFormKeys, onReset]);
+
+	const resetForm = useCallback(
+		function () {
+			if (!formRef.current) return;
+			//Resetting select boxes
+			formRef.current.reset();
+			const newFilterData = { ...filterData };
+			for (const key in newFilterData) {
+				if (defaults.hasOwnProperty(key)) {
+					newFilterData[key] = defaults[key];
+				} else {
+					newFilterData[key] = "";
+				}
+			}
+
+			setFilterData(newFilterData);
+		},
+		[defaults, filterData]
+	);
 
 	useEffect(() => {
 		if (searchParams.size === 0) {
 			if (!formRef.current) return;
-			let formData = new FormData(formRef.current);
-			console.log(formData);
-			setSearchParams(
-				new URLSearchParams(formData as unknown as Record<string, string>)
-			);
+			resetForm();
 		}
-	}, [searchParams, setSearchParams]);
+	}, [resetForm, searchParams, objectType, defaults]);
 
 	useEffect(() => {
-		if (!formRef.current) return;
-		let formData = new FormData(formRef.current);
-		setFormKeys(Array.from(formData.keys()));
-		console.log(Array.from(formData.keys()));
-	}, [formRef, setFormKeys]);
-
-	const resetForm = function (e) {
-		e.preventDefault();
-		if (!formRef.current) return;
-		formRef.current.reset();
-		let formData = new FormData(formRef.current);
-		console.log(formData);
-		let searchParams = new URLSearchParams(
-			formData as unknown as Record<string, string>
-		);
-		onReset(searchParams);
-
-		//Resetting select boxes
-		setIsActive(null);
-		setSite(null);
-		setDeviceType(null);
-
-		//call reset callback
-	};
+		handleFilterChange();
+	}, [filterData, handleFilterChange]);
 
 	const doJobButton = function () {
-		if (objectType !== "datafile") {
-			return null;
-		}
 		return (
-			<button
-				type="button"
-				className="btn btn-secondary btn-lg ms-lg-2"
-				onClick={handleStartJob}
-			>
-				Export data
-			</button>
+			<>
+				<div className="formControl">
+					<FormSelect
+						id="select-job"
+						name="job_name"
+						label="Select job..."
+						choices={[
+							{ value: "create_data_package", label: "Create data package" },
+						]}
+						isSearchable={true}
+						value={jobName}
+						handleChange={onJobChange}
+					/>
+				</div>
+				<button
+					type="button"
+					className="btn btn-secondary ms-lg-2"
+					onClick={handleStartJob}
+					disabled={jobName === ""}
+				>
+					Start job
+				</button>
+			</>
 		);
 	};
 
@@ -108,19 +185,100 @@ function GalleryForm({
 
 		return (
 			<div className="col-lg-2">
-				<div className="form-floating">
+				<div className="">
+					<label htmlFor="select-is_active">Deployment active now?</label>
 					<FormSelect
 						id="select-is_active"
 						name="is_active"
-						label="Deployment active?"
+						label="No filter"
 						choices={[
 							{ value: "True", label: "True" },
 							{ value: "False", label: "False" },
 						]}
 						isSearchable={false}
-						//defaultvalue={searchParams.get("is_active") || null}
-						value={isActive}
-						handleChange={setIsActive}
+						value={filterData.is_active}
+						handleChange={(newValue) => setNewDataValue("is_active", newValue)}
+					/>
+				</div>
+			</div>
+		);
+	};
+
+	const archivedField = function () {
+		if (!["datafile"].includes(objectType)) return;
+
+		return (
+			<div className="col-lg-2">
+				<div className="">
+					<label htmlFor="select-archived">File archived</label>
+					<FormSelect
+						id="select-archived"
+						name="archived"
+						label="No filter"
+						choices={[
+							{ value: "True", label: "True" },
+							{ value: "False", label: "False" },
+						]}
+						isSearchable={false}
+						value={filterData.archived}
+						handleChange={(newValue) => setNewDataValue("archived", newValue)}
+					/>
+				</div>
+			</div>
+		);
+	};
+
+	const observationField = function () {
+		if (!["datafile"].includes(objectType)) return;
+
+		return (
+			<div className="col-lg-2">
+				<div className="">
+					<label htmlFor="select-obs_type">Has observations</label>
+					<FormSelect
+						id="select-obs_type"
+						name="obs_type"
+						label="No filter"
+						choices={[
+							{ value: "no_obs", label: "No observations" },
+							{ value: "no_human_obs", label: "No human observations" },
+							{ value: "all_obs", label: "All observations" },
+							{ value: "has_human", label: "Human observations" },
+							{ value: "has_ai", label: "AI observations" },
+							{ value: "human_only", label: "Human observations only" },
+							{ value: "ai_only", label: "AI observations only" },
+						]}
+						isSearchable={false}
+						value={filterData.obs_type}
+						handleChange={(newValue) => setNewDataValue("obs_type", newValue)}
+					/>
+				</div>
+			</div>
+		);
+	};
+
+	const uncertainField = function () {
+		if (!["datafile"].includes(objectType)) return;
+		return (
+			<div className="col-lg-2">
+				<div className="">
+					<label htmlFor="select-uncertain">Uncertain observations</label>
+					<FormSelect
+						id="select-uncertain"
+						name="uncertain"
+						label="No filter"
+						choices={[
+							{ value: "no_uncertain", label: "No uncertain observations" },
+							{ value: "uncertain", label: "Uncertain observations" },
+							{
+								value: "other_uncertain",
+								label: "Other's uncertain observations",
+							},
+							{ value: "my_uncertain", label: "My uncertain observations" },
+						]}
+						isSearchable={false}
+						value={filterData.uncertain}
+						handleChange={(newValue) => setNewDataValue("uncertain", newValue)}
 					/>
 				</div>
 			</div>
@@ -131,17 +289,18 @@ function GalleryForm({
 		if (!validtypes.includes(objectType)) return;
 
 		return (
-			<FormDateSelector
-				id={id}
-				name={name}
-				label={label}
-				defaultvalue={
-					!searchParams.get(name)
-						? undefined
-						: (searchParams.get(name) as string)
-				}
-				className="col-lg-2"
-			/>
+			<div className="col-lg-2">
+				<label htmlFor="id">{label}</label>
+				<FormDateSelector
+					id={id}
+					name={name}
+					label={label}
+					value={filterData[name]}
+					onChange={handleChange}
+					className="col-lg-2"
+					float={false}
+				/>
+			</div>
 		);
 	};
 
@@ -150,17 +309,18 @@ function GalleryForm({
 
 		return (
 			<div className="col-lg-2">
-				<div className="form-floating">
+				<label htmlFor="select-site">Site</label>
+				<div className="">
 					<FormSelectAPI
 						id="select-site"
 						name="site"
-						label="Site"
+						label="All"
 						choices={[]}
-						value={site}
+						value={filterData.site}
 						apiURL="site/"
 						valueKey="id"
 						labelKey="short_name"
-						handleChange={setSite}
+						handleChange={(newValue) => setNewDataValue("site", newValue)}
 					/>
 				</div>
 			</div>
@@ -172,18 +332,21 @@ function GalleryForm({
 
 		return (
 			<div className="col-lg-2">
-				<div className="form-floating">
+				<div className="">
+					<label htmlFor="select-datatype">Device type</label>
 					<FormSelectAPI
 						key="select-datatype"
 						id="select-datatype"
 						name="device_type"
-						label="Device type"
+						label="All"
 						choices={[]}
-						value={deviceType}
+						value={filterData.device_type}
 						apiURL="datatype/?device_type=true"
 						valueKey="id"
 						labelKey="name"
-						handleChange={setDeviceType}
+						handleChange={(newValue) =>
+							setNewDataValue("device_type", newValue)
+						}
 					/>
 				</div>
 			</div>
@@ -195,18 +358,19 @@ function GalleryForm({
 
 		return (
 			<div className="col-lg-2">
-				<div className="form-floating">
+				<div className="">
+					<label htmlFor="select-filetype">File type</label>
 					<FormSelectAPI
 						key="select-filetype"
 						id="select-fileType"
 						name="file_type"
-						label="File type"
+						label="All"
 						choices={[]}
-						value={fileType}
+						value={filterData.file_type}
 						apiURL="datatype/?file_type=true"
 						valueKey="id"
 						labelKey="name"
-						handleChange={setFileType}
+						handleChange={(newValue) => setNewDataValue("file_type", newValue)}
 					/>
 				</div>
 			</div>
@@ -228,6 +392,20 @@ function GalleryForm({
 		}
 	};
 
+	const addNewButton = function () {
+		if (objectType !== "datafile") {
+			return (
+				<button
+					type="button"
+					className="btn btn-success ms-lg-2"
+					onClick={handleAddNew}
+				>
+					Add new
+				</button>
+			);
+		}
+	};
+
 	return (
 		<div id="search-form-div">
 			<Form
@@ -237,19 +415,16 @@ function GalleryForm({
 				ref={formRef}
 			>
 				<div className="row gx-3 gy-2">
-					<div className="col-lg-5">
-						<div className="form-floating">
+					<div className="col-lg-4">
+						<div className="">
+							<label htmlFor="search">Search</label>
 							<input
 								name="search"
 								id="search"
 								className="form-control"
-								defaultValue={
-									!searchParams.get("search")
-										? undefined
-										: (searchParams.get("search") as string)
-								}
+								value={filterData.search}
+								onChange={handleChange}
 							/>
-							<label htmlFor="search">Search</label>
 						</div>
 					</div>
 					{activeField()}
@@ -263,9 +438,21 @@ function GalleryForm({
 						["deployment"]
 					)}
 					{dateField(
+						"start_date_2",
+						"deployment_start__lte",
+						"Deployment started before",
+						["deployment"]
+					)}
+					{dateField(
 						"end_date",
 						"deployment_end__lte",
 						"Deployment ended before",
+						["deployment"]
+					)}
+					{dateField(
+						"end_date2",
+						"deployment_end__gte",
+						"Deployment ended after",
 						["deployment"]
 					)}
 					{dateField("start_date", "recording_dt__gte", "File recorded after", [
@@ -274,31 +461,29 @@ function GalleryForm({
 					{dateField("end_date", "recording_dt__lte", "File recorded before", [
 						"datafile",
 					])}
-
-					<div className="d-grid gap-2 d-md-block mt-2 pt-1 col-lg-5">
+					{observationField()}
+					{uncertainField()}
+					{archivedField()}
+				</div>
+				<div className="row gap-2 mt-2 pt-1">
+					<div className="col">
 						<button
 							type="submit"
-							className="btn btn-primary btn-lg me-lg-2"
+							className="btn btn-primary me-lg-2"
 						>
 							Search
 						</button>
 
 						<button
 							type="button"
-							className="btn btn-danger btn-lg ms-lg-2 me-lg-2"
-							onClick={resetForm}
+							className="btn btn-danger ms-lg-2 me-lg-2"
+							onClick={handleResetForm}
 						>
 							Reset
 						</button>
-
-						<button
-							type="button"
-							className="btn btn-success btn-lg ms-lg-2"
-							onClick={handleAddNew}
-						>
-							Add new
-						</button>
-
+					</div>
+					<div className="col d-flex justify-content-end">
+						{addNewButton()}
 						{doJobButton()}
 					</div>
 				</div>
