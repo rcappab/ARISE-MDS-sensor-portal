@@ -14,11 +14,7 @@ services:
           restart: true
       restart: unless-stopped
       environment:
-        - DEV=True
-      volumes:
-        - ./sensor_portal_docs:/sensor_portal_docs      
         - ./file_storage:/file_storage
-        - ./sensor_portal/static:/backend_static  
   sensor_portal_frontend:
     build:
       context: .
@@ -27,13 +23,10 @@ services:
     ports:
       - '3000'
     volumes:
-      - ./frontend/src:/app/frontend/src
       - ./frontend/public:/app/frontend/public
     command: npm start
     restart: always
     environment:
-      - CHOKIDAR_USEPOLLING=true
-      - WATCHPACK_POLLING=true
       - REACT_APP_API_BASE_URL=api
       - REACT_APP_CAPTCHA_SECRET_KEY=${CAPTCHA_SECRET_KEY}
       - REACT_APP_CAPTCHA_SITE_KEY=${CAPTCHA_SITE_KEY}
@@ -45,13 +38,19 @@ services:
     command: bash -c "python manage.py wait_for_db && gunicorn sensor_portal.wsgi:application --bind 0.0.0.0:8000  --limit-request-line 0 --workers 40 --threads 2 --timeout 120 --graceful-timeout 120 --max-requests 1200 --max-requests-jitter 50"
     volumes:
       - ./file_storage:/media/file_storage
-      - ./sensor_portal:/usr/src/sensor_portal
     ports:
       - "8000"
     environment:
-      - DEV=True
+      - POSTGRES_NAME=${POSTGRES_NAME}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS}
+      - DJANGO_CSRF=${DJANGO_CSRF}
+      - DJANGO_CSRF_COOKIE_DOMAIN=${DJANGO_CSRF_COOKIE_DOMAIN}
       - CELERY_BROKER=${CELERY_BROKER}
       - CELERY_BACKEND=${CELERY_BACKEND}
+      - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
       - DRF_RECAPTCHA_SECRET_KEY=${CAPTCHA_SECRET_KEY}
       - EMAIL_HOST=${EMAIL_HOST}
       - EMAIL_HOST_USER=${EMAIL_HOST_USER}
@@ -74,9 +73,7 @@ services:
     command: bash -c "celery -A sensor_portal worker --autoscale 10,1 --loglevel=INFO -Q main_worker"
     volumes:
       - ./file_storage:/media/file_storage
-      - ./sensor_portal:/usr/src/sensor_portal
     environment:
-      - DEV=True
       - POSTGRES_NAME=${POSTGRES_NAME}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -109,7 +106,6 @@ services:
     image: sensor_portal_django_image
     command: bash -c "celery -A sensor_portal beat --loglevel=INFO"
     environment:
-      - DEV=True
       - POSTGRES_NAME=${POSTGRES_NAME}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -131,19 +127,16 @@ services:
       sensor_portal_redis:
         condition: service_healthy
         restart: true
-    volumes:
-      - ./sensor_portal:/usr/src/sensor_portal
     restart: always
   sensor_portal_db:
     image: postgis/postgis:14-3.3
+    shm_size: 1g
     volumes:
       - ./sensor_portal_database:/var/lib/postgresql/data
     environment:
       - POSTGRES_DB=${POSTGRES_NAME}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-    ports:
-      - 5432:5432
     healthcheck:
       test: ["CMD-SHELL",  "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
       interval: 30s

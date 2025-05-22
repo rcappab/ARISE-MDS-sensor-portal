@@ -39,27 +39,52 @@ else:
     SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', None)
 
 
-FIELD_ENCRYPTION_KEY = os.environ.get('FIELD_ENCRYPTION_KEY', '')
+FIELD_ENCRYPTION_KEY = os.environ.get(
+    'FIELD_ENCRYPTION_KEY', "FrMHRMwLSdQytSjWRAIwaFPzzWC1R5XIPaH6HQbcryA=")
 
 STATIC_URL = 'staticfiles/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static_files'),
+]
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+ALLOWED_HOSTS = os.environ.get(
+    'DJANGO_ALLOWED_HOSTS', "localhost 127.0.0.1 [::1]").split(" ")
+
+CSRF_TRUSTED_ORIGINS = os.environ.get(
+    'DJANGO_CRSF', "https://*.127.0.0.1").split(" ")
+
+CSRF_COOKIE_DOMAIN = os.environ.get(
+    'DJANGO_CSRF_COOKIE_DOMAIN', '127.0.0.1')
+
+
 if DEVMODE:
     print("Running in dev mode")
     DEBUG = True
-    STATICFILES_DIRS = [
-        os.path.join(BASE_DIR, 'static_files'),
-    ]
-    STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-    CSRF_USE_SESSIONS = True
     CORS_ALLOW_ALL_ORIGINS = True
-    CSRF_COOKIE_DOMAIN = '127.0.0.1'
+else:
+    CORS_ALLOW_ALL_ORIGINS = False
+    CORS_ALLOWED_ORIGINS = CSRF_TRUSTED_ORIGINS
+    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+    USE_X_FORWARDED_PORT = True
+    CSRF_COOKIE_SECURE = True
+    CSRF_COOKIE_SAMESITE = 'Strict'
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    # SECURE_SSL_REDIRECT = True
+    X_FRAME_OPTIONS = 'DENY'
+    # set low, but when site is ready for deployment, set to at least 15768000 (6 months)
+    SECURE_HSTS_SECONDS = 15768000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
 
-    CSRF_TRUSTED_ORIGINS = ['http://localhost:8080',
-                            'https://localhost:8080']
-    ALLOWED_HOSTS = ['localhost']
-    CORS_ORIGINS_WHITELIST = [
-        'http://localhost:8080', 'https://localhost:8080']
 
-    # DRF_RECAPTCHA_TESTING=True
+CORS_ORIGINS_WHITELIST = CSRF_TRUSTED_ORIGINS
+CSRF_USE_SESSIONS = True
+
+
+# DRF_RECAPTCHA_TESTING=True
 print("Reading settings!")
 
 # Application definition
@@ -146,9 +171,9 @@ DATABASES = {
     'default': {
         # 'ENGINE': 'django.db.backends.postgresql',
         'ENGINE': 'django.contrib.gis.db.backends.postgis',
-        'NAME': os.environ.get('POSTGRES_NAME'),
-        'USER': os.environ.get('POSTGRES_USER'),
-        'PASSWORD': os.environ.get('POSTGRES_PASSWORD'),
+        'NAME': os.environ.get('POSTGRES_NAME', "postgres"),
+        'USER': os.environ.get('POSTGRES_USER', "postgres"),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', "postgres"),
         'HOST': 'sensor_portal_db',
         'PORT': 5432,
     }
@@ -240,6 +265,8 @@ SPECTACULAR_SETTINGS = {
     'SERVE_INCLUDE_SCHEMA': False,
     # OTHER SETTINGS
 }
+if DEVMODE:
+    DRF_RECAPTCHA_TESTING = True
 
 DRF_RECAPTCHA_SECRET_KEY = os.environ.get(
     'DRF_RECAPTCHA_SECRET_KEY', None)

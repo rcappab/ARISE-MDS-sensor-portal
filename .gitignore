@@ -37,3 +37,4 @@ db_struct.erd
 .env
 /sensor_portal_database_3
 /sensor_portal/static
+.env copy
