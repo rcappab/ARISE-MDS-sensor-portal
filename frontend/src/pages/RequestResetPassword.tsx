@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
 const RequestResetPassword = () => {
-	const [CaptchaToken, setCaptchaToken] = useState(null);
+	const [CaptchaToken, setCaptchaToken] = useState<string | null>(null);
 	const { executeRecaptcha } = useGoogleReCaptcha();
 	const navigate = useNavigate();
 
@@ -73,7 +73,6 @@ const RequestResetPassword = () => {
 			const data = {
 				email: email,
 			};
-			console.log(data);
 			response = await doPost.mutateAsync({
 				apiURL: `password_reset/`,
 				data: data,
@@ -89,7 +88,6 @@ const RequestResetPassword = () => {
 				);
 				doPost.reset();
 			} else {
-				console.log(response);
 				toast.success("Password reset succesfully requested", {
 					id: toastId,
 				});

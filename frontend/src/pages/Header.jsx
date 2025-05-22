@@ -113,6 +113,22 @@ const Header = () => {
 										<li className="dropdown-item">
 											<NavLink
 												className="nav-link"
+												to={`/users/${user.id}`}
+											>
+												Profile
+											</NavLink>
+										</li>
+										<li className="dropdown-item">
+											<NavLink
+												className="nav-link"
+												to={`/users/${user.id}/datafiles`}
+											>
+												Favourites
+											</NavLink>
+										</li>
+										<li className="dropdown-item">
+											<NavLink
+												className="nav-link"
 												to="/datapackages"
 											>
 												Data packages

@@ -4,10 +4,10 @@ import { useState, useCallback, useEffect } from "react";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import CaptchaText from "../components/CaptchaText.tsx";
+import CaptchaText from "../components/General/CaptchaText.tsx";
 
 const RegistraionPage = () => {
-	const [CaptchaToken, setCaptchaToken] = useState(null);
+	const [CaptchaToken, setCaptchaToken] = useState<string | null>(null);
 	const { executeRecaptcha } = useGoogleReCaptcha();
 	const navigate = useNavigate();
 
@@ -82,7 +82,6 @@ const RegistraionPage = () => {
 				bio: formData.get("bio"),
 				recaptcha: CaptchaToken,
 			};
-			console.log(data);
 			response = await doPost.mutateAsync({
 				apiURL: `user/`,
 				data: data,
@@ -98,7 +97,6 @@ const RegistraionPage = () => {
 				);
 				doPost.reset();
 			} else {
-				console.log(response);
 				toast.success(response["detail"], {
 					id: toastId,
 				});
@@ -251,6 +249,18 @@ const RegistraionPage = () => {
 						</button>
 					</form>
 				</div>
+			</div>
+			<div>
+				<p>Privacy Statement</p>
+				We collect and store the following personal data to manage access to
+				research data: first name, last name, email address, username, and a
+				hashed password. This information is securely stored on servers located
+				within the faculty and is retained only for as long as access management
+				is required. Access to this data is restricted to authorized personnel
+				and handled in accordance with applicable data protection regulations,
+				including account closure requests. To request an account closure ,
+				please send an e-mail from the e-mail address you signed up with to this
+				e-mail address.
 			</div>
 			<CaptchaText />
 		</>

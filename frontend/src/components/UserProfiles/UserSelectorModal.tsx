@@ -1,11 +1,11 @@
 import React, { useState } from "react";
-import BasicModal from "./BasicModal.tsx";
+import BasicModal from "../General/BasicModal.tsx";
 import UserSelector from "./UserSelector.tsx";
 
 interface Props {
 	permissionname: string;
-	chosenUsers: Number[];
-	onPermissionChange: (number, boolean) => void;
+	chosenUsers: number[];
+	onPermissionChange: (userIDs: number[]) => void;
 }
 
 const UserSelectorModal = ({

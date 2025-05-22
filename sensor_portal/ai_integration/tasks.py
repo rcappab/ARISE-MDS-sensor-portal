@@ -1,9 +1,11 @@
 from celery import chain, chord, group, shared_task, signature
 from celery.app import Celery
+from data_models.job_handling_functions import register_job
 from data_models.models import DataFile
 from django.conf import settings
 from django.db.models import CharField
 from django.db.models.functions import Lower
+from django.utils import timezone
 from observation_editor.models import Observation, Taxon
 
 # While we are using django_results as a backend, the ultralytics worker cannot access this to trigger the callback.
@@ -15,9 +17,11 @@ app = Celery(broker_url=settings.CELERY_BROKER_URL,
 CharField.register_lookup(Lower)
 
 
-@shared_task(name="generic_task_-_datafile_-_do_ultra_inference")
+@shared_task(name="do_ultra_inference")
+@register_job("Do Ultralytic AI model inference", "do_ultra_inference", "datafile", True,
+              default_args={"model_name": "yolov8s"})
 def do_ultra_inference(datafile_pks, model_name, target_labels=None, chunksize=500, chunksize2=100,
-                       exclude_done=False, parallel=False):
+                       exclude_done=False, parallel=False, **kwargs):
 
     valid_formats = [".jpg", ".jpeg", ".png"]  # should be setting from env
     target_queue_name = "ultralytics"  # should be setting from env
@@ -89,6 +93,7 @@ def handle_ultra_results(all_results, target_labels=None):
 
     objs_to_create = []
     file_objs_pks = []
+    file_objs_human_pks = []
 
     for results in all_results:
         source = results.get('source')
@@ -111,10 +116,12 @@ def handle_ultra_results(all_results, target_labels=None):
                         if result.get('orig_shape') is not None:
                             extra_data["orig_shape"] = result.get('orig_shape')
 
+                        taxon_obj = Taxon.objects.get_or_create(
+                            species_name=prediction)[0]
+
                         new_observation_object = Observation(
                             label=f"{prediction}_{file_obj.file_name}",
-                            taxon=Taxon.objects.get_or_create(
-                                species_name=prediction)[0],
+                            taxon=taxon_obj,
                             obs_dt=file_obj.recording_dt,
                             bounding_box=bounding_box,
                             confidence=confidence,
@@ -124,12 +131,15 @@ def handle_ultra_results(all_results, target_labels=None):
 
                         objs_to_create.append(new_observation_object)
                         file_objs_pks.append(file_obj.pk)
+                        if taxon_obj.taxon_code == settings.HUMAN_TAXON_CODE:
+                            file_objs_human_pks.append(file_obj.pk)
 
             if len(file_results) == 0 or num_results == 0:
+                taxon_obj = Taxon.objects.get_or_create(
+                    species_name="No detection")[0]
                 new_observation_object = Observation(
                     label=f"No_dectection_{file_obj.file_name}",
-                    taxon=Taxon.objects.get_or_create(
-                        species_name="No detection")[0],
+                    taxon=taxon_obj,
                     obs_dt=file_obj.recording_dt,
                     extra_data={},
                     source=source
@@ -147,3 +157,6 @@ def handle_ultra_results(all_results, target_labels=None):
     through_class.objects.bulk_create(
         all_through_objs, batch_size=500, ignore_conflicts=True)
     print(f"Created {len(new_observations)} observations")
+    # Update datafiles if human is present
+    DataFile.objects.filter(pk__in=file_objs_human_pks).update(
+        has_human=True, modified_on=timezone.now())

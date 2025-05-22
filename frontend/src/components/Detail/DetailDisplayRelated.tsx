@@ -1,5 +1,6 @@
 import React from "react";
-import { Link, useOutletContext } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useObjectType } from "../../context/ObjectTypeCheck.tsx";
 
 interface Props {
 	selectedDataID: number;
@@ -7,7 +8,7 @@ interface Props {
 }
 
 const DetailDisplayRelated = ({ selectedDataID, objectType }: Props) => {
-	const { validGalleries } = useOutletContext() as object;
+	const { validGalleries } = useObjectType();
 
 	const getButtons = function () {
 		return validGalleries.map((validType) => {

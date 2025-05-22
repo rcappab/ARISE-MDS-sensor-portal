@@ -1,20 +1,16 @@
-import React, {
-	useCallback,
-	useContext,
-	useEffect,
-	useRef,
-	useState,
-} from "react";
-import { Link } from "react-router-dom";
-import RectDraw from "../RectDraw.tsx";
+import React, { useCallback, useContext, useState } from "react";
+
+import RectDraw from "./Observations/RectDraw.tsx";
 import FavouriteButton from "./FavouriteButton.tsx";
 import { ObsEditModeContext } from "../../context/ObsModeContext.jsx";
 import AuthContext from "../../context/AuthContext.jsx";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { getData } from "../../utils/FetchFunctions.js";
-import Loading from "../Loading.tsx";
-import ObservationForm from "../ObservationForm.tsx";
-import ObservationTable from "../ObservationTable.tsx";
+import Loading from "../General/Loading.tsx";
+import ObservationForm, {
+	obsDataType,
+} from "./Observations/ObservationForm.tsx";
+import ObservationTable from "./Observations/ObservationTable.tsx";
 
 interface Props {
 	fileData: Object;
@@ -34,7 +30,7 @@ const DetailDisplayFile = ({ fileData }: Props) => {
 		edit: false,
 		index: -1,
 	});
-	const [tempObsData, setTempObsData] = useState<object[]>([]);
+	const [tempObsData, setTempObsData] = useState<obsDataType[]>([]);
 	const [hoverIndex, setHoverIndex] = useState(-1);
 	const [expanded, setExpanded] = useState(false);
 
@@ -74,19 +70,18 @@ const DetailDisplayFile = ({ fileData }: Props) => {
 	const getDataFunc = async () => {
 		let apiURL = `observation/?data_files=${fileData["id"]}`;
 		let response_json = await getData(apiURL, authTokens.access);
-		console.log(response_json);
 		setTempObsData(response_json);
 		return response_json;
 	};
 
 	const {
 		isLoading,
-		isError,
+		//isError,
 		isPending,
 		data,
-		error,
+		//error,
 		isRefetching,
-		isPlaceholderData,
+		//isPlaceholderData,
 		refetch,
 	} = useQuery({
 		queryKey: ["obs", user, fileData["id"]],

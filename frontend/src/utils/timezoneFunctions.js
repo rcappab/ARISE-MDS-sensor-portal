@@ -77,7 +77,6 @@ export const getTimeZoneCode = function (datetime) {
 };
 
 export const getOffset = function (timeZoneCode, removeUTC = false) {
-	//console.log(timeZoneCode);
 	let timeZone = timezonesWithoffsets.find(
 		(element) => element["abbreviation"] === timeZoneCode
 	);

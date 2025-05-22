@@ -19,8 +19,6 @@ const UserTable = ({
 }: Props) => {
 	const hideKeys = ["id"];
 
-	console.log(userData);
-
 	const tableRow = (currentData, index) => {
 		return (
 			<tr key={index}>
@@ -48,7 +46,6 @@ const UserTable = ({
 	};
 
 	const tableHead = (currentData) => {
-		console.log(currentData);
 		return (
 			<tr key={0}>
 				{Object.keys(currentData).map((key, i) => {

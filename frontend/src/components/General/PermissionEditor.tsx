@@ -1,5 +1,5 @@
 import React from "react";
-import UserSelectorModal from "./UserSelectorModal.tsx";
+import UserSelectorModal from "../UserProfiles/UserSelectorModal.tsx";
 
 interface Props {
 	permissionName: string;

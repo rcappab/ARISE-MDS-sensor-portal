@@ -1,7 +1,7 @@
 import React, { useState, ChangeEvent, ChangeEventHandler } from "react";
 import FormSelectTZ from "./FormSelectTZ.tsx";
 import FormDateSelector from "./FormDateSelector.tsx";
-import { itemFromTimeZone } from "../utils/timezoneFunctions.js";
+import { itemFromTimeZone } from "../../utils/timezoneFunctions.js";
 import { fromZonedTime, formatInTimeZone } from "date-fns-tz";
 
 interface Props {

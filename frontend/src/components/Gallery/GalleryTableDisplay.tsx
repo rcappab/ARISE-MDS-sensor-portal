@@ -1,19 +1,22 @@
-import { useOutletContext } from "react-router-dom";
 import React, { useState } from "react";
 import { dtFormat } from "../../utils/timezoneFunctions";
+import "../../styles/galleryTable.css";
+import { useObjectType } from "../../context/ObjectTypeCheck.tsx";
 
 interface Props {
 	objectType: string;
 	data: [];
-	onRowClick: (index: number) => void;
+	onClick: (e: React.MouseEvent<Element, MouseEvent>, index: number) => void;
+	selectedIndexes: number[];
 }
 
 const GalleryTableDisplay = ({
 	objectType,
 	data = [],
-	onRowClick = () => {},
+	onClick = (e, index) => {},
+	selectedIndexes,
 }: Props) => {
-	const { nameKey } = useOutletContext();
+	const { nameKey } = useObjectType();
 	const [sortConfig, setSortConfig] = useState<{
 		key: string;
 		direction: "asc" | "desc";
@@ -59,9 +62,7 @@ const GalleryTableDisplay = ({
 		if (timeKeys.includes(key)) {
 			let currentTime = value;
 
-			console.log(currentTime);
 			let dateTime = new Date(currentTime);
-			console.log(dateTime);
 			return dtFormat.format(dateTime);
 		} else {
 			return value;
@@ -112,14 +113,14 @@ const GalleryTableDisplay = ({
 							? (extraClasses = "")
 							: (extraClasses = "text-white bg-secondary");
 					}
-					if (hoveredRow === index) {
-						extraClasses += " table-hover";
+					if (hoveredRow === index || selectedIndexes.includes(index)) {
+						extraClasses += "table-hover";
 					}
 					return (
 						<tr
 							key={`row_${index}`}
 							className={extraClasses}
-							onClick={() => onRowClick(index)}
+							onClick={(e) => onClick(e, index)}
 							onMouseEnter={() => setHoveredRow(index)}
 							onMouseLeave={() => setHoveredRow(null)}
 							style={{ cursor: "pointer" }}

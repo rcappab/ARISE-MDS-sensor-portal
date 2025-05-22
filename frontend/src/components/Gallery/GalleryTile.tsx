@@ -7,7 +7,7 @@ interface Props {
 	cardImageURL?: string;
 	index: number;
 	extraClasses: string;
-	onClick?: (int) => void;
+	onClick?: (e: React.MouseEvent<Element, MouseEvent>, index: Number) => void;
 }
 
 const GalleryTile = ({
@@ -16,7 +16,7 @@ const GalleryTile = ({
 	cardImageURL = "",
 	index = 0,
 	extraClasses = "",
-	onClick = (int) => {},
+	onClick = (e, int) => {},
 }: Props) => {
 	const getImage = function () {
 		if (cardImageURL !== null && cardImageURL !== "") {
@@ -53,8 +53,7 @@ const GalleryTile = ({
 	};
 
 	const handleOnClick = function (e) {
-		console.log(index);
-		onClick(index);
+		onClick(e, index);
 	};
 
 	return (

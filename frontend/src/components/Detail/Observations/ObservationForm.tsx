@@ -1,18 +1,32 @@
-import React, { useCallback, useContext, useEffect, useState } from "react";
-import FormSelectAPI from "./FormSelectAPI.tsx";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import AuthContext from "../context/AuthContext";
+import React, { useCallback, useContext, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import AuthContext from "../../../context/AuthContext.jsx";
 import {
 	deleteData,
 	getData,
 	patchData,
 	postData,
-} from "../utils/FetchFunctions.js";
+} from "../../../utils/FetchFunctions.js";
 import AsyncCreatableSelect from "react-select/async-creatable";
 import { debounce } from "lodash";
 import { formatInTimeZone } from "date-fns-tz";
 import toast from "react-hot-toast";
-import "../styles/observationform.css";
+import "../../../styles/observationform.css";
+
+export type obsDataType = {
+	id: string;
+	data_files: number[];
+	validation_requested: boolean;
+	user_is_owner: boolean;
+	obs_dt: string;
+	species_name: string;
+	number: number;
+	sex: string;
+	lifestage: string;
+	behavior: string;
+	edited?: boolean;
+	index?: number | undefined;
+};
 
 interface speciesSelectorProps {
 	obsData?: object;
@@ -37,13 +51,17 @@ const SpeciesSelector = ({
 		return response_json;
 	};
 
-	const loadOptions = debounce(async (inputValue, callback) => {
+	const debouncedLoadOptions = debounce(async (inputValue, callback) => {
 		const newData = await queryClient.fetchQuery({
 			queryKey: ["taxon", inputValue],
 			queryFn: () => fetchOptions(inputValue, "taxon?search="),
 		});
 		callback(newData);
 	}, 500);
+
+	const loadOptions = (inputValue, callback) => {
+		debouncedLoadOptions(inputValue, callback);
+	};
 
 	const [speciesName, setSpeciesName] = useState(
 		obsData !== undefined
@@ -87,7 +105,9 @@ const SpeciesSelector = ({
 				!inputValue || inputValue === "" ? "Type to search" : "No options found"
 			}
 			onChange={(selected) => {
-				setSpeciesName(selected);
+				if (selected) {
+					setSpeciesName(selected);
+				}
 				handleSelection(selected);
 			}}
 			loadingMessage={() => "Loading..."}
@@ -117,7 +137,7 @@ const SpeciesSelector = ({
 interface obsFormRowProps {
 	index: number;
 	fileData: object;
-	obsData?: object;
+	obsData?: obsDataType;
 	onEdit?: (newObjData) => void;
 	onAdd?: (copiedData) => void;
 	onEditBoundingBox?: (index) => void;
@@ -171,7 +191,7 @@ const ObservationFormRow = ({
 		function () {
 			const editedData = {
 				...obsData,
-				data_files: obsData.data_files.filter((x) => x !== fileData["id"]),
+				data_files: obsData?.data_files.filter((x) => x !== fileData["id"]),
 				edited: true,
 			};
 			onEdit(editedData);
@@ -188,7 +208,7 @@ const ObservationFormRow = ({
 
 	const handleValidationRequest = useCallback(
 		function () {
-			setNewDataValue("validation_requested", !obsData["validation_requested"]);
+			setNewDataValue("validation_requested", !obsData?.validation_requested);
 		},
 		[obsData, setNewDataValue]
 	);
@@ -207,20 +227,20 @@ const ObservationFormRow = ({
 		[setNewDataValue]
 	);
 
-	if (obsData.data_files.length === 0) {
+	if (obsData?.data_files.length === 0) {
 		return null;
 	}
 
 	return (
 		<tr
 			className={
-				hover ? "highlight" : obsData.validation_requested ? "uncertain" : ""
+				hover ? "highlight" : obsData?.validation_requested ? "uncertain" : ""
 			}
 			onMouseEnter={() => handleHover(true)}
 			onMouseLeave={() => handleHover(false)}
 		>
 			<td className={"date-time-input"}>
-				{obsData.user_is_owner ? (
+				{obsData?.user_is_owner ? (
 					<input
 						className={"form-control-sm"}
 						name={"obs_dt"}
@@ -229,34 +249,34 @@ const ObservationFormRow = ({
 						onChange={handleChange}
 					/>
 				) : (
-					obsData.obs_dt
+					obsData?.obs_dt
 				)}
 			</td>
 			<td className={"species-selector"}>
-				{obsData.user_is_owner ? (
+				{obsData?.user_is_owner ? (
 					<SpeciesSelector
 						obsData={obsData}
 						handleSelection={handleSpeciesSelection}
 					/>
 				) : (
-					obsData.species_name
+					obsData?.species_name
 				)}
 			</td>
 			<td className={"number-input"}>
-				{obsData.user_is_owner ? (
+				{obsData?.user_is_owner ? (
 					<input
 						className={"form-control-sm"}
 						name={"number"}
 						type={"number"}
-						value={obsData.number}
+						value={obsData?.number}
 						onChange={handleChange}
 					/>
 				) : (
-					obsData.number
+					obsData?.number
 				)}
 			</td>
 			<td className={"text-input"}>
-				{obsData.user_is_owner ? (
+				{obsData?.user_is_owner ? (
 					<input
 						className={"form-control-sm"}
 						name={"sex"}
@@ -264,42 +284,42 @@ const ObservationFormRow = ({
 						onChange={handleChange}
 					/>
 				) : (
-					obsData.sex
+					obsData?.sex
 				)}
 			</td>
 			<td className={"text-input"}>
-				{obsData.user_is_owner ? (
+				{obsData?.user_is_owner ? (
 					<input
 						className={"form-control-sm"}
 						name={"lifestage"}
-						value={obsData.lifestage}
+						value={obsData?.lifestage}
 						onChange={handleChange}
 					/>
 				) : (
-					obsData.lifestage
+					obsData?.lifestage
 				)}
 			</td>
 			<td className={"text-input"}>
-				{obsData.user_is_owner ? (
+				{obsData?.user_is_owner ? (
 					<input
 						className={"form-control-sm"}
 						name={"behavior"}
-						value={obsData.behavior}
+						value={obsData?.behavior}
 						onChange={handleChange}
 					/>
 				) : (
-					obsData.behavior
+					obsData?.behavior
 				)}
 			</td>
 			<td className={"button-column"}>
-				{obsData.user_is_owner ? (
+				{obsData?.user_is_owner ? (
 					<button
 						onClick={handleValidationRequest}
 						className="btn btn-sm btn-secondary uncertain"
 					>
-						{obsData.validation_requested ? "Certain" : "Uncertain"}
+						{obsData?.validation_requested ? "Certain" : "Uncertain"}
 					</button>
-				) : obsData.validation_requested ? (
+				) : obsData?.validation_requested ? (
 					"Uncertain"
 				) : (
 					""
@@ -310,11 +330,11 @@ const ObservationFormRow = ({
 					onClick={handleCopy}
 					className="btn btn-secondary btn-sm"
 				>
-					{obsData.validation_requested ? "Validate" : "Copy"}
+					{obsData?.validation_requested ? "Validate" : "Copy"}
 				</button>
 			</td>
 			<td className={"button-column"}>
-				{obsData.user_is_owner ? (
+				{obsData?.user_is_owner ? (
 					<button
 						onClick={handleStartEditBoundingBox}
 						className="btn btn-secondary btn-sm"
@@ -326,7 +346,7 @@ const ObservationFormRow = ({
 				)}
 			</td>
 			<td className={"button-column"}>
-				{obsData.user_is_owner ? (
+				{obsData?.user_is_owner ? (
 					<button
 						onClick={handleDelete}
 						className="btn btn-sm btn-danger"
@@ -343,7 +363,7 @@ const ObservationFormRow = ({
 
 interface obsFormProps {
 	fileData: object;
-	allObsData: object[] | [];
+	allObsData: obsDataType[] | [];
 	onSubmit: () => void;
 	onEdit: (newObservation: object, newRow?: boolean) => void;
 	onEditBoundingBox: (index: number) => void;
@@ -436,7 +456,7 @@ const ObservationForm = ({
 
 			onEdit(newRow, true);
 		},
-		[allObsData, getNewRow, onEdit]
+		[getNewRow, onEdit]
 	);
 
 	const startLoadingToast = () => {
@@ -470,7 +490,7 @@ const ObservationForm = ({
 		response,
 		toastId,
 		action,
-		index = undefined
+		index: number | undefined = undefined
 	) {
 		if (!response["ok"]) {
 			toast.error(
@@ -508,19 +528,19 @@ const ObservationForm = ({
 	};
 
 	const submitForms = async function (stopEdit = false) {
-		let toDelete = [] as object[];
-		let toCreate = [] as object[];
-		let toEdit = [] as object[];
+		let toDelete = [] as obsDataType[];
+		let toCreate = [] as obsDataType[];
+		let toEdit = [] as obsDataType[];
 		let successArray = [] as boolean[];
 
 		for (const rowData of allObsData) {
 			if (rowData !== undefined) {
-				if (rowData["id"] === "") {
-					if (rowData["data_files"].length > 0) {
+				if (rowData.id === "") {
+					if (rowData.data_files.length > 0) {
 						toCreate.push(rowData);
 					}
 				} else {
-					if (rowData["data_files"].length > 0 && rowData["edited"]) {
+					if (rowData.data_files.length > 0 && rowData["edited"]) {
 						toEdit.push(rowData);
 					} else if (rowData["data_files"].length === 0 && rowData["edited"]) {
 						toDelete.push(rowData);
@@ -631,7 +651,7 @@ const ObservationForm = ({
 			</button>
 			<button
 				className="btn btn-outline-primary"
-				onClick={submitForms}
+				onClick={() => submitForms}
 			>
 				Save and keep annotating
 			</button>

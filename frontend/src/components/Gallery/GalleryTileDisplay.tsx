@@ -1,19 +1,21 @@
 import React from "react";
 import GalleryTile from "./GalleryTile.tsx";
-import { useOutletContext } from "react-router-dom";
+import { useObjectType } from "../../context/ObjectTypeCheck.tsx";
 
 interface Props {
 	objectType: string;
 	data: [];
-	onTileClick: (index) => void;
+	onClick?: (e: React.MouseEvent<Element, MouseEvent>, index: number) => void;
+	selectedIndexes: number[];
 }
 
 const GalleryTileDisplay = ({
 	objectType,
 	data = [],
-	onTileClick = () => {},
+	onClick = (e, index) => {},
+	selectedIndexes,
 }: Props) => {
-	const { nameKey } = useOutletContext();
+	const { nameKey } = useObjectType();
 	let thumbKey = "";
 	let textKey = "";
 	if (objectType === "deployment") {
@@ -40,15 +42,22 @@ const GalleryTileDisplay = ({
 						: (extraClasses = "text-white bg-secondary");
 				}
 				return (
-					<div className="col">
+					<div
+						className="col "
+						key={`tile_div_${index}`}
+					>
 						<GalleryTile
 							cardTitle={x[nameKey]}
 							cardText={x[textKey]}
 							cardImageURL={imageURL}
 							index={index}
 							key={`tile_${index}`}
-							extraClasses={extraClasses}
-							onClick={onTileClick}
+							extraClasses={
+								selectedIndexes.includes(index)
+									? extraClasses + "selected"
+									: extraClasses
+							}
+							onClick={(e) => onClick(e, index)}
 						/>
 					</div>
 				);

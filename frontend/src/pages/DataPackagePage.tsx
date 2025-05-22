@@ -3,7 +3,7 @@ import { useContext } from "react";
 import AuthContext from "../context/AuthContext";
 import { deleteData, getData } from "../utils/FetchFunctions.js";
 import { useQuery, keepPreviousData, useMutation } from "@tanstack/react-query";
-import Loading from "../components/Loading.tsx";
+import Loading from "../components/General/Loading.tsx";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 
@@ -12,17 +12,16 @@ const DataPackagePage = () => {
 
 	const getDataFunc = async () => {
 		let apiURL = `${"datapackage"}/`;
-		console.log(apiURL);
 		let response_json = await getData(apiURL, authTokens.access);
 		return response_json;
 	};
 
 	const {
 		isLoading,
-		isError,
+		//isError,
 		isPending,
 		data,
-		error,
+		//error,
 		isRefetching,
 		isPlaceholderData,
 		refetch,
@@ -49,7 +48,6 @@ const DataPackagePage = () => {
 
 	const deleteItem = async function (objID, name) {
 		let response = await doDelete.mutateAsync(objID);
-		console.log(response);
 		if (response["ok"]) {
 			toast(`Deleted ${name}`);
 			refetch();

@@ -3,7 +3,7 @@ import "leaflet/dist/leaflet.css";
 import FormMapMarker from "./FormMapMarker.tsx";
 import UserLocationMarker from "./MapUserLocationMarker.tsx";
 import ResetLocation from "./MapControlResetLocation.tsx";
-import "../styles/map.css";
+import "../../styles/map.css";
 import React from "react";
 
 interface Props {

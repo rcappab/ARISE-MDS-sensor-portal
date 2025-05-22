@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import DetailEditForm from "./DetailEditForm.tsx";
-import JSONInput from "../JSONInput.tsx";
-import FormSelectAPI from "../FormSelectAPI.tsx";
-import { set } from "date-fns";
+import JSONInput from "../General/JSONInput.tsx";
+import FormSelectAPI from "../Forms/FormSelectAPI.tsx";
 import DetailDisplayStorage from "./DetailDisplayStorage.tsx";
 
 interface Props {

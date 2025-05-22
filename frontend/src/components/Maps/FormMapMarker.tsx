@@ -51,10 +51,6 @@ const FormMapMarker = ({
 		}
 	});
 
-	console.log(formLatLong ? true : false);
-	console.log(formLatLong);
-	console.log(mapLocation);
-
 	return mapLocation === null ? null : (
 		<Marker
 			position={mapLocation as LatLngExpression}

@@ -1,12 +1,23 @@
-import React, { createContext } from "react";
-import { Outlet, useParams } from "react-router-dom";
+import React from "react";
+import { Outlet, useOutletContext, useParams } from "react-router-dom";
 import {
 	getNameKey,
 	getValidGalleries,
 	getValidParents,
 	getValidObject,
+	getFilterKey,
 } from "../utils/objectChecks";
 import Error404page from "../pages/Error404page";
+
+type objectContextType = {
+	fromObject: string | undefined;
+	fromID: string | undefined;
+	objectType: string | undefined;
+	nameKey: string;
+	validGalleries: string[];
+	validParents: string[];
+	filterKey: string;
+};
 
 export const ObjectTypeCheck = () => {
 	let { fromObject, fromID, objectType } = useParams();
@@ -28,9 +39,10 @@ export const ObjectTypeCheck = () => {
 		error = true;
 	}
 
-	const nameKey = getNameKey(objectType);
+	const nameKey = getNameKey(objectType) as string;
 	if (fromID !== undefined && fromObject !== undefined) {
 		const validFromGalleries = getValidGalleries(fromObject);
+
 		if (
 			validFromGalleries === undefined ||
 			!validFromGalleries.includes(objectType)
@@ -39,8 +51,9 @@ export const ObjectTypeCheck = () => {
 		}
 	}
 
-	const validGalleries = getValidGalleries(objectType);
-	const validParents = getValidParents(objectType);
+	const validGalleries = getValidGalleries(objectType) as string[];
+	const validParents = getValidParents(objectType) as string[];
+	const filterKey = getFilterKey(fromObject) as string;
 
 	const contextData = {
 		fromObject: fromObject,
@@ -49,9 +62,8 @@ export const ObjectTypeCheck = () => {
 		nameKey: nameKey,
 		validGalleries: validGalleries,
 		validParents: validParents,
-	};
-
-	console.log(contextData);
+		filterKey: filterKey,
+	} as objectContextType;
 
 	if (error) {
 		return <Error404page />;
@@ -60,4 +72,6 @@ export const ObjectTypeCheck = () => {
 	return <Outlet context={contextData} />;
 };
 
-export default ObjectTypeCheck;
+export function useObjectType() {
+	return useOutletContext<objectContextType>();
+}

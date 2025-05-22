@@ -1,8 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
-import { createBrowserRouter, RouterProvider, Outlet } from "react-router-dom";
-import reportWebVitals from "./reportWebVitals";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+//import reportWebVitals from "./reportWebVitals";
 import LoginPage from "./pages/LoginPage";
 import RegistrationPage from "./pages/RegistrationPage.tsx";
 import HomePage from "./pages/HomePage";
@@ -15,9 +15,8 @@ import Gallery from "./components/Gallery/Gallery.tsx";
 import "bootstrap/dist/css/bootstrap.min.css";
 import DetailPage from "./components/Detail/DetailPage.tsx";
 import Error404page from "./pages/Error404page.jsx";
-import ObjectTypeCheck from "./components/ObjectTypeCheck.tsx";
+import { ObjectTypeCheck } from "./context/ObjectTypeCheck.tsx";
 import { GoogleReCaptchaProvider } from "react-google-recaptcha-v3";
-import ReCaptchaContainer from "./utils/ReCaptchaContainer.tsx";
 import RequestResetPassword from "./pages/RequestResetPassword.tsx";
 import PostResetPassword from "./pages/PostResetPassword.tsx";
 import DoResetPassword from "./pages/DoResetPassword.tsx";
@@ -107,4 +106,4 @@ ReactDOM.createRoot(document.getElementById("root")).render(
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
 // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
+//reportWebVitals();

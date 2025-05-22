@@ -5,7 +5,7 @@ import { useMutation } from "@tanstack/react-query";
 import AuthContext from "../../context/AuthContext.jsx";
 import { patchData, postData } from "../../utils/FetchFunctions.js";
 import toast from "react-hot-toast";
-import PermissionEditor from "../PermissionEditor.tsx";
+import PermissionEditor from "../General/PermissionEditor.tsx";
 
 interface Props {
 	children?: ReactElement;
@@ -49,8 +49,6 @@ const DetailEditForm = ({
 		selectedData ? selectedData["annotators_ID"] : []
 	);
 
-	console.log(!selectedData);
-
 	if (
 		!selectedData ||
 		Object.keys(selectedData as object).includes("managers_ID")
@@ -64,7 +62,6 @@ const DetailEditForm = ({
 
 	const doValidation = useCallback(
 		function (responseData = null) {
-			console.log("VALIDATE");
 			let form = formRef.current;
 			if (form === null) {
 				return;
@@ -89,7 +86,6 @@ const DetailEditForm = ({
 			}
 
 			setErrorDict(newErrorDict);
-			console.log(newErrorDict);
 			return valid;
 		},
 		[setErrorDict]
@@ -97,7 +93,6 @@ const DetailEditForm = ({
 
 	const handleFormChange = useCallback(
 		function () {
-			console.log("Form change " + wasValidated);
 			if (wasValidated) {
 				doValidation();
 			}
@@ -116,8 +111,6 @@ const DetailEditForm = ({
 		let form = e.target;
 		let formData = new FormData(form);
 
-		console.log(formData);
-
 		let addNew = formData.get("id") === "";
 
 		setWasValidated(true);
@@ -135,16 +128,11 @@ const DetailEditForm = ({
 			}
 		}
 
-		console.log("Add new :" + addNew);
-		console.log(formData);
-
 		let objData = Object.fromEntries(formData);
 		for (let key of JSONFields) {
-			console.log(objData[key]);
 			objData[key] = JSON.parse(objData[key] as string);
 		}
 
-		console.log(objData);
 		let response;
 		if (!addNew) {
 			response = await doPatch.mutateAsync({
@@ -157,8 +145,6 @@ const DetailEditForm = ({
 				newData: objData,
 			});
 		}
-
-		console.log(response);
 
 		if (!response["ok"]) {
 			formValid = doValidation(response);
@@ -199,7 +185,6 @@ const DetailEditForm = ({
 
 	const newPATCH = async function (x: { apiURL: string; newData: object }) {
 		let response_json = await patchData(x.apiURL, authTokens.access, x.newData);
-		//console.log(response_json);
 		return response_json;
 	};
 
@@ -210,7 +195,6 @@ const DetailEditForm = ({
 
 	const newPOST = async function (x: { apiURL: string; newData: object }) {
 		let response_json = await postData(x.apiURL, authTokens.access, x.newData);
-		//console.log(response_json);
 		return response_json;
 	};
 

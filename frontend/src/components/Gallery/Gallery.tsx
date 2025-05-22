@@ -6,19 +6,21 @@ import GalleryForm from "./GalleryForm.tsx";
 import GalleryDisplay from "./GalleryDisplay.tsx";
 import GalleryPageControls from "./GalleryPageControls.tsx";
 
-import Loading from "../Loading.tsx";
+import Loading from "../General/Loading.tsx";
 import { useQuery, keepPreviousData, useMutation } from "@tanstack/react-query";
-import { useOutletContext, useParams, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import DetailModal from "../Detail/DetailModal.tsx";
 
 import { ObsEditModeContext } from "../../context/ObsModeContext.jsx";
-import BasicModal from "../BasicModal.tsx";
-import JobModal from "../JobModal.tsx";
+import JobModal from "./JobModal.tsx";
+import { useObjectType } from "../../context/ObjectTypeCheck.tsx";
 
 const Gallery = () => {
-	const { fromID, fromObject, objectType, nameKey } = useOutletContext();
+	const { fromID, fromObject, objectType, nameKey, filterKey } =
+		useObjectType();
+
 	const defaultPageSize = 28;
 	const [searchParams, setSearchParams] = useSearchParams();
 	const [formKeys, setFormKeys] = useState<String[]>([]);
@@ -29,11 +31,11 @@ const Gallery = () => {
 	const { authTokens, user } = useContext(AuthContext);
 	const [obsEditMode, setObsEditMode] = useState(false);
 	const [showJobModal, setShowJobModal] = useState(false);
-	const [jobName, setJobName] = useState("");
+	const [jobID, setJobName] = useState<string | null>(null);
+	const [selectedIndexes, setSelectedIndexes] = useState<number[]>([]);
 
 	let additionalOrdering;
 	let defaultOrdering = nameKey;
-	let thumbKey = "";
 	let defaultTableMode = true;
 
 	if (objectType === "device") {
@@ -79,7 +81,6 @@ const Gallery = () => {
 	);
 
 	useEffect(() => {
-		console.log(pageNum);
 		updateSearchParameters("page", pageNum);
 	}, [pageNum, updateSearchParameters]);
 
@@ -93,7 +94,6 @@ const Gallery = () => {
 
 	const getDataFunc = async (currentSearchParams) => {
 		let apiURL = `${objectType}/?${currentSearchParams.toString()}`;
-		console.log(apiURL);
 		let response_json = await getData(apiURL, authTokens.access);
 		return response_json;
 	};
@@ -162,7 +162,6 @@ const Gallery = () => {
 		setPageNum(1);
 		searchParams.set("page", (1).toString());
 
-		console.log(searchParams);
 		setSearchParams(searchParams);
 	};
 
@@ -181,7 +180,6 @@ const Gallery = () => {
 
 	const changePage = useCallback(
 		function (newPage) {
-			console.log(newPage);
 			setPageNum(newPage);
 		},
 		[setPageNum]
@@ -194,9 +192,54 @@ const Gallery = () => {
 		[updateSearchParameters]
 	);
 
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				setSelectedIndexes([]);
+			}
+		};
+
+		window.addEventListener("keydown", handleKeyDown);
+		return () => {
+			window.removeEventListener("keydown", handleKeyDown);
+		};
+	}, []);
+
+	const handleClick = useCallback(
+		function (e: React.MouseEvent<Element, MouseEvent>, index: number) {
+			if (e.ctrlKey || e.metaKey) {
+				setSelectedIndexes((prev) => {
+					if (prev.includes(index)) {
+						return prev.filter((i) => i !== index);
+					} else {
+						return [...prev, index];
+					}
+				});
+			} else if (e.shiftKey) {
+				document.getSelection()?.removeAllRanges();
+				setSelectedIndexes((prev) => {
+					if (prev.length > 0) {
+						const lastIndex = prev[prev.length - 1];
+						const range = [lastIndex, index].sort((a, b) => a - b);
+						const newIndexes = Array.from(
+							{ length: range[1] - range[0] + 1 },
+							(_, i) => range[0] + i
+						);
+						return Array.from(new Set([...prev, ...newIndexes]));
+					} else {
+						return [index];
+					}
+				});
+			} else {
+				setSelectedIndexes([]);
+				openDetail(index);
+			}
+		},
+		[openDetail, setSelectedIndexes]
+	);
+
 	const closeDetail = useCallback(
 		function () {
-			console.log("close detail");
 			removeSearchParameters("detail");
 		},
 		[removeSearchParameters]
@@ -257,8 +300,9 @@ const Gallery = () => {
 					<GalleryDisplay
 						objectType={objectType}
 						data={data.results}
-						onTileClick={openDetail}
+						onClick={handleClick}
 						tableMode={tableMode}
+						selectedIndexes={selectedIndexes}
 					/>
 				</div>
 			</div>
@@ -282,7 +326,6 @@ const Gallery = () => {
 
 	const deleteItem = async function (objID) {
 		let response = await doDelete.mutateAsync(objID);
-		console.log(response);
 		if (response["ok"]) {
 			toast(`${objectType} deleted`);
 			setPageNum(1);
@@ -300,6 +343,10 @@ const Gallery = () => {
 		}
 	};
 
+	if (objectType === undefined) {
+		return null;
+	}
+
 	return (
 		<div>
 			<title>{`Search ${objectType}s`}</title>
@@ -310,12 +357,17 @@ const Gallery = () => {
 			</h3>
 			{showJobModal && data && data.results && data.results.length > 0 ? (
 				<JobModal
-					jobName={jobName}
+					jobID={jobID}
 					show={showJobModal}
+					jobPKs={
+						selectedIndexes.length > 0
+							? selectedIndexes.map((index) => data.results[index]?.id)
+							: []
+					}
 					onClose={() => {
 						setShowJobModal(false);
 					}}
-					key={jobName}
+					key={jobID}
 				/>
 			) : null}
 			<ObsEditModeContext.Provider value={{ obsEditMode, setObsEditMode }}>
@@ -342,15 +394,17 @@ const Gallery = () => {
 				orderBy={orderBy ? orderBy : ""}
 				setFormKeys={setFormKeys}
 				addNew={addNew}
-				jobName={jobName}
+				jobID={jobID}
 				onJobChange={setJobName}
 				handleStartJob={() => {
-					if (jobName !== "") setShowJobModal(true);
+					if (jobID !== null) setShowJobModal(true);
 				}}
 				objectType={objectType}
 				fromObject={fromObject}
 				fromID={fromID}
+				filterKey={filterKey}
 				key={`${objectType}-${fromObject}-${fromID}`}
+				selectedItemsCount={selectedIndexes.length}
 			/>
 			{showGallery()}
 		</div>

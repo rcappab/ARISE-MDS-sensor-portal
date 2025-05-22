@@ -1,35 +1,39 @@
-import React, { useState } from "react";
-
-import { useOutletContext } from "react-router-dom";
+import React from "react";
 import GalleryTileDisplay from "./GalleryTileDisplay.tsx";
 import GalleryTableDisplay from "./GalleryTableDisplay.tsx";
 
 interface Props {
-	objectType: string;
+	objectType: string | undefined;
 	data: [];
 	tableMode: boolean;
-	onTileClick: (index) => void;
+	onClick: (e: React.MouseEvent<Element, MouseEvent>, index: number) => void;
+	selectedIndexes: number[];
 }
 
 const GalleryDisplay = ({
 	objectType,
 	data = [],
 	tableMode = false,
-	onTileClick = () => {},
+	onClick = (e, index) => {},
+	selectedIndexes,
 }: Props) => {
-	const { nameKey } = useOutletContext();
+	if (objectType === undefined) {
+		return null;
+	}
 
 	return tableMode ? (
 		<GalleryTableDisplay
 			objectType={objectType}
 			data={data}
-			onRowClick={onTileClick}
+			onClick={onClick}
+			selectedIndexes={selectedIndexes}
 		/>
 	) : (
 		<GalleryTileDisplay
 			objectType={objectType}
 			data={data}
-			onTileClick={onTileClick}
+			onClick={onClick}
+			selectedIndexes={selectedIndexes}
 		/>
 	);
 };

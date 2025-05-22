@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "../styles/observationform.css";
+import "../../../styles/observationform.css";
 
 interface ObservationTableRowProps {
 	obsDataRow: object;
@@ -45,7 +45,7 @@ const ObservationTableRow = ({
 
 interface ObservationTableProps {
 	allObsData: object[] | [];
-	onRowHover: (index: number, hover: boolean) => void;
+	onRowHover: (index: number) => void;
 }
 
 const ObservationTable = ({

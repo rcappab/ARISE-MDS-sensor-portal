@@ -1,32 +1,70 @@
 import React, { useContext, useState } from "react";
 import DetailModalContent from "./DetailModalContent.tsx";
-import { useNavigate, useOutletContext, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { deleteData, getData } from "../../utils/FetchFunctions";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import AuthContext from "../../context/AuthContext";
-import Loading from "../Loading.tsx";
+import Loading from "../General/Loading.tsx";
 import toast from "react-hot-toast";
+import DetailDisplayUser from "./DetailDisplayUser.tsx";
+import { useObjectType } from "../../context/ObjectTypeCheck.tsx";
+import Error404page from "../../pages/Error404page.jsx";
 
 const DetailPage = () => {
 	const { authTokens, user } = useContext(AuthContext);
+	const { fromID, objectType, nameKey } = useObjectType();
+	if (objectType === "user") {
+		return (
+			<DetailDisplayUser
+				id={fromID}
+				authTokens={authTokens}
+				user={user}
+			/>
+		);
+	} else {
+		return (
+			<ObjectDetailPage
+				authTokens={authTokens}
+				user={user}
+				fromID={fromID}
+				objectType={objectType}
+				nameKey={nameKey}
+			/>
+		);
+	}
+};
+
+interface DetailProps {
+	authTokens: any;
+	user: any;
+	fromID: string | undefined;
+	objectType: string | undefined;
+	nameKey: string;
+}
+
+const ObjectDetailPage = ({
+	authTokens,
+	user,
+	fromID,
+	objectType,
+	nameKey,
+}: DetailProps) => {
 	const [editMode, setEditMode] = useState(false);
 	const navigate = useNavigate();
-	const { fromID, objectType, nameKey } = useOutletContext();
 
 	const getDataFunc = async () => {
-		let apiURL = `${objectType}/?id=${fromID}`;
-		console.log(apiURL);
+		let apiURL = `${objectType}/${fromID}`;
 		let response_json = await getData(apiURL, authTokens.access);
-		return response_json[0];
+		return response_json;
 	};
 
 	const {
 		isLoading,
-		isError,
+		//isError,
 		isPending,
 		data,
-		error,
-		isPlaceholderData,
+		//error,
+		//isPlaceholderData,
 		refetch,
 	} = useQuery({
 		queryKey: ["data", user, fromID],
@@ -47,7 +85,6 @@ const DetailPage = () => {
 
 	const deleteItem = async function (objID) {
 		let response = await doDelete.mutateAsync(objID);
-		console.log(response);
 		if (response["ok"]) {
 			toast(`Deleted ${data[nameKey]}`);
 			navigate(`/${objectType}s`);
@@ -99,6 +136,10 @@ const DetailPage = () => {
 			);
 		}
 	};
+
+	if (objectType === undefined) {
+		return <Error404page />;
+	}
 
 	return (
 		<>

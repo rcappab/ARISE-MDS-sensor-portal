@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import BasicModal from "../BasicModal.tsx";
+import BasicModal from "../General/BasicModal.tsx";
 import DetailModalHeader from "./DetailModalHeader.jsx";
 import DetailModalContent from "./DetailModalContent.tsx";
 

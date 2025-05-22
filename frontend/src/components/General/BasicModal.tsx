@@ -1,5 +1,5 @@
 import React, { ReactElement } from "react";
-import "../styles/detailmodal.css";
+import "../../styles/detailmodal.css";
 
 interface Props {
 	modalId?: string;

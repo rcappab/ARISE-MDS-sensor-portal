@@ -1,12 +1,12 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import React, { useContext, useState } from "react";
-import { getData } from "../utils/FetchFunctions";
+import { getData } from "../../utils/FetchFunctions.js";
 import UserTable from "./UserTable.tsx";
-import AuthContext from "../context/AuthContext.jsx";
-import Loading from "./Loading.tsx";
+import AuthContext from "../../context/AuthContext.jsx";
+import Loading from "../General/Loading.tsx";
 
 interface Props {
-	chosenUsers: Number[];
+	chosenUsers: number[];
 	onPermissionChange: (newValue: number[]) => void;
 }
 
@@ -18,8 +18,6 @@ const UserSelector = ({
 
 	const [searchString, setSearchString] = useState("");
 	//get chosen user data
-
-	console.log(chosenUsers);
 
 	const {
 		data: chosenData,
@@ -57,15 +55,13 @@ const UserSelector = ({
 
 	const handleAddClick = (clickedUserID) => {
 		let newChosenUsers = chosenUsers.concat(clickedUserID);
-		console.log(newChosenUsers);
 		onPermissionChange(newChosenUsers);
 	};
 
 	const handleRemoveClick = (clickedUserID) => {
 		let newChosenUsers = chosenUsers.filter(
-			(userID) => userID != clickedUserID
+			(userID) => userID !== clickedUserID
 		);
-		console.log("Remove", newChosenUsers);
 		onPermissionChange(newChosenUsers);
 	};
 

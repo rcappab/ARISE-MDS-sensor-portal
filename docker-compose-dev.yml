@@ -43,7 +43,6 @@ services:
     volumes:
       - ./file_storage:/media/file_storage
       - ./sensor_portal:/usr/src/sensor_portal
-      - ./secrets:/media/secrets
     ports:
       - "8000"
     environment:
@@ -56,6 +55,9 @@ services:
       - CELERY_BACKEND=${CELERY_BACKEND}
       - FIELD_ENCRYPTION_KEY=${FIELD_ENCRYPTION_KEY}
       - DRF_RECAPTCHA_SECRET_KEY=${CAPTCHA_SECRET_KEY}
+      - EMAIL_HOST=${EMAIL_HOST}
+      - EMAIL_HOST_USER=${EMAIL_HOST_USER}
+      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
     depends_on:
       sensor_portal_db:
         condition: service_healthy

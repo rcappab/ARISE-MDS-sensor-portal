@@ -1,13 +1,13 @@
-import React, { useCallback, useContext, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import BasicModal from "./BasicModal.tsx";
+import BasicModal from "../General/BasicModal.tsx";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import AuthContext from "../context/AuthContext.jsx";
-import { getData, postData } from "../utils/FetchFunctions.js";
+import AuthContext from "../../context/AuthContext.jsx";
+import { getData, postData } from "../../utils/FetchFunctions.js";
 import toast from "react-hot-toast";
-import FormSelect from "./FormSelect.tsx";
-import Loading from "./Loading.tsx";
-import JSONInput from "./JSONInput.tsx";
+import FormSelect from "../Forms/FormSelect.tsx";
+import Loading from "../General/Loading.tsx";
+import JSONInput from "../General/JSONInput.tsx";
 
 interface jobDataEditorProps {
 	jobName: string;
@@ -42,7 +42,9 @@ const GenericJobData = ({
 			<div>
 				<JSONInput
 					name={"job_data_input"}
+					value={jobData}
 					onJSONchange={onSetJobData}
+					key={jobName}
 				/>
 			</div>
 		</>
@@ -102,31 +104,24 @@ const DataBundleJobData = ({
 };
 
 interface Props {
-	jobName?: string;
+	jobID?: string | null;
 	objectType?: string;
 	show?: boolean;
+	jobPKs?: number[];
 	onClose?: () => void;
 }
 
 const JobModal = ({
-	jobName = "",
+	jobID = null,
 	objectType = "datafile",
 	show = false,
+	jobPKs = [],
 	onClose = () => {},
 }: Props) => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const { user, authTokens } = useContext(AuthContext);
 
-	const defaultJobData = useCallback(() => {
-		let data = {};
-		if (jobName === "create_data_package") {
-			data["metadata_type"] = "0";
-			data["include_files"] = true;
-		}
-		return data;
-	}, [jobName]);
-
-	const [jobData, setJobData] = useState(defaultJobData);
+	const [jobData, setJobData] = useState<Object | null>(null);
 	//const jobName = "create_data_package";
 
 	const setNewDataValue = useCallback(
@@ -135,16 +130,29 @@ const JobModal = ({
 				...jobData,
 				[key]: value,
 			};
-			console.log(editedData);
 			setJobData(editedData);
 		},
 		[jobData]
 	);
 
-	const getDataFunc = async () => {
-		let apiURL = `${objectType}/queryset_count/?${searchParams.toString()}`;
+	const getJobFunc = async () => {
+		let apiURL = `genericjob/${jobID}`;
 		let response_json = await getData(apiURL, authTokens.access);
 		return response_json;
+	};
+
+	const getDataFunc = async () => {
+		if (jobPKs.length === 0) {
+			let apiURL = `${objectType}/queryset_count/?${searchParams.toString()}`;
+			let response_json = await getData(apiURL, authTokens.access);
+			return response_json;
+		} else {
+			let apiURL = `${objectType}/ids_count/`;
+			let response_json = await postData(apiURL, authTokens.access, {
+				ids: jobPKs,
+			});
+			return response_json;
+		}
 	};
 
 	const { isLoading, isError, isPending, data, error, isPlaceholderData } =
@@ -153,6 +161,25 @@ const JobModal = ({
 			queryFn: () => getDataFunc(),
 			enabled: show,
 		});
+
+	const {
+		isLoading: jobIsLoading,
+		isError: jobIsError,
+		isPending: jobIsPending,
+		data: jobInfo,
+		error: jobError,
+		isPlaceholderData: jobIsPlaceHolderData,
+	} = useQuery({
+		queryKey: ["generic_job", jobID],
+		queryFn: () => getJobFunc(),
+		enabled: show,
+	});
+
+	useEffect(() => {
+		if (jobData === null && jobInfo !== undefined) {
+			setJobData(jobInfo["default_args"]);
+		}
+	}, [jobData, jobInfo]);
 
 	const newPOST = async function (x: { apiURL: string; data: object }) {
 		let response_json = await postData(x.apiURL, authTokens.access, x.data);
@@ -173,10 +200,31 @@ const JobModal = ({
 		e.preventDefault();
 		let toastId = startLoadingToast();
 		let response;
-		response = await doPost.mutateAsync({
-			apiURL: `${objectType}/start_job/${jobName}/?${searchParams.toString()}`,
-			data: jobData,
-		});
+
+		if (jobData === null) {
+			toast.error("No data to submit", {
+				id: toastId,
+			});
+			return;
+		}
+
+		const submitJobData = jobData;
+
+		if (jobPKs.length > 0) {
+			submitJobData["ids"] = jobPKs;
+			response = await doPost.mutateAsync({
+				apiURL: `${objectType}/start_job/${jobInfo["task_name"]}/`,
+				data: submitJobData,
+			});
+		} else {
+			response = await doPost.mutateAsync({
+				apiURL: `${objectType}/start_job/${
+					jobInfo["task_name"]
+				}/?${searchParams.toString()}`,
+				data: submitJobData,
+			});
+		}
+
 		if (!response["ok"]) {
 			toast.error(
 				`Error in submission ${
@@ -195,10 +243,13 @@ const JobModal = ({
 	};
 
 	const getDataBundleEdit = () => {
-		if (jobName === "create_data_package") {
+		if (jobIsLoading || isLoading || jobData === null) {
+			return null;
+		}
+		if (jobInfo["task_name"] === "create_data_package") {
 			return (
 				<DataBundleJobData
-					jobName={jobName}
+					jobName={jobInfo["name"]}
 					objectType={objectType}
 					queryData={data}
 					jobData={jobData}
@@ -209,7 +260,7 @@ const JobModal = ({
 		} else {
 			return (
 				<GenericJobData
-					jobName={jobName}
+					jobName={jobInfo["name"]}
 					objectType={objectType}
 					queryData={data}
 					jobData={jobData}
@@ -225,7 +276,7 @@ const JobModal = ({
 			modalShow={show}
 			headerChildren={"Start job"}
 		>
-			{isLoading ? (
+			{isLoading || jobIsLoading || jobData === null ? (
 				<Loading />
 			) : (
 				<div>

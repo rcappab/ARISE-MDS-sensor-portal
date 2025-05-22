@@ -1,10 +1,11 @@
-const validObjects = ["deployment", "device", "project", "datafile"];
+const validObjects = ["deployment", "device", "project", "datafile", "user"];
 
 const nameKeys = {
 	deployment: "deployment_device_ID",
 	device: "device_ID",
 	project: "project_ID",
 	datafile: "file_name",
+	user: "username",
 };
 
 const validGalleries = {
@@ -12,6 +13,7 @@ const validGalleries = {
 	device: ["deployment", "datafile"],
 	project: ["deployment", "datafile"],
 	datafile: [],
+	user: ["datafile"],
 };
 
 const validParents = {
@@ -21,12 +23,27 @@ const validParents = {
 	datafile: ["deployment"],
 };
 
+const filterKey = {
+	deployment: "deployment",
+	device: "device",
+	project: "project",
+	datafile: "datafile",
+	user: "favourite_of",
+};
+
 export const getNameKey = function (objectType) {
 	return nameKeys[objectType];
 };
 
 export const getValidGalleries = function (fromObject) {
 	return validGalleries[fromObject];
+};
+
+export const getFilterKey = function (fromObject) {
+	if (fromObject === undefined) {
+		return undefined;
+	}
+	return filterKey[fromObject];
 };
 
 export const getValidParents = function (fromObject) {

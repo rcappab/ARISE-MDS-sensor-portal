@@ -58,25 +58,72 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     owned_projects = serializers.SlugRelatedField(
         many=True, read_only=True, slug_field='project_ID')
+    owned_projects_ID = serializers.PrimaryKeyRelatedField(
+        many=True, read_only=True, source='owned_projects')
     managed_projects = serializers.SlugRelatedField(
         many=True, read_only=True, slug_field='project_ID')
-    owned_devices = DeviceSerializer(
-        many=True, read_only=True)
-    managed_devices = DeviceSerializer(
-        many=True, read_only=True)
+    managed_projects_ID = serializers.PrimaryKeyRelatedField(
+        many=True, read_only=True, source='managed_projects')
+    annotatable_projects = serializers.SlugRelatedField(
+        many=True, read_only=True, slug_field='project_ID')
+    annotatable_projects_ID = serializers.PrimaryKeyRelatedField(
+        many=True, read_only=True, source='annotatable_projects')
+    viewable_projects = serializers.SlugRelatedField(
+        many=True, read_only=True, slug_field='project_ID')
+    viewable_projects_ID = serializers.PrimaryKeyRelatedField(
+        many=True, read_only=True, source='viewable_projects')
+
+    owned_devices = serializers.SlugRelatedField(
+        many=True, read_only=True, slug_field='device_ID')
+    owned_devices_ID = serializers.PrimaryKeyRelatedField(
+        many=True, read_only=True, source='owned_devices')
+    managed_devices = serializers.SlugRelatedField(
+        many=True, read_only=True, slug_field='device_ID')
+    managed_devices_ID = serializers.PrimaryKeyRelatedField(
+        many=True, read_only=True, source='managed_devices')
+    annotatable_devices = serializers.SlugRelatedField(
+        many=True, read_only=True, slug_field='device_ID')
+    annotatable_devices_ID = serializers.PrimaryKeyRelatedField(
+        many=True, read_only=True, source='annotatable_devices')
+    viewable_devices = serializers.SlugRelatedField(
+        many=True, read_only=True, slug_field='device_ID')
+    viewable_devices_ID = serializers.PrimaryKeyRelatedField(
+        many=True, read_only=True, source='viewable_devices')
+
     owned_deployments = serializers.SlugRelatedField(
         many=True, read_only=True, slug_field='deployment_device_ID')
+    owned_deployments_ID = serializers.PrimaryKeyRelatedField(
+        many=True, read_only=True, source='owned_deployments')
     managed_deployments = serializers.SlugRelatedField(
         many=True, read_only=True, slug_field='deployment_device_ID')
+    managed_deployments_ID = serializers.PrimaryKeyRelatedField(
+        many=True, read_only=True, source='managed_deployments')
+    annotatable_deployments = serializers.SlugRelatedField(
+        many=True, read_only=True, slug_field='deployment_device_ID')
+    annotatable_deployments_ID = serializers.PrimaryKeyRelatedField(
+        many=True, read_only=True, source='annotatable_deployments')
+    viewable_deployments = serializers.SlugRelatedField(
+        many=True, read_only=True, slug_field='deployment_device_ID')
+    viewable_deployments_ID = serializers.PrimaryKeyRelatedField(
+        many=True, read_only=True, source='viewable_deployments')
 
     class Meta:
         model = User
         fields = ('id', 'username', 'email',
                   'first_name', 'last_name',
-                  'bio', 'organisation'
-                  'owned_projects', 'managed_projects',
-                  'owned_devices', 'managed_devices',
-                  'owned_deployments', 'managed_deployments'
+                  'bio', 'organisation',
+                  'owned_projects', 'owned_projects_ID',
+                  'managed_projects', 'managed_projects_ID',
+                  'annotatable_projects', 'annotatable_projects_ID',
+                  'viewable_projects', 'viewable_projects_ID',
+                  'owned_devices', 'owned_devices_ID',
+                  'managed_devices', 'managed_devices_ID',
+                  'annotatable_devices', 'annotatable_devices_ID',
+                  'viewable_devices', 'viewable_devices_ID',
+                  'owned_deployments', 'owned_deployments_ID',
+                  'managed_deployments', 'managed_deployments_ID',
+                  'annotatable_deployments', 'annotatable_deployments_ID',
+                  'viewable_deployments', 'viewable_deployments_ID'
                   )
 
 
@@ -91,4 +138,5 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     def get_token(cls, user):
         token = super().get_token(user)
         token['username'] = user.username
+        token['id'] = user.pk
         return token

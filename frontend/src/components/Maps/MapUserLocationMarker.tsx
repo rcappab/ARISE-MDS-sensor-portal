@@ -10,7 +10,6 @@ const UserLocationMarker = () => {
 
 	useEffect(() => {
 		map.locate().on("locationfound", function (e) {
-			console.log("location found");
 			setPosition(e.latlng);
 			setRadius(e.accuracy);
 		});

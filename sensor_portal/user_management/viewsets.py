@@ -1,4 +1,5 @@
 from django.core.exceptions import ObjectDoesNotExist
+from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -35,3 +36,15 @@ class UserProfileViewSet(viewsets.ModelViewSet):
                      'username', 'first_name', 'last_name', 'organisation']
     permission_classes = [IsAuthenticated]
     queryset = User.objects.all().distinct()
+
+    def list(self, request, *args, **kwargs):
+        return Response({"detail": "Method 'GET' not allowed."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def retrieve(self, request, pk=None, *args, **kwargs):
+        user_obj = get_object_or_404(pk=pk, klass=self.queryset)
+
+        if not request.user == user_obj and not request.user.is_staff:
+            return Response({"detail": " You do not have permission to view this item."},
+                            status=status.HTTP_403_FORBIDDEN)
+
+        return super().retrieve(request, *args, **kwargs)

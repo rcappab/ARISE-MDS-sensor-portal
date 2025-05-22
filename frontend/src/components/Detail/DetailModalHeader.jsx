@@ -1,7 +1,6 @@
 import React from "react";
 import "../../styles/base.css";
-import Loading from "../Loading.tsx";
-import { useNavigate } from "react-router-dom";
+import Loading from "../General/Loading.tsx";
 
 const DetailModalHeader = (props) => {
 	const changeDetail = function (change) {
@@ -9,7 +8,6 @@ const DetailModalHeader = (props) => {
 		setDetail(newDetail);
 	};
 	const showEdit = !props.editMode && props.canEdit;
-	console.log(props.canEdit, props.editMode, showEdit);
 
 	const setDetail = function (newDetail) {
 		if (newDetail >= 0 && newDetail < Number(props.maxDetail)) {
@@ -27,20 +25,15 @@ const DetailModalHeader = (props) => {
 				props.handleDetailChange(newDetail);
 			}
 		}
-		console.log(newDetail);
 	};
 
 	const changePage = function (change) {
-		console.log("new page");
-		console.log(Number(props.pageNum));
 		let newPage = Number(props.pageNum) + change;
 		let pageChange = setPage(newPage);
 		return pageChange;
 	};
 
 	const setPage = function (newPage) {
-		console.log("set page");
-		console.log(newPage);
 		if (newPage >= 1 && newPage <= Number(props.maxPage)) {
 			props.handlePageChange(newPage);
 			return true;
@@ -53,15 +46,11 @@ const DetailModalHeader = (props) => {
 		}
 	};
 
-	const navigate = useNavigate();
-
 	const handleEdit = function (e) {
-		console.log("edit button clicked");
 		props.handleEdit(true);
 	};
 
 	const handleDelete = function (e) {
-		console.log("edit button clicked");
 		props.handleDelete(e);
 	};
 

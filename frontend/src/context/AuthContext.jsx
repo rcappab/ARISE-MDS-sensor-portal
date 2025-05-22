@@ -1,7 +1,7 @@
 import { createContext, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import { Outlet, useNavigate } from "react-router-dom";
-import Header from "../components/Header";
+import Header from "../pages/Header";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 const AuthContext = createContext();
@@ -23,7 +23,6 @@ export const AuthProvider = () => {
 	const navigate = useNavigate();
 
 	const loginUserFunction = async (username, password, recaptchaToken) => {
-		console.log("bar");
 		const response = await fetch(
 			`/${process.env.REACT_APP_API_BASE_URL}/token/`,
 			{
@@ -56,7 +55,6 @@ export const AuthProvider = () => {
 	});
 
 	let loginUser = async (username, password, recaptchaToken) => {
-		console.log("foo");
 		doLogIn.mutate({
 			username: username,
 			password: password,
@@ -87,7 +85,7 @@ export const AuthProvider = () => {
 		return data;
 	};
 
-	const { data } = useQuery({
+	useQuery({
 		queryKey: [`refreshToken-${user}`],
 		queryFn: updateToken,
 		enabled: authTokens != null,

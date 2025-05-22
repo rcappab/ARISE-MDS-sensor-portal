@@ -1,6 +1,6 @@
-import React, { useEffect } from "react";
+import React from "react";
 import "../../styles/pagination.css";
-import FormSelect from "../FormSelect.tsx";
+import FormSelect from "../Forms/FormSelect.tsx";
 
 interface Props {
 	pageNum: number;
@@ -28,14 +28,11 @@ const GalleryPageControls = ({
 	handleChangeTableDisplay,
 }: Props) => {
 	const changePage = function (change) {
-		console.log("new page");
 		let newPage = Number(pageNum) + change;
 		setPage(newPage);
 	};
 
 	const setPage = function (newPage) {
-		console.log("set page");
-		console.log(newPage);
 		if (newPage >= 1 && newPage <= Number(maxPage)) {
 			handleChangePage(newPage);
 		} else if (newPage < 1) {

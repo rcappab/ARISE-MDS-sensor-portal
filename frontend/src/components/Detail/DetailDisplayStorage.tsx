@@ -1,6 +1,5 @@
 import React, { useContext } from "react";
 import { useQuery } from "@tanstack/react-query";
-import Loading from "../Loading.tsx";
 import { getData } from "../../utils/FetchFunctions";
 import AuthContext from "../../context/AuthContext";
 
@@ -9,11 +8,10 @@ interface Props {
 }
 
 const DetailDisplayStorage = ({ selectedDataID }: Props) => {
-	const { authTokens, user } = useContext(AuthContext);
+	const { authTokens } = useContext(AuthContext);
 
 	const getDataFunc = async () => {
 		let apiURL = `datastorageinput/${selectedDataID}`;
-		console.log(apiURL);
 		let response_json = await getData(apiURL, authTokens.access);
 		return response_json;
 	};

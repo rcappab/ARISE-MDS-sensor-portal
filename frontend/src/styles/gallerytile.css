@@ -5,7 +5,8 @@
 	cursor: pointer;
 }
 
-.card:hover {
+.card:hover,
+.card.selected {
 	padding: 7px !important;
 	border-width: 2px !important;
 	--bs-border-opacity: 1;

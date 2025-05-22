@@ -15,6 +15,7 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+from celery.schedules import crontab
 from data_handlers.base_data_handler_class import DataTypeHandlerCollection
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -62,7 +63,7 @@ if DEVMODE:
 print("Reading settings!")
 
 # Application definition
-
+GENERIC_JOBS = {}
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -90,6 +91,7 @@ INSTALLED_APPS = [
     'drf_recaptcha',
     'colorfield',
     'django_icon_picker',
+    'drf_spectacular',
     # my apps
     'data_models',
     'user_management',
@@ -228,7 +230,17 @@ REST_FRAMEWORK = {
         # 'rest_framework.renderers.BrowsableAPIRenderer'
         'utils.api_renderer.BrowsableAPIRendererWithoutForms',
     ),
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Sensor portal API',
+    'DESCRIPTION': 'API for ARISE MDS Sensor portal',
+    'VERSION': '0.7.5',
+    'SERVE_INCLUDE_SCHEMA': False,
+    # OTHER SETTINGS
+}
+
 DRF_RECAPTCHA_SECRET_KEY = os.environ.get(
     'DRF_RECAPTCHA_SECRET_KEY', None)
 
@@ -260,7 +272,19 @@ CELERY_TIMEZONE = TIME_ZONE
 CELERY_ENABLE_UTC = False
 
 CELERY_BEAT_SCHEDULE = {
-
+    "check_deployment_active": {
+        "task": "data_models.tasks.check_deployment_active",
+        "schedule": crontab(minute="0"),
+    },
+    "check_device_status": {
+        "task": "data_models.tasks.check_device_status",
+        "schedule": crontab(hour="12",
+                            day_of_week="mon-fri"),
+    },
+    "clean_local_storage": {
+        "task": "data_models.tasks.clean_all_files",
+        "schedule": crontab(hour="1"),
+    },
 }
 
 # SENSOR-PORTAL SETTINGS
@@ -269,6 +293,7 @@ GLOBAL_PROJECT_ID = "GLOBAL"
 
 # Automatically generated collection of data handlers.
 DATA_HANDLERS = DataTypeHandlerCollection()
+
 
 # Maximum number of files that can be submitted to a job through the start_job API endpoint.
 MAX_JOB_SIZE = 5000
@@ -290,20 +315,14 @@ HUMAN_TAXON_CODE = "2436436"
 # path in FILE_STORAGE_ROOT where data packages will be saved
 PACKAGE_PATH = "data_packages"
 
-try:
-    with open("/media/secrets/mail_secrets", "r") as mail_secrets_file:
-        mail_secrets = json.load(mail_secrets_file)
 
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST = mail_secrets.get("EMAIL_HOST")
-    EMAIL_HOST_USER = mail_secrets.get("EMAIL_HOST_USER")
-    EMAIL_HOST_PASSWORD = mail_secrets.get(
-        "EMAIL_HOST_PASSWORD")
-    EMAIL_PORT = 465
-    EMAIL_USE_SSL = True
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.environ.get('EMAIL_HOST')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+EMAIL_PORT = 465
+EMAIL_USE_SSL = True
 
-except Exception as e:
-    print(e)
 
 # Name of queue to use for ultralytics tasks.
 CELERY_ULTRALYTICS_QUEUE = 'ultralytics'

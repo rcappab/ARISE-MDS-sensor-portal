@@ -42,7 +42,7 @@ class Site(BaseModel):
 
 
 class DataType(BaseModel):
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length=20)
     colour = ColorField(default="#FFFFFF")
     symbol = IconField(blank=True)
 
@@ -258,8 +258,8 @@ class Device(BaseModel):
 
 class Deployment(BaseModel):
     deployment_device_ID = models.CharField(
-        max_length=100, blank=True, editable=False, unique=True)
-    deployment_ID = models.CharField(max_length=50)
+        max_length=110, blank=True, editable=False, unique=True)
+    deployment_ID = models.CharField(max_length=80)
     device_type = models.ForeignKey(
         DataType, models.PROTECT, related_name="deployments", null=True)
     device_n = models.IntegerField(default=1)
@@ -436,7 +436,7 @@ class DataFile(BaseModel):
 
     file_type = models.ForeignKey(
         DataType, models.PROTECT, related_name="files", null=True, default=None)
-    file_name = models.CharField(max_length=100, unique=True)
+    file_name = models.CharField(max_length=150, unique=True)
     file_size = FileSizeField()
     file_format = models.CharField(max_length=10)
 
@@ -577,4 +577,4 @@ class ProjectJob(BaseModel):
 
     def get_job_signature(self, file_pks):
         # project level jobs always assumed to work on the file level, as they are fired by files being imported
-        return get_job_from_name(self.celery_job_name, "datafile", None, file_pks, self.job_args)
+        return get_job_from_name(self.celery_job_name, "datafile", file_pks, self.job_args)

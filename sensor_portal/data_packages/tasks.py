@@ -4,6 +4,7 @@ from uuid import uuid4
 from archiving.tasks import get_files_from_archive_task
 from celery import shared_task
 from data_models.file_handling_functions import group_files_by_size
+from data_models.job_handling_functions import register_job
 from data_models.models import DataFile
 from data_models.permissions import perms
 from django.conf import settings
@@ -12,7 +13,9 @@ from user_management.models import User
 from .models import DataPackage
 
 
-@shared_task(name="generic_task_-_datafile_-_create_data_package")
+@shared_task(name="create_data_package")
+@register_job("Create data package", "create_data_package", "datafile", False, default_args={"metadata_type": "0",
+                                                                                             "include_files": True})
 def start_make_data_package_task(datafile_pks, user_pk, metadata_type=0, include_files=True):
 
     print(datafile_pks, user_pk)

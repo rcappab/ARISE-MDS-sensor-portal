@@ -51,7 +51,6 @@ const JSONInput = ({
 		);
 		let newJSONstring = JSON.stringify(newObj);
 		setJSONtext(newJSONstring);
-		console.log(newObj);
 		onJSONchange(newObj);
 	}, [inputFields, onJSONchange]);
 

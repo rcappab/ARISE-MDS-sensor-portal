@@ -19,11 +19,6 @@ from . import validators
 from .models import (DataFile, DataType, Deployment, Device, DeviceModel,
                      Project, Site)
 
-# from user_management.serializers import (
-#     UserGroupMemberSerializer,
-#     UserGroupProfileSerializer,
-# )
-
 
 class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMixIn, ManagerMixIn, CreatedModifiedMixIn, CheckFormMixIn,
                             serializers.ModelSerializer):
@@ -402,6 +397,16 @@ class DataTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = DataType
         fields = '__all__'
+
+
+class GenericJobSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    task_name = serializers.CharField()
+    data_type = serializers.CharField()
+    admin_only = serializers.BooleanField()
+    max_items = serializers.IntegerField()
+    default_args = serializers.JSONField()
 
 
 def get_image_recording_dt(uploaded_file):

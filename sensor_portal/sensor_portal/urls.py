@@ -17,6 +17,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path, re_path
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework_simplejwt import views as jwt_views
 
 from . import api
@@ -27,8 +28,7 @@ urlpatterns = [
     path('api/', include('user_management.urls')),
     path('api/', include('utils.urls')),
     path("icon_picker/", include("django_icon_picker.urls")),
-    # re_path(r"^api-auth/", include("rest_framework.urls",
-    #        namespace="rest_framework"))
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/schema/swagger-ui/',
+         SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 ]
-# + static(settings.FILE_STORAGE_URL, document_root=settings.FILE_STORAGE_ROOT) \
-#     + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

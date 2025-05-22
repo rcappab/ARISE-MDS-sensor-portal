@@ -41,23 +41,15 @@ const FormSelect = ({
 	useEffect(
 		function verifyValueExistsInNewOptions() {
 			if (value && choices.length === 0) {
-				value = null;
+				handleChange(null);
 			}
 		},
-		[choices]
+		[choices, handleChange, value]
 	);
-
-	// useEffect(
-	// 	function tryToReset() {
-	// 		console.log("defaukt changed");
-	// 		setSelectedValue(undefined);
-	// 	},
-	// 	[defaultvalue]
-	// );
 
 	const objFromValue = function (_choices, value: any | [any] = null) {
 		if (!value) return null;
-		//console.log(name, _choices, value);
+
 		if (_choices && _choices.length > 0) {
 			if (value) {
 				let chosenDefault = null;
@@ -70,10 +62,9 @@ const FormSelect = ({
 						return String(value) === String(item.value);
 					});
 				}
-				//console.log(name, _choices, value, chosenDefault);
+
 				return chosenDefault;
 			} else {
-				//console.log("NULL");
 				return null;
 			}
 		} else {
@@ -81,9 +72,7 @@ const FormSelect = ({
 		}
 	};
 
-	const [selectedValue, setSelectedValue] = useState(
-		objFromValue(choices, value) as any
-	);
+	const [setSelectedValue] = useState(objFromValue(choices, value) as any);
 
 	const style = {
 		container: (baseStyles, state) => ({
@@ -107,9 +96,8 @@ const FormSelect = ({
 	};
 
 	const handleOptionCreate = async (newInput) => {
-		console.log(newInput);
 		let newOption = await handleCreate(newInput);
-		console.log(newOption);
+
 		handleChange(newOption["value"]);
 	};
 
@@ -120,10 +108,8 @@ const FormSelect = ({
 		if (newValue === undefined) {
 			newValue = null;
 		}
-		console.log("SELECTION CHANGE " + name + " " + newValue);
 		setSelectedValue(newValue);
 
-		console.log(Array.isArray(newValue));
 		if (newValue === null) {
 			handleChange(newValue);
 		} else if (multiple) {
@@ -137,29 +123,7 @@ const FormSelect = ({
 		}
 	};
 
-	// console.log(defaultvalue, selectedValue);
-	// if (selectedValue === undefined && choices && choices.length > 0) {
-	// 	if (multiple && !Array.isArray(defaultvalue)) {
-	// 		defaultvalue = [defaultvalue];
-	// 	}
-	// 	console.log(
-	// 		"set default " +
-	// 			name +
-	// 			" value " +
-	// 			" " +
-	// 			defaultvalue +
-	// 			" " +
-	// 			selectedValue
-	// 	);
-	// 	handleSelectionChange(objFromValue(choices));
-	// }
-
-	//${
-	//valid ? "is-valid" : "is-invalid"
-	//}
-
 	const getSelect = function () {
-		//console.log(name + " " + selectedValue);
 		if (creatable) {
 			return (
 				<CreatableSelect

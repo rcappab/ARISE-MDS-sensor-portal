@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
-import "../styles/drawstyles.css";
-import useMousePosition from "./useMousePosition.tsx";
+import "../../../styles/drawstyles.css";
+import useMousePosition from "../../General/useMousePosition.tsx";
 
 interface rectDrawProps {
 	obsData: object[] | [];
@@ -39,16 +39,19 @@ const RectDraw = ({
 	};
 
 	const mouseUp = () => {
+		if (svgRef.current === undefined || svgRef.current === null) {
+			return;
+		}
+
 		setMouseDown(false);
 
 		//edit bounding box array, pass new array back to parent
 		const bbox = {
-			x1: rectx / svgRef.current?.clientWidth,
-			y1: recty / svgRef.current?.clientHeight,
-			x2: (rectx + rectwidth) / svgRef.current?.clientWidth,
-			y2: (recty + rectheight) / svgRef.current?.clientHeight,
+			x1: rectx / svgRef.current.clientWidth,
+			y1: recty / svgRef.current.clientHeight,
+			x2: (rectx + rectwidth) / svgRef.current.clientWidth,
+			y2: (recty + rectheight) / svgRef.current.clientHeight,
 		};
-		console.log(bbox);
 		// update the bounding box array at the edit index, pass the array back to parent
 		// These states should be handled by the parent component
 
@@ -62,6 +65,10 @@ const RectDraw = ({
 		index: number,
 		highlight: boolean = false
 	) => {
+		if (svgRef.current === undefined || svgRef.current === null) {
+			return null;
+		}
+
 		if (
 			(highlight && index !== hoverIndex) ||
 			(!highlight && index === hoverIndex)
@@ -79,9 +86,6 @@ const RectDraw = ({
 
 		const _rectWidth = _rectX2 - _rectX1;
 		const _rectHeight = _rectY2 - _rectY1;
-
-		console.log(obs);
-
 		let classes = "";
 		//check if human, uncertain, highlighted, apply classes
 

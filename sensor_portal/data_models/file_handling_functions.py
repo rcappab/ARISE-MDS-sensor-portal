@@ -16,7 +16,7 @@ from .general_functions import check_dt
 
 
 def create_file_objects(files, check_filename=False, recording_dt=None, extra_data=None, deployment_object=None,
-                        device_object=None, data_types=None, request_user=None):
+                        device_object=None, data_types=None, request_user=None, verbose=False):
     from data_models.models import DataFile, DataType, ProjectJob
 
     invalid_files = []
@@ -25,7 +25,9 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
     if extra_data is None:
         extra_data = [{}]
 
-    print(files)
+    if verbose:
+        print(files)
+        print(device_object, deployment_object)
 
     upload_dt = djtimezone.now()
 
@@ -41,7 +43,7 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
         if len(files) == 0:
             return (uploaded_files, invalid_files, existing_files, status.HTTP_200_OK)
 
-        if len(recording_dt) > 1:
+        if recording_dt and len(recording_dt) > 1:
             recording_dt = [x for x, y in zip(
                 recording_dt, not_duplicated) if y]
         if len(extra_data) > 1:
@@ -82,7 +84,7 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
                 if recording_dt is not None and len(recording_dt) > 1:
                     recording_dt = [x for x, y in zip(
                         recording_dt, valid_files_bool) if y]
-                if len(extra_data) > 1:
+                if extra_data and len(extra_data) > 1:
                     extra_data = [x for x, y in zip(
                         extra_data, valid_files_bool) if y]
 
@@ -134,7 +136,8 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
             if not request_user.has_perm('data_models.change_deployment', deployment_object):
                 invalid_files += [
                     {x.name: {
-                        "message": f"Not allowed to attach files to {deployment_object.deployment_device_ID}", "status": 403}}
+                        "message": f"Not allowed to attach files to {deployment_object.deployment_device_ID}",
+                        "status": 403}}
                     for x in files]
                 return (uploaded_files, invalid_files, existing_files, status.HTTP_403_FORBIDDEN)
 
@@ -150,8 +153,18 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
             x for x in deployment_objects if x is not None]
 
     #  split off invalid  files
-    invalid_files += [{x.name: {"message": f"no suitable deployment of {device_object} found for recording date time {z}"}, "status": 400} for x,
-                      y, z in zip(files, file_valid, recording_dt) if not y]
+    if deployment_object:
+        invalid_files += [{x.name:
+                           {"message": f"Recording date time {z} does not exist in {deployment_object}",
+                            "status": 400}} for x,
+                          y, z in zip(files, file_valid, recording_dt) if not y]
+    else:
+
+        invalid_files += [{x.name:
+                           {"message": f"no suitable deployment of {device_object} found for recording date time {z}",
+                            "status": 400}} for x,
+                          y, z in zip(files, file_valid, recording_dt) if not y]
+
     files = [x for x, y in zip(files, file_valid) if y]
 
     if len(files) == 0:

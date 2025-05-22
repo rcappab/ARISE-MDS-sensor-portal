@@ -1,18 +1,16 @@
 import React from "react";
-import { Link, useOutletContext } from "react-router-dom";
-
+import { Link } from "react-router-dom";
+import { useObjectType } from "../../context/ObjectTypeCheck.tsx";
 interface Props {
 	selectedData: object;
-	objectType: number;
+	objectType: string;
 }
 
 const DetailDisplayParents = ({ selectedData, objectType }: Props) => {
-	const { validParents } = useOutletContext() as object;
+	const { validParents } = useObjectType();
 
 	const getButtons = function () {
 		return validParents.map((validParent) => {
-			console.log(validParent);
-			console.log(selectedData);
 			let currentName = selectedData[validParent];
 			let current_IDs = selectedData[validParent + "_ID"];
 			if (Array.isArray(current_IDs)) {

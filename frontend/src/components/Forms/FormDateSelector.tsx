@@ -1,5 +1,5 @@
 import React, { ChangeEvent } from "react";
-import "../styles/base.css";
+import "../../styles/base.css";
 
 interface Props {
 	id: string;

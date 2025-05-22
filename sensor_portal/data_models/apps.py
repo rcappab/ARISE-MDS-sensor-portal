@@ -7,3 +7,4 @@ class DataModelsConfig(AppConfig):
 
     def ready(self):
         import data_models.signals
+        import data_models.tasks

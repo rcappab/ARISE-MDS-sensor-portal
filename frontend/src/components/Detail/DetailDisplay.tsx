@@ -4,6 +4,7 @@ import DetailDisplayRelated from "./DetailDisplayRelated.tsx";
 import DetailDisplayParents from "./DetailDisplayParents.tsx";
 import DetailDisplayFile from "./DetailDisplayFile.tsx";
 import DetailDisplayMetrics from "./DetailDisplayMetrics.tsx";
+import UploadFile from "./UploadFile.tsx";
 
 interface Props {
 	objectType: string;
@@ -93,6 +94,13 @@ const DetailDisplay = ({ objectType, selectedData }: Props) => {
 				objectType={objectType}
 				selectedData={selectedData}
 			/>
+			{(objectType === "deployment" || objectType === "device") &&
+			selectedData["user_is_manager"] ? (
+				<UploadFile
+					id={selectedData["id"]}
+					objectType={objectType}
+				/>
+			) : null}
 			<DetailDisplayTable
 				selectedData={selectedData}
 				displayKeys={displayKeys}

@@ -1,14 +1,14 @@
 import React, { useCallback, useEffect } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useState } from "react";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
 const DoResetPassword = () => {
-	const [CaptchaToken, setCaptchaToken] = useState(null);
+	const [CaptchaToken, setCaptchaToken] = useState<string | null>(null);
 	const { executeRecaptcha } = useGoogleReCaptcha();
-	const [searchParams, setSearchParams] = useSearchParams();
+	const [searchParams] = useSearchParams();
 	const navigate = useNavigate();
 
 	// Create an event handler so you can call the verification on button click event or form submit
@@ -75,7 +75,6 @@ const DoResetPassword = () => {
 				password: password,
 				token: searchParams.get("token"),
 			};
-			console.log(data);
 			response = await doPost.mutateAsync({
 				apiURL: `password_reset/confirm/`,
 				data: data,
@@ -90,7 +89,6 @@ const DoResetPassword = () => {
 					}
 				);
 			} else {
-				console.log(response);
 				toast.success("Password succesfully changed!", {
 					id: toastId,
 				});

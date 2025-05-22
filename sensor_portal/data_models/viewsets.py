@@ -11,6 +11,7 @@ from django.utils import timezone as djtimezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_gis import filters as filters_gis
 from utils.viewsets import (AddOwnerViewSetMixIn, CheckAttachmentViewSetMixIn,
@@ -28,7 +29,8 @@ from .plotting_functions import get_all_file_metric_dicts
 from .serializers import (DataFileSerializer, DataFileUploadSerializer,
                           DataTypeSerializer, DeploymentSerializer,
                           DeploymentSerializer_GeoJSON, DeviceModelSerializer,
-                          DeviceSerializer, ProjectSerializer, SiteSerializer)
+                          DeviceSerializer, GenericJobSerializer,
+                          ProjectSerializer, SiteSerializer)
 
 
 class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, CheckFormViewSetMixIn, OptionalPaginationViewSetMixIn):
@@ -40,6 +42,34 @@ class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, Check
     filterset_class = DeploymentFilter
     filter_backends = viewsets.ModelViewSet.filter_backends + \
         [filters_gis.InBBoxFilter]
+
+    @action(detail=False, methods=['post'])
+    def ids_count(self, request, *args, **kwargs):
+        queryset = Deployment.objects.filter(pk__in=request.data.get("ids"))
+        return Response(queryset.file_count(), status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'])
+    def queryset_count(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        return Response(queryset.file_count(), status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path=r'start_job/(?P<job_name>\w+)')
+    def start_job(self, request, job_name, *args, **kwargs):
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        user_pk = request.user.pk
+
+        if not (obj_pks := request.data.get("ids")):
+            obj_pks = list(queryset.values_list('pk', flat=True))
+        else:
+            request.data.pop("ids")
+
+        job_args = request.data
+        success, detail, job_status = start_job_from_name(
+            job_name, "deployment", obj_pks, job_args, user_pk)
+
+        return Response({"detail": detail}, status=job_status)
 
     def get_queryset(self):
         qs = Deployment.objects.all().distinct()
@@ -87,6 +117,34 @@ class ProjectViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
     filterset_class = ProjectFilter
     search_fields = ['project_ID', 'name', 'organization']
 
+    @action(detail=False, methods=['post'])
+    def ids_count(self, request, *args, **kwargs):
+        queryset = Project.objects.filter(pk__in=request.data.get("ids"))
+        return Response(queryset.file_count(), status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'])
+    def queryset_count(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        return Response(queryset.file_count(), status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path=r'start_job/(?P<job_name>\w+)')
+    def start_job(self, request, job_name, *args, **kwargs):
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        user_pk = request.user.pk
+
+        if not (obj_pks := request.data.get("ids")):
+            obj_pks = list(queryset.values_list('pk', flat=True))
+        else:
+            request.data.pop("ids")
+
+        job_args = request.data
+        success, detail, job_status = start_job_from_name(
+            job_name, "project", obj_pks, job_args, user_pk)
+
+        return Response({"detail": detail}, status=job_status)
+
     @action(detail=True, methods=['get'])
     def species_list(self, request, pk=None):
         project = self.get_object()
@@ -117,6 +175,34 @@ class DeviceViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
     filterset_class = DeviceFilter
     search_fields = ['device_ID', 'name', 'model__name']
 
+    @action(detail=False, methods=['post'])
+    def ids_count(self, request, *args, **kwargs):
+        queryset = Device.objects.filter(pk__in=request.data.get("ids"))
+        return Response(queryset.file_count(), status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'])
+    def queryset_count(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        return Response(queryset.file_count(), status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path=r'start_job/(?P<job_name>\w+)')
+    def start_job(self, request, job_name, *args, **kwargs):
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        user_pk = request.user.pk
+
+        if not (obj_pks := request.data.get("ids")):
+            obj_pks = list(queryset.values_list('pk', flat=True))
+        else:
+            request.data.pop("ids")
+
+        job_args = request.data
+        success, detail, job_status = start_job_from_name(
+            job_name, "device", obj_pks, job_args, user_pk)
+
+        return Response({"detail": detail}, status=job_status)
+
     @action(detail=True, methods=['get'])
     def metrics(self, request, pk=None):
         device = self.get_object()
@@ -145,6 +231,11 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
             qs = get_ctdp_media_qs(qs)
         return qs
 
+    @action(detail=False, methods=['post'])
+    def ids_count(self, request, *args, **kwargs):
+        queryset = DataFile.objects.filter(pk__in=request.data.get("ids"))
+        return Response(queryset.file_count(), status=status.HTTP_200_OK)
+
     @action(detail=False, methods=['get'])
     def queryset_count(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -152,23 +243,24 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
 
     @action(detail=False, methods=['post'], url_path=r'start_job/(?P<job_name>\w+)')
     def start_job(self, request, job_name, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-        if (job_size := queryset.count()) > settings.MAX_JOB_SIZE:
-            return Response({"detail":
-                             f"Requested job of {job_size} exceeds maximum job size of {settings.MAX_JOB_SIZE}"},
-                            status=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE)
 
-        print(request.data)
+        queryset = self.filter_queryset(self.get_queryset())
 
         user_pk = request.user.pk
-        obj_pks = list(queryset.values_list('pk', flat=True))
+
+        if not (obj_pks := request.data.get("ids")):
+            obj_pks = list(queryset.values_list('pk', flat=True))
+        else:
+            request.data.pop("ids")
+
         job_args = request.data
-        start_job_from_name(job_name, "datafile", user_pk, obj_pks, job_args)
+        success, detail, job_status = start_job_from_name(
+            job_name, "datafile", obj_pks, job_args, user_pk)
 
-        return Response({"detail": f"{job_name} submitted"}, status=status.HTTP_202_ACCEPTED)
+        return Response({"detail": detail}, status=job_status)
 
-    @action(detail=True, methods=['post'], permission_classes=['data_models.view_datafile'])
-    def favourite_file(self, request):
+    @action(detail=True, methods=['post'])
+    def favourite_file(self, request, pk=None):
         data_file = self.get_object()
         user = request.user
         if user:
@@ -243,3 +335,37 @@ class DeviceModelViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = DeviceModel.objects.all().distinct()
     search_fields = ['name']
     filterset_class = DeviceModelFilter
+
+
+class GenericJobViewSet(viewsets.ViewSet):
+    # Required for the Browsable API renderer to have a nice form.
+    serializer_class = GenericJobSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+
+        job_list = settings.GENERIC_JOBS.values()
+        if not user.is_staff:
+            job_list = [x for x in job_list if not x["admin_only"]]
+
+        data_type = self.request.query_params.get('data_type')
+        if data_type is not None:
+            job_list = [x for x in job_list if x["data_type"] == data_type]
+        return job_list
+
+    def list(self, request):
+
+        serializer = self.serializer_class(
+            instance=self.get_queryset(), many=True)
+
+        return Response(serializer.data)
+
+    def retrieve(self, request, pk=None):
+        try:
+            job_dict = list(settings.GENERIC_JOBS.values())[int(pk)]
+        except (IndexError, ValueError):
+            return Response(status=404)
+
+        serializer = self.serializer_class(job_dict)
+        return Response(serializer.data)

@@ -1,12 +1,9 @@
 import React, { useEffect, useState } from "react";
 import DetailEditForm from "./DetailEditForm.tsx";
-import JSONInput from "../JSONInput.tsx";
-import FormMap from "../FormMap.tsx";
-import FormDateTZSelect from "../FormDateTZSelect.tsx";
-import FormSelectAPI from "../FormSelectAPI.tsx";
-import UserSelector from "../UserSelector.tsx";
-import PermissionEditor from "../PermissionEditor.tsx";
-import { itemFromTimeZone } from "../../utils/timezoneFunctions.js";
+import JSONInput from "../General/JSONInput.tsx";
+import FormMap from "../Maps/FormMap.tsx";
+import FormDateTZSelect from "../Forms/FormDateTZSelect.tsx";
+import FormSelectAPI from "../Forms/FormSelectAPI.tsx";
 
 interface Props {
 	selectedData?: object | null;
@@ -31,13 +28,9 @@ const DetailEditDeployment = ({
 }: Props) => {
 	// deployment
 
-	console.log("DATA IN DEPLOYMENT DETAIL EDIT");
-	console.log(selectedData);
-
 	const [deploymentID, setDeploymentID] = useState(
 		selectedData ? selectedData["deployment_ID"] : ""
 	);
-	console.log(deploymentID);
 	const [device_type_ID, setDevice_type_ID] = useState(
 		selectedData ? selectedData["device_type_ID"] : null
 	);
@@ -130,8 +123,6 @@ const DetailEditDeployment = ({
 				: Intl.DateTimeFormat().resolvedOptions().timeZone
 		);
 	}, [selectedData]);
-
-	console.log(errorDict);
 
 	return (
 		<DetailEditForm

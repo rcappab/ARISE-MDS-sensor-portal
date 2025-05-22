@@ -1,31 +1,33 @@
 import React, { useCallback } from "react";
 import { useEffect, useRef, useState } from "react";
-import { Form, useOutletContext, useParams } from "react-router-dom";
-import FormSelect from "../FormSelect.tsx";
-import FormSelectAPI from "../FormSelectAPI.tsx";
-import FormDateSelector from "../FormDateSelector.tsx";
+import { Form } from "react-router-dom";
+import FormSelect from "../Forms/FormSelect.tsx";
+import FormSelectAPI from "../Forms/FormSelectAPI.tsx";
+import FormDateSelector from "../Forms/FormDateSelector.tsx";
 import { useSearchParams } from "react-router-dom";
 
 interface Props {
 	objectType?: string;
 	fromObject?: string;
 	fromID?: string;
+	filterKey?: string;
 	onSubmit: () => void;
 	addNew: () => void;
-	jobName: string;
-	onJobChange: (string) => void;
+	jobID: string | null;
+	onJobChange: (number) => void;
 	handleStartJob: () => void;
 	setFormKeys: (val: string[]) => void;
 	orderBy: string;
 	pageSize: number;
 	pageNum: number;
 	onReset: (searchParams: any) => void;
+	selectedItemsCount?: number;
 }
 
 function GalleryForm({
 	onSubmit,
 	addNew,
-	jobName,
+	jobID,
 	onJobChange,
 	handleStartJob,
 	setFormKeys,
@@ -36,8 +38,10 @@ function GalleryForm({
 	objectType = "deployment",
 	fromObject = undefined,
 	fromID = undefined,
+	filterKey = undefined,
+	selectedItemsCount = 0,
 }: Props) {
-	const [searchParams, setSearchParams] = useSearchParams();
+	const [searchParams] = useSearchParams();
 
 	const formRef = useRef<HTMLFormElement>(null);
 
@@ -154,16 +158,23 @@ function GalleryForm({
 	const doJobButton = function () {
 		return (
 			<>
+				<span className="me-2 align-content-center">
+					{selectedItemsCount > 0
+						? `${selectedItemsCount} selected. Esc to clear.
+				`
+						: `Ctrl or shift to select`}
+				</span>
 				<div className="formControl">
-					<FormSelect
+					<FormSelectAPI
 						id="select-job"
 						name="job_name"
+						apiURL={`genericjob/?data_type=${objectType}`}
 						label="Select job..."
-						choices={[
-							{ value: "create_data_package", label: "Create data package" },
-						]}
+						valueKey="id"
+						labelKey="name"
+						choices={[]}
 						isSearchable={true}
-						value={jobName}
+						value={jobID}
 						handleChange={onJobChange}
 					/>
 				</div>
@@ -171,7 +182,7 @@ function GalleryForm({
 					type="button"
 					className="btn btn-secondary ms-lg-2"
 					onClick={handleStartJob}
-					disabled={jobName === ""}
+					disabled={jobID === null}
 				>
 					Start job
 				</button>
@@ -383,7 +394,7 @@ function GalleryForm({
 		} else {
 			return (
 				<input
-					name={fromObject}
+					name={filterKey}
 					className="d-none"
 					id={fromObject}
 					defaultValue={fromID}
@@ -397,10 +408,10 @@ function GalleryForm({
 			return (
 				<button
 					type="button"
-					className="btn btn-success ms-lg-2"
+					className="btn btn-success ms-lg-2 me-lg-2"
 					onClick={handleAddNew}
 				>
-					Add new
+					Add new {objectType}
 				</button>
 			);
 		}
@@ -483,8 +494,8 @@ function GalleryForm({
 						</button>
 					</div>
 					<div className="col d-flex justify-content-end">
-						{addNewButton()}
 						{doJobButton()}
+						{addNewButton()}
 					</div>
 				</div>
 

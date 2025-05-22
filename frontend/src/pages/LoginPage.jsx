@@ -1,10 +1,9 @@
 import React from "react";
 import { useContext, useState, useCallback, useEffect } from "react";
 import AuthContext from "../context/AuthContext";
-import ReCaptchaContainer from "../utils/ReCaptchaContainer.tsx";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { Link } from "react-router-dom";
-import CaptchaText from "../components/CaptchaText.tsx";
+import CaptchaText from "../components/General/CaptchaText.tsx";
 
 const LoginPage = () => {
 	const { loginUser } = useContext(AuthContext);

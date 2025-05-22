@@ -18,6 +18,12 @@ def send_email_to_user(user: User, subject: str, body: str):
 
 
 def send_email(to_email, subject, body):
+    try:
+        settings.EMAIL_HOST_USER
+    except AttributeError:
+        print("No email sender configured")
+        return
+
     if not to_email:
         raise ValueError(
             "The 'to_email' address must be provided and cannot be empty.")

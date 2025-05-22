@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from "react";
 
 import { getData } from "../../utils/FetchFunctions.js";
-import Loading from "../Loading.tsx";
+import Loading from "../General/Loading.tsx";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import AuthContext from "../../context/AuthContext.jsx";
 import { capitalizeFirstLetter } from "../../utils/generalFunctions.js";
@@ -20,20 +20,20 @@ const DetailDisplayMetrics = ({ id, objectType }: Props) => {
 
 	const getDataFunc = async () => {
 		let apiURL = `${objectType}/${id}/metrics`;
-		console.log(apiURL);
+
 		let response_json = await getData(apiURL, authTokens.access);
 		return response_json;
 	};
 
 	const {
 		isLoading,
-		isError,
+		//isError,
 		isPending,
 		data,
-		error,
+		//error,
 		isRefetching,
-		isPlaceholderData,
-		refetch,
+		//isPlaceholderData,
+		//refetch,
 	} = useQuery({
 		queryKey: ["metrics", user, id, objectType],
 		queryFn: () => getDataFunc(),
@@ -42,7 +42,6 @@ const DetailDisplayMetrics = ({ id, objectType }: Props) => {
 
 	const getTabs = function () {
 		const tabs = Object.keys(data).map((key) => {
-			console.log(key);
 			return <Tab>{capitalizeFirstLetter(key.replace(/_/g, " "))}</Tab>;
 		});
 		return tabs;
@@ -50,7 +49,6 @@ const DetailDisplayMetrics = ({ id, objectType }: Props) => {
 
 	const getTabContent = function () {
 		const tabContent = Object.keys(data).map((key) => {
-			console.log(key);
 			return (
 				<TabPanel>
 					<div

@@ -1,21 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import {
-	FeatureGroup,
-	LayerGroup,
-	MapContainer,
-	Popup,
-	TileLayer,
-	Marker,
-} from "react-leaflet";
+import { FeatureGroup, MapContainer, Popup, TileLayer } from "react-leaflet";
 import UserLocationMarker from "./MapUserLocationMarker.tsx";
 import ResetLocation from "./MapControlResetLocation.tsx";
 
 import { Icon } from "leaflet";
 import { Marker as CompMarker } from "@adamscybot/react-leaflet-component-marker";
-import "../BeautifyMarker/leaflet-beautify-marker-icon.css";
-import { IconPickerItem } from "react-icons-picker";
-
-import logo from "../snyper4g.png";
+import "../../BeautifyMarker/leaflet-beautify-marker-icon.css";
 
 interface Props {
 	deployments: [{ latitude; longitude; deployment_device_ID }];
@@ -62,19 +52,7 @@ const DeploymentIcon = ({
 						height: "100%",
 						width: "100%",
 					}}
-				>
-					<IconPickerItem
-						value={symbol}
-						size={symbolSize}
-						color={textColor}
-					/>
-
-					{/* <img
-						style={{ height: "100%", objectFit: "cover" }}
-						src={logo}
-						alt="Logo"
-					/> */}
-				</div>
+				></div>
 			</div>
 		</div>
 	);
@@ -95,7 +73,6 @@ const DeploymentMap = ({ deployments }: Props) => {
 
 	const setBounds = useCallback(() => {
 		if (!map) return;
-		console.log(map);
 		let newBounds = featureGroupRef.current.getBounds();
 		map.fitBounds(newBounds);
 	}, [map]);

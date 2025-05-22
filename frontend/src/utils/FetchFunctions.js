@@ -12,14 +12,36 @@ export async function getData(url, token) {
 	return response.json();
 }
 
+export async function postDataFiles(url, token, data, files) {
+	const body = new FormData();
+	for (const key in data) {
+		body.append(key, data[key]);
+	}
+	for (const file of files) {
+		body.append("files", file, file.name);
+	}
+
+	const response_json = await postBody(url, token, body, false);
+	return response_json;
+}
+
 export async function postData(url, token, data) {
+	const body = JSON.stringify(data);
+	const response_json = await postBody(url, token, body);
+	return response_json;
+}
+
+export async function postBody(url, token, body, json = true) {
+	const headers = {
+		Authorization: "Bearer " + String(token),
+	};
+	if (json) {
+		headers["Content-Type"] = "application/json";
+	}
 	let response = await fetch(`/${process.env.REACT_APP_API_BASE_URL}/${url}`, {
 		method: "POST",
-		headers: {
-			Authorization: "Bearer " + String(token),
-			"Content-Type": "application/json",
-		},
-		body: JSON.stringify(data),
+		headers: headers,
+		body: body,
 	});
 	let response_json = await response.json();
 	response_json["ok"] = response.ok;
@@ -44,8 +66,6 @@ export async function patchData(url, token, data) {
 	response_json["ok"] = response.ok;
 	response_json["statusText"] = response.statusText;
 
-	console.log(response_json);
-
 	//if (!response.ok) {
 	//throw new Error(response.statusText);
 	//}
@@ -60,11 +80,9 @@ export async function deleteData(url, token) {
 			"Content-Type": "application/json",
 		},
 	});
-	console.log(response);
 	let response_json = {};
 	response_json["ok"] = response.ok;
 	response_json["statusText"] = response.statusText;
 
-	console.log(response_json);
 	return response_json;
 }

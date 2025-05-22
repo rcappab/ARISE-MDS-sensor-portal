@@ -18,10 +18,7 @@ const DetailDisplayTable = ({
 	const convertDates = function (key, value) {
 		if (timeKeys.includes(key)) {
 			let currentTime = value;
-
-			console.log(currentTime);
 			let dateTime = new Date(currentTime);
-			console.log(dateTime);
 			return dtFormat.format(dateTime);
 		} else {
 			return value;

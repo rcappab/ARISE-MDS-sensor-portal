@@ -1,8 +1,8 @@
 import React, { useContext, useState } from "react";
 import FormSelect from "./FormSelect.tsx";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import AuthContext from "../context/AuthContext";
-import { getData, postData } from "../utils/FetchFunctions";
+import AuthContext from "../../context/AuthContext.jsx";
+import { getData, postData } from "../../utils/FetchFunctions.js";
 
 interface Props {
 	name: string;
@@ -59,17 +59,15 @@ const FormSelectAPI = ({
 		if ("results" in response_json) {
 			response_json = response_json["results"];
 		}
-		//console.log(response_json);
 
 		let newOptions = response_json.map((x) => {
 			if (valueKey !== undefined && labelKey !== undefined) {
-				return { value: x[valueKey], label: x[labelKey] };
+				return { value: String(x[valueKey]), label: x[labelKey] };
 			} else {
-				return { value: x, label: x };
+				return { value: String(x), label: x };
 			}
 		});
 		let allOptions = choices.concat(newOptions);
-		//console.log(allOptions);
 		return allOptions;
 	};
 
@@ -80,8 +78,11 @@ const FormSelectAPI = ({
 
 	const handleCreate = async (newvalue: string) => {
 		let results = await doCreate.mutateAsync(newvalue);
-		let newoption = { label: results[labelKey], value: results[valueKey] };
-		return newoption;
+		if (labelKey && valueKey) {
+			return { label: results[labelKey], value: results[valueKey] };
+		} else {
+			return { value: results["value"], label: results["label"] };
+		}
 	};
 
 	const doCreate = useMutation({
@@ -97,14 +98,16 @@ const FormSelectAPI = ({
 
 	const newPOST = async (inputValue) => {
 		let newData = {};
-		newData[labelKey] = inputValue;
+		if (labelKey) {
+			newData[labelKey] = inputValue;
+		} else {
+			newData["label"] = inputValue;
+		}
+
 		let response_json = await postData(apiURL, authTokens.access, newData);
-		//console.log(response_json);
 		refetch();
 		return response_json;
 	};
-
-	//console.log(value);
 
 	return (
 		<FormSelect
