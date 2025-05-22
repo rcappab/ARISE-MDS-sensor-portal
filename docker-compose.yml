@@ -130,7 +130,7 @@ services:
     image: postgis/postgis:14-3.3
     shm_size: 1g
     volumes:
-      - /data/sensor_portal_database:/var/lib/postgresql/data:z
+      - /data/sensor_portal_db:/var/lib/postgresql/data:z
     environment:
       - POSTGRES_DB=${POSTGRES_NAME}
       - POSTGRES_USER=${POSTGRES_USER}
@@ -153,4 +153,4 @@ services:
     restart: always
 volumes:
   /data/file_storage:
-  /data/sensor_portal_database:
+  /data/sensor_portal_db:
