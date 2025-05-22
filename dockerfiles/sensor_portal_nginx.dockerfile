@@ -7,8 +7,8 @@ COPY ./nginx /etc/nginx
 
 ARG DEV
 RUN if [ "$DEV" != "TRUE" ]; then \
-    COPY /sensor_portal_docs_source /sensor_portal_docs; \
-    COPY /sensor_portal/static /backend_static; \
+    COPY ./sensor_portal_docs /sensor_portal_docs; \
+    COPY ./sensor_portal/static /backend_static; \
 fi
 
 
