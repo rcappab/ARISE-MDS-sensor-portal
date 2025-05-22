@@ -3,8 +3,6 @@ services:
       build: 
           context: .
           dockerfile: ./dockerfiles/sensor_portal_nginx.dockerfile
-          args: 
-            - DEV=FALSE
       ports:
           - "8080:80"
       depends_on:
