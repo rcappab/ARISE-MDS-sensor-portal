@@ -99,6 +99,37 @@ const Header = () => {
 							)}
 						</ul>
 						<ul className="navbar-nav ms-lg-auto">
+							<li className="nav-item dropdown">
+								<Link
+									className="nav-link dropdown-toggle"
+									role="button"
+									data-bs-toggle="dropdown"
+									aria-expanded="false"
+								>
+									Help
+								</Link>
+								<ul className="dropdown-menu dropdown-menu-end">
+									<li className="dropdown-item">
+										<NavLink
+											className="nav-link"
+											to="/docs/"
+											reloadDocument
+										>
+											Documentation
+										</NavLink>
+									</li>
+									<li className="dropdown-item">
+										<NavLink
+											className="nav-link"
+											to="/api/schema/swagger-ui/"
+											reloadDocument
+										>
+											API Schema
+										</NavLink>
+									</li>
+								</ul>
+							</li>
+
 							{user && (
 								<li className="nav-item dropdown">
 									<Link

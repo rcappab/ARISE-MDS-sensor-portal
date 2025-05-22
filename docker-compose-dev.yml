@@ -13,7 +13,10 @@ services:
           condition: service_started
           restart: true
       restart: unless-stopped
-      volumes:      
+      environment:
+        - DEV=True
+      volumes:
+        - ./sensor_portal_docs:/sensor_portal_docs      
         - ./file_storage:/file_storage
         - ./sensor_portal/static:/backend_static  
   sensor_portal_frontend:
