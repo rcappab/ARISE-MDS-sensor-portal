@@ -41,3 +41,5 @@ factories.DeploymentFactory()
 ```bash
 docker compose -f docker-compose-dev.yml exec sensor_portal_django pytest
 ```
+
+For active development please see: https://github.com/jevansbio/ARISE-MDS-sensor-portal/tree/Testing
