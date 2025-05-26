@@ -1,8 +1,11 @@
 # ARISE-MDS sensor portal
  
-This is a shareable version of the ARISE-MDS sensor portal. It is currently a work in progress. This documentation will be updated when the code approaches a release. Please note this branch is very much a WIP, and there may be a risk of breaking changes occasionally.
+This is a shareable version of the ARISE-MDS sensor portal. It is currently a work in progress. This documentation will be updated when the code approaches a release. Please note this is still WIP.
 
 ## Starting the project for the first time
+
+TODO: LIST REQUIRED ENV VARS FOR DEVELOPMENT AND PRODUCTION
+
 ```bash
 docker compose -f docker-compose-dev.yml build
 ```
