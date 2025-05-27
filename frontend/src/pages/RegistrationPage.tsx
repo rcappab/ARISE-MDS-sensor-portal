@@ -18,10 +18,13 @@ const RegistraionPage = () => {
 			return;
 		}
 
-		const token = await executeRecaptcha("register");
-		setCaptchaToken(token);
-		//verifyCaptcha(token);
-		// Do whatever you want with the token
+		await executeRecaptcha("register")
+			.then((result) => {
+				setCaptchaToken(result);
+			})
+			.catch((error) => {
+				console.error("Promise rejected with:", error);
+			});
 	}, [executeRecaptcha, setCaptchaToken]);
 
 	const postData = async function (url, data) {

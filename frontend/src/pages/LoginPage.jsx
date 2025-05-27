@@ -17,8 +17,14 @@ const LoginPage = () => {
 			return;
 		}
 
-		const token = await executeRecaptcha("login");
-		setCaptchaToken(token);
+		await executeRecaptcha("login")
+			.then((result) => {
+				setCaptchaToken(result);
+			})
+			.catch((error) => {
+				console.error("Promise rejected with:", error);
+			});
+
 		//verifyCaptcha(token);
 		// Do whatever you want with the token
 	}, [executeRecaptcha, setCaptchaToken]);
