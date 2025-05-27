@@ -7,36 +7,40 @@ import CaptchaText from "../components/General/CaptchaText.tsx";
 
 const LoginPage = () => {
 	const { loginUser } = useContext(AuthContext);
-	const [CaptchaToken, setCaptchaToken] = useState(null);
 	const { executeRecaptcha } = useGoogleReCaptcha();
 
 	// Create an event handler so you can call the verification on button click event or form submit
 	const handleReCaptchaVerify = useCallback(async () => {
 		if (!executeRecaptcha) {
 			console.log("Execute recaptcha not yet available");
-			return;
+			return null;
 		}
 
-		await executeRecaptcha("login")
-			.then((result) => {
-				setCaptchaToken(result);
-			})
-			.catch((error) => {
-				console.error("Promise rejected with:", error);
-			});
-	}, [executeRecaptcha, setCaptchaToken]);
-
-	function handleSubmission(e) {
-		e.preventDefault();
-		handleReCaptchaVerify();
-		const username = e.target.username.value;
-		const password = e.target.password.value;
-		if (CaptchaToken) {
-			loginUser(username, password, CaptchaToken);
-		} else {
-			console.log("Captcha token not set yet");
+		try {
+			const captchaToken = await executeRecaptcha("login");
+			return captchaToken;
+		} catch (error) {
+			console.error("ReCaptcha verification failed:", error);
+			return null;
 		}
-	}
+	}, [executeRecaptcha]);
+
+	const handleSubmission = useCallback(
+		async (e) => {
+			e.preventDefault();
+			const captchaToken = await handleReCaptchaVerify();
+
+			const username = e.target.username.value;
+			const password = e.target.password.value;
+
+			if (captchaToken) {
+				loginUser(username, password, captchaToken);
+			} else {
+				console.log("Captcha token not set yet");
+			}
+		},
+		[handleReCaptchaVerify, loginUser]
+	);
 
 	return (
 		<div className="d-flex justify-content-center align-items-center">
