@@ -3,7 +3,7 @@
 import pytest
 from data_models.factories import (DataFileFactory, DeploymentFactory,
                                    ProjectFactory)
-from observation_editor.factories import ObservationFactory
+from observation_editor.factories import ObservationFactory, TaxonFactory
 
 # Test no permission
 # Owner, manager, annotator, viewer
@@ -21,7 +21,7 @@ def obs_crud_check(api_client_with_credentials, data_file_pk, existing_owned_obs
     owned_observation_api_url = f'/api/observation/{existing_owned_observation_pk}/'
 
     payload = {"data_files": [data_file_pk],
-               "source": "human", "species_name": "homo sapiens"}
+               "source": "human", "species_name": "Erithacus rubecula"}
     print("add observation")
     response_create = api_client_with_credentials.post(
         api_url, data=payload, format="json")
@@ -32,7 +32,7 @@ def obs_crud_check(api_client_with_credentials, data_file_pk, existing_owned_obs
 
     response_get = api_client_with_credentials.get(
         observation_api_url, format="json")
-    print(f"Response: {response_get.data}")
+    print(f"Response get: {response_get.data}")
     assert response_get.status_code == expected_read_status
 
     # Try to edit existing observation
@@ -40,7 +40,7 @@ def obs_crud_check(api_client_with_credentials, data_file_pk, existing_owned_obs
     response_patch = api_client_with_credentials.patch(
         observation_api_url, {'species': 'vulpes vulpes'}, format='json')
 
-    print(f"Response: {response_patch.data}")
+    print(f"Response patch: {response_patch.data}")
     assert response_patch.status_code == expected_update_status
 
     # Try to edit owned observation to attach to data_file
@@ -48,14 +48,14 @@ def obs_crud_check(api_client_with_credentials, data_file_pk, existing_owned_obs
     response_patch_attach = api_client_with_credentials.patch(
         owned_observation_api_url, {'data_files': [data_file_pk]}, format='json')
 
-    print(f"Response: {response_patch_attach.data}")
+    print(f"Response patch attach: {response_patch_attach.data}")
     assert response_patch_attach.status_code == expected_reattach_status
 
-    # Try to delete existing observation
     response_delete = api_client_with_credentials.delete(
         observation_api_url)
 
-    print(response_delete.data)
+    print(f"Response delete: {response_delete} {response_delete.data}")
+
     assert response_delete.status_code == expected_delete_status
 
 
@@ -72,14 +72,17 @@ def obs_crud_setup(api_client_with_credentials, permission_object=None, permissi
     if permission_object is not None and permission_level is not None:
         getattr(object_dict[permission_object], permission_level).add(user)
 
+    taxon = TaxonFactory(species_name="Chroicocephalus ridibundus")
+
     data_file = DataFileFactory(deployment=deployment)
-    existing_observation = ObservationFactory(data_files=[data_file])
+    existing_observation = ObservationFactory(
+        data_files=[data_file], taxon=taxon)
 
     owned_project = ProjectFactory(owner=user)
     owned_deployment = DeploymentFactory(project=[owned_project])
     owned_data_file = DataFileFactory(deployment=owned_deployment)
     existing_owned_observation = ObservationFactory(
-        data_files=[owned_data_file], owner=user)
+        data_files=[owned_data_file], owner=user, taxon=taxon)
 
     data_file_pk = data_file.pk
     existing_observation_pk = existing_observation.pk
@@ -146,6 +149,8 @@ def test_annotator_permission(api_client_with_credentials, permission_object, pe
     expected_update_status = 403
     expected_reattach_status = 200
     expected_delete_status = 403
+
+    print(f"Test {permission_object} {permission_level}")
 
     obs_crud_check(api_client_with_credentials, data_file_pk, existing_owned_observation_pk, existing_observation_pk,
                    expected_create_status, expected_read_status, expected_update_status, expected_reattach_status,

@@ -12,7 +12,7 @@ class TaxonFactory(factory.django.DjangoModelFactory):
         django_get_or_create = ("species_name",)
 
     species_name = factory.Faker('random_element',
-                                 elements=["Homo sapiens",
+                                 elements=["Puffinus puffinus",
                                            "Chroicocephalus ridibundus",
                                            "vehicle"])
 

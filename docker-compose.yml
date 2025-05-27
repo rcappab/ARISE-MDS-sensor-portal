@@ -1,20 +1,20 @@
 services:
   sensor_portal_nginx:
-      build: 
-          context: .
-          dockerfile: ./dockerfiles/sensor_portal_nginx.dockerfile
-      ports:
-          - "8080:80"
-      depends_on:
-        sensor_portal_django:
-          condition: service_healthy
-          restart: true
-        sensor_portal_frontend:
-          condition: service_started
-          restart: true
-      restart: unless-stopped
-      volumes:
-        - ./file_storage:/file_storage
+    build: 
+        context: .
+        dockerfile: ./dockerfiles/sensor_portal_nginx.dockerfile
+    ports:
+        - "8080:80"
+    depends_on:
+      sensor_portal_django:
+        condition: service_healthy
+        restart: true
+      sensor_portal_frontend:
+        condition: service_started
+        restart: true
+    restart: unless-stopped
+    volumes:
+      - ./file_storage:/file_storage
   sensor_portal_frontend:
     build:
       context: .
