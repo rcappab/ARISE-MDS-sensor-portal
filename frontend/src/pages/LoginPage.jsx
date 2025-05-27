@@ -24,14 +24,7 @@ const LoginPage = () => {
 			.catch((error) => {
 				console.error("Promise rejected with:", error);
 			});
-
-		//verifyCaptcha(token);
-		// Do whatever you want with the token
 	}, [executeRecaptcha, setCaptchaToken]);
-
-	useEffect(() => {
-		handleReCaptchaVerify();
-	}, [handleReCaptchaVerify]);
 
 	function handleSubmission(e) {
 		e.preventDefault();
