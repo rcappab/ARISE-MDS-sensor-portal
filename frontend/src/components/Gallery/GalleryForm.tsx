@@ -22,6 +22,7 @@ interface Props {
 	pageNum: number;
 	onReset: (searchParams: any) => void;
 	selectedItemsCount?: number;
+	noData?: boolean;
 }
 
 function GalleryForm({
@@ -40,6 +41,7 @@ function GalleryForm({
 	fromID = undefined,
 	filterKey = undefined,
 	selectedItemsCount = 0,
+	noData = true,
 }: Props) {
 	const [searchParams] = useSearchParams();
 
@@ -182,7 +184,7 @@ function GalleryForm({
 					type="button"
 					className="btn btn-secondary ms-lg-2"
 					onClick={handleStartJob}
-					disabled={jobID === null}
+					disabled={jobID === null || noData}
 				>
 					Start job
 				</button>

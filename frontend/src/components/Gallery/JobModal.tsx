@@ -246,6 +246,14 @@ const JobModal = ({
 		if (jobIsLoading || isLoading || jobData === null) {
 			return null;
 		}
+		if (data["object_n"] === 0) {
+			return (
+				<div>
+					{" "}
+					<strong>No data</strong>
+				</div>
+			);
+		}
 		if (jobInfo["task_name"] === "create_data_package") {
 			return (
 				<DataBundleJobData
@@ -276,7 +284,7 @@ const JobModal = ({
 			modalShow={show}
 			headerChildren={"Start job"}
 		>
-			{isLoading || jobIsLoading || jobData === null ? (
+			{isLoading || jobIsLoading || jobData === null || data === null ? (
 				<Loading />
 			) : (
 				<div>
@@ -286,6 +294,7 @@ const JobModal = ({
 							type="button"
 							className="btn btn-primary btn-lg ms-lg-2"
 							onClick={onSubmit}
+							disabled={data["object_n"] === 0}
 						>
 							Start job
 						</button>

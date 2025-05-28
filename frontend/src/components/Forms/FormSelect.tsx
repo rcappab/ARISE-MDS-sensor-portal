@@ -72,7 +72,9 @@ const FormSelect = ({
 		}
 	};
 
-	const [setSelectedValue] = useState(objFromValue(choices, value) as any);
+	const [selectedValue, setSelectedValue] = useState(
+		objFromValue(choices, value) as any
+	);
 
 	const style = {
 		container: (baseStyles, state) => ({

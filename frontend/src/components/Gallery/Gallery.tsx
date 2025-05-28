@@ -405,6 +405,11 @@ const Gallery = () => {
 				filterKey={filterKey}
 				key={`${objectType}-${fromObject}-${fromID}`}
 				selectedItemsCount={selectedIndexes.length}
+				noData={
+					isLoading ||
+					data === undefined ||
+					(data && data.results && data.results.length === 0)
+				}
 			/>
 			{showGallery()}
 		</div>
