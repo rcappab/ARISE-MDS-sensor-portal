@@ -74,8 +74,8 @@ def check_device_status():
     Check if device has transmitted in the allotted time and email managers
     """
     bad_devices = Device.objects.filter(
-        # deployments__is_active=True,
-        # autoupdate=True,
+        deployments__is_active=True,
+        autoupdate=True,
     ).annotate(
         last_file_time=Max(
             'deployments__files__recording_dt')
@@ -89,13 +89,15 @@ def check_device_status():
     ).annotate(file_hours=ExtractHour('file_age'))
 
     # get all unique managers
-    all_bad_device_users = User.objects.filter(Q(owned_projects__deployments__device__in=bad_devices) |
-                                               Q(managed_projects__deployments__device__in=bad_devices) |
-                                               Q(owned_devices__in=bad_devices) |
-                                               Q(managed_devices__in=bad_devices) |
-                                               Q(managed_deployments__device__in=bad_devices) |
-                                               Q(owned_deployments__device__in=bad_devices)
-                                               ).distinct()
+    all_bad_device_users = User.objects.filter(
+        deviceuser__isnull=True).filter(
+            Q(owned_projects__deployments__device__in=bad_devices) |
+        Q(managed_projects__deployments__device__in=bad_devices) |
+        Q(owned_devices__in=bad_devices) |
+        Q(managed_devices__in=bad_devices) |
+        Q(managed_deployments__device__in=bad_devices) |
+        Q(owned_deployments__device__in=bad_devices)
+    ).distinct()
 
     bad_devices_values = bad_devices.values(
         'device_ID', 'name', 'file_hours')
