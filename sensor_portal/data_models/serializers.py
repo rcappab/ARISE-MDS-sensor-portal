@@ -272,10 +272,19 @@ class DeviceSerializer(OwnerMixIn, ManagerMixIn, CreatedModifiedMixIn, CheckForm
         return data
 
 
+class DataFileCheckSerializer(serializers.Serializer):
+    file_names = serializers.ListField(
+        child=serializers.CharField(), required=False
+    )
+    original_names = serializers.ListField(
+        child=serializers.CharField(), required=False
+    )
+
+
 class DataFileSerializer(CreatedModifiedMixIn, serializers.ModelSerializer):
     deployment = serializers.SlugRelatedField(
         slug_field='deployment_device_ID', queryset=Deployment.objects.all(), required=False)
-    deployment_ID = serializers.PrimaryKeyRelatedField(source="deployment", queryset=Device.objects.all(),
+    deployment_ID = serializers.PrimaryKeyRelatedField(source="deployment", queryset=Deployment.objects.all(),
                                                        required=False)
     file_type = serializers.StringRelatedField()
     recording_dt = serializers.DateTimeField(default_timezone=djtimezone.utc)
