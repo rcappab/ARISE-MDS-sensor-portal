@@ -25,7 +25,7 @@ class UserViewSet(viewsets.ModelViewSet):
             permission_classes = [IsAuthenticated]
         return [permission() for permission in permission_classes]
 
-    queryset = User.objects.all().distinct()
+    queryset = User.objects.filter(deviceuser__isnull=True).distinct()
 
 
 class UserProfileViewSet(viewsets.ModelViewSet):
@@ -35,7 +35,7 @@ class UserProfileViewSet(viewsets.ModelViewSet):
     search_fields = ['email',
                      'username', 'first_name', 'last_name', 'organisation']
     permission_classes = [IsAuthenticated]
-    queryset = User.objects.all().distinct()
+    queryset = User.objects.filter(deviceuser__isnull=True).distinct()
 
     def list(self, request, *args, **kwargs):
         return Response({"detail": "Method 'GET' not allowed."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)

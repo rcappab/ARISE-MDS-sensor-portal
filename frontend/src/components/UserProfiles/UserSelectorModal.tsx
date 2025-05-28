@@ -58,6 +58,7 @@ const UserSelectorModal = ({
 					onClose={() => {
 						setModalOpen(false);
 					}}
+					className="modal-xl"
 				/>
 			) : null}
 		</>
