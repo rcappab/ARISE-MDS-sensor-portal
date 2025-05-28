@@ -32,12 +32,12 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMixIn, ManagerMixIn, CreatedM
                                                    required=False)
     project = serializers.SlugRelatedField(many=True,
                                            slug_field='project_ID',
-                                           queryset=Project.objects.all(),
+                                           queryset=Project.objects.all().exclude(name=settings.GLOBAL_PROJECT_ID),
                                            allow_null=True,
                                            required=False)
     project_ID = serializers.PrimaryKeyRelatedField(source="project",
                                                     many=True,
-                                                    queryset=Project.objects.all(),
+                                                    queryset=Project.objects.all().exclude(name=settings.GLOBAL_PROJECT_ID),
                                                     required=False,
                                                     allow_null=True)
     site = SlugRelatedGetOrCreateField(slug_field='short_name',
@@ -59,6 +59,12 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMixIn, ManagerMixIn, CreatedM
     def to_representation(self, instance):
         initial_rep = super(DeploymentFieldsMixIn,
                             self).to_representation(instance)
+        projects_no_global = [(x, y) for x, y in zip(
+            initial_rep["project"], initial_rep["project_ID"]) if x != settings.GLOBAL_PROJECT_ID]
+
+        initial_rep["project"], initial_rep["project_ID"] = zip(
+            *projects_no_global) if projects_no_global else ([], [])
+
         if not self.context.get('request'):
             initial_rep.pop('thumb_url')
         return initial_rep

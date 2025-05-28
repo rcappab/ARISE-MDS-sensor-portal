@@ -113,7 +113,8 @@ class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, Check
 
 class ProjectViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
     serializer_class = ProjectSerializer
-    queryset = Project.objects.all().distinct()
+    queryset = Project.objects.all().distinct().exclude(
+        name=settings.GLOBAL_PROJECT_ID)
     filterset_class = ProjectFilter
     search_fields = ['project_ID', 'name', 'organization']
 
