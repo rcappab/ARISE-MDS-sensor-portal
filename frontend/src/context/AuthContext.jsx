@@ -3,12 +3,18 @@ import { jwtDecode } from "jwt-decode";
 import { Outlet, useNavigate } from "react-router-dom";
 import Header from "../pages/Header";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
 const AuthContext = createContext();
 
 export default AuthContext;
 
 export const AuthProvider = () => {
+	const startLoadingToast = () => {
+		const toastId = toast.loading("Loading...");
+		return toastId;
+	};
+
 	const [user, setUser] = useState(() =>
 		localStorage.getItem("authTokens")
 			? jwtDecode(localStorage.getItem("authTokens"))
@@ -23,6 +29,7 @@ export const AuthProvider = () => {
 	const navigate = useNavigate();
 
 	const loginUserFunction = async (username, password, recaptchaToken) => {
+		let toastId = startLoadingToast();
 		const response = await fetch(
 			`/${process.env.REACT_APP_API_BASE_URL}/token/`,
 			{
@@ -38,13 +45,21 @@ export const AuthProvider = () => {
 			}
 		);
 		let data = await response.json();
-		if (data) {
+		if (response.ok) {
+			toast.success("Logged in", {
+				id: toastId,
+			});
 			localStorage.setItem("authTokens", JSON.stringify(data));
 			setAuthTokens(data);
 			setUser(jwtDecode(data.access));
 			navigate("/");
 		} else {
-			alert("Something went wrong while loggin in the user!");
+			toast.error(
+				`Error logging in${data["detail"] ? ": " + data["detail"] : ""}`,
+				{
+					id: toastId,
+				}
+			);
 		}
 		return data;
 	};

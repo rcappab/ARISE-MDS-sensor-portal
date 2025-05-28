@@ -1,31 +1,29 @@
 import { useMutation } from "@tanstack/react-query";
 import React from "react";
-import { useState, useCallback, useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import CaptchaText from "../components/General/CaptchaText.tsx";
 
-const RegistraionPage = () => {
-	const [CaptchaToken, setCaptchaToken] = useState<string | null>(null);
+const RegistrationPage = () => {
 	const { executeRecaptcha } = useGoogleReCaptcha();
 	const navigate = useNavigate();
 
-	// Create an event handler so you can call the verification on button click event or form submit
 	const handleReCaptchaVerify = useCallback(async () => {
 		if (!executeRecaptcha) {
 			console.log("Execute recaptcha not yet available");
-			return;
+			return null;
 		}
 
-		await executeRecaptcha("register")
-			.then((result) => {
-				setCaptchaToken(result);
-			})
-			.catch((error) => {
-				console.error("Promise rejected with:", error);
-			});
-	}, [executeRecaptcha, setCaptchaToken]);
+		try {
+			const captchaToken = await executeRecaptcha("login");
+			return captchaToken;
+		} catch (error) {
+			console.error("ReCaptcha verification failed:", error);
+			return null;
+		}
+	}, [executeRecaptcha]);
 
 	const postData = async function (url, data) {
 		let response = await fetch(
@@ -62,17 +60,13 @@ const RegistraionPage = () => {
 		return toastId;
 	};
 
-	useEffect(() => {
-		handleReCaptchaVerify();
-	}, [handleReCaptchaVerify]);
-
 	const handleSubmission = async function (e) {
 		e.preventDefault();
-		handleReCaptchaVerify();
+		const captchaToken = await handleReCaptchaVerify();
 		let toastId = startLoadingToast();
 		let response;
 
-		if (CaptchaToken) {
+		if (captchaToken) {
 			const formData = new FormData(e.target);
 			const data = {
 				username: formData.get("username"),
@@ -83,7 +77,7 @@ const RegistraionPage = () => {
 				last_name: formData.get("last_name"),
 				organisation: formData.get("organisation"),
 				bio: formData.get("bio"),
-				recaptcha: CaptchaToken,
+				recaptcha: captchaToken,
 			};
 			response = await doPost.mutateAsync({
 				apiURL: `user/`,
@@ -254,7 +248,9 @@ const RegistraionPage = () => {
 				</div>
 			</div>
 			<div>
-				<p>Privacy Statement</p>
+				<p>
+					<strong>Privacy Statement</strong>
+				</p>
 				We collect and store the following personal data to manage access to
 				research data: first name, last name, email address, username, and a
 				hashed password. This information is securely stored on servers located
@@ -270,4 +266,4 @@ const RegistraionPage = () => {
 	);
 };
 
-export default RegistraionPage;
+export default RegistrationPage;

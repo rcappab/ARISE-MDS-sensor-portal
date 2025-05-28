@@ -1,5 +1,5 @@
 import React from "react";
-import { useContext, useState, useCallback, useEffect } from "react";
+import { useContext, useCallback } from "react";
 import AuthContext from "../context/AuthContext";
 import { useGoogleReCaptcha } from "react-google-recaptcha-v3";
 import { Link } from "react-router-dom";
@@ -9,7 +9,6 @@ const LoginPage = () => {
 	const { loginUser } = useContext(AuthContext);
 	const { executeRecaptcha } = useGoogleReCaptcha();
 
-	// Create an event handler so you can call the verification on button click event or form submit
 	const handleReCaptchaVerify = useCallback(async () => {
 		if (!executeRecaptcha) {
 			console.log("Execute recaptcha not yet available");
@@ -28,6 +27,7 @@ const LoginPage = () => {
 	const handleSubmission = useCallback(
 		async (e) => {
 			e.preventDefault();
+
 			const captchaToken = await handleReCaptchaVerify();
 
 			const username = e.target.username.value;
