@@ -73,6 +73,7 @@ const DeploymentMap = ({ deployments }: Props) => {
 
 	const setBounds = useCallback(() => {
 		if (!map) return;
+		if (deployments.length === 0) return;
 		let newBounds = featureGroupRef.current.getBounds();
 		map.fitBounds(newBounds);
 	}, [map]);
@@ -85,7 +86,7 @@ const DeploymentMap = ({ deployments }: Props) => {
 		<div>
 			<MapContainer
 				center={[0, 0]}
-				zoom={1}
+				zoom={3}
 				scrollWheelZoom={true}
 				style={{ height: "75vh", width: "100%" }}
 				whenReady={(e) => setMap(e.target)}
