@@ -26,11 +26,12 @@ from .models import (DataFile, DataType, Deployment, Device, DeviceModel,
                      Project, Site)
 from .permissions import perms
 from .plotting_functions import get_all_file_metric_dicts
-from .serializers import (DataFileSerializer, DataFileUploadSerializer,
-                          DataTypeSerializer, DeploymentSerializer,
-                          DeploymentSerializer_GeoJSON, DeviceModelSerializer,
-                          DeviceSerializer, GenericJobSerializer,
-                          ProjectSerializer, SiteSerializer)
+from .serializers import (DataFileCheckSerializer, DataFileSerializer,
+                          DataFileUploadSerializer, DataTypeSerializer,
+                          DeploymentSerializer, DeploymentSerializer_GeoJSON,
+                          DeviceModelSerializer, DeviceSerializer,
+                          GenericJobSerializer, ProjectSerializer,
+                          SiteSerializer)
 
 
 class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, CheckFormViewSetMixIn, OptionalPaginationViewSetMixIn):
@@ -224,13 +225,38 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
                      'deployment__deployment_device_ID',
                      'deployment__device__name',
                      'deployment__device__device_ID',
-                     '=tag']
+                     '=tag',
+                     'observation__taxon__species_name',
+                     'observation__taxon__common_name']
 
     def get_queryset(self):
         qs = DataFile.objects.all().distinct()
         if 'CTDP' in self.request.GET.keys():
             qs = get_ctdp_media_qs(qs)
         return qs
+
+    @action(detail=False, methods=['post'])
+    def check_existing(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = DataFileCheckSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({"detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        if (original_names := serializer.validated_data.get('original_names')):
+            existing_names = queryset.filter(
+                original_name__in=original_names).values_list('original_name', flat=True)
+            print(existing_names)
+            missing_names = [
+                x for x in original_names if x not in existing_names]
+        elif (file_names := serializer.validated_data.get('file_names')):
+            existing_names = queryset.filter(
+                file_name__in=file_names).values_list('file_name', flat=True)
+            missing_names = [
+                x for x in original_names if x not in existing_names]
+        else:
+            return Response({"detail": "Either 'original_names' or 'file_names' must be provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(missing_names, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'])
     def ids_count(self, request, *args, **kwargs):
