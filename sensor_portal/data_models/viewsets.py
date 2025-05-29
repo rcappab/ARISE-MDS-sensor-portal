@@ -330,12 +330,16 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
         data_types = instance.get('data_types')
         check_filename = instance.get('check_filename')
 
+        multipart = 'HTTP_CONTENT_RANGE' in request.META
+
         uploaded_files, invalid_files, existing_files, status_code = create_file_objects(
-            files, check_filename, recording_dt, extra_data, deployment_object, device_object, data_types, self.request.user)
+            files, check_filename, recording_dt, extra_data, deployment_object, device_object,
+            data_types, self.request.user, multipart)
 
-        print([x.pk for x in uploaded_files])
+        print(
+            f"Uploaded files: {uploaded_files}, Invalid files: {invalid_files}, Existing files: {existing_files}, Status code: {status_code}")
 
-        if status_code == status.HTTP_201_CREATED:
+        if len(uploaded_files) > 0:
             returned_data = DataFileSerializer(data=uploaded_files, many=True)
             returned_data.is_valid()
             uploaded_files = returned_data.data

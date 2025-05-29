@@ -330,7 +330,7 @@ class DataFileUploadSerializer(serializers.Serializer):
     file_names = serializers.ListField(child=serializers.CharField(
     ), required=False)
     extra_data = serializers.ListField(
-        child=serializers.JSONField(), required=False)
+        child=serializers.JSONField(binary=True), required=False)
     recording_dt = serializers.ListField(
         child=serializers.DateTimeField(), required=False)
     autoupdate = serializers.BooleanField(default=False)

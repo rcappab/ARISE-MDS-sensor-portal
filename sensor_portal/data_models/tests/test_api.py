@@ -1,3 +1,6 @@
+import hashlib
+import json
+import math
 import os
 from copy import copy
 from datetime import datetime as dt
@@ -10,6 +13,7 @@ from data_models.general_functions import create_image
 from data_models.models import DataFile
 from data_models.serializers import (DeploymentSerializer, DeviceSerializer,
                                      ProjectSerializer)
+from utils.general import read_in_chunks
 from utils.test_functions import (api_check_delete, api_check_post,
                                   api_check_update)
 
@@ -304,3 +308,89 @@ def test_CRUD_datafile_by_device(api_client_with_credentials):
     assert not os.path.exists(file_path)
 
 # Test file update
+# Test file creation with a single deployment
+
+
+@pytest.mark.django_db
+def test_multipart_datafile(api_client_with_credentials):
+    """
+    Test: Test multipart file upload.
+    """
+
+    user = api_client_with_credentials.handler._force_user
+
+    test_date_time = dt(1066, 1, 2, 0, 0, 0)
+
+    new_item = DeploymentFactory(
+        owner=user, deployment_start=dt(1066, 1, 1, 0, 0, 0))
+
+    recording_dt = [test_date_time]
+
+    # Generate a file
+    temp = BytesIO()
+
+    test_image = create_image()
+    test_image.save(temp, format="JPEG")
+
+    temp.seek(0)
+    content_size = len(temp.getvalue())
+
+    hash_md5 = hashlib.md5()
+    for chunk in iter(lambda: temp.read(4096), b""):
+        hash_md5.update(chunk)
+    temp.seek(0)  # Reset the BytesIO object to the start after reading
+    checksum = hash_md5.hexdigest()
+
+    # Split temp into chunks
+    chunk_size = math.ceil(content_size/3)
+    total_offset = 0
+    for idx, chunk in enumerate(read_in_chunks(temp, chunk_size)):
+        total_offset += chunk_size
+        chunk_file = BytesIO(chunk)
+        chunk_file.name = "test_file_part.jpeg"
+
+        headers = {}
+        headers['Content-Range'] = f'bytes {total_offset}/{content_size}'
+
+        extra_data = {}
+        final_chunk = (total_offset/content_size) >= 1
+        if final_chunk:
+            extra_data["md5_checksum"] = checksum
+
+        api_url = '/api/datafile/'
+        payload = {
+            "deployment": new_item.deployment_device_ID,
+            "files": [chunk_file],
+            "recording_dt": recording_dt,
+            "extra_data": [json.dumps(extra_data)]
+        }
+
+        response_create = api_client_with_credentials.post(
+            api_url, data=payload,  format='multipart', headers=headers)
+        response_create_json = response_create.data
+
+        print(f"Response: {response_create_json}")
+        if final_chunk:
+            assert response_create.status_code == 200
+        elif idx == 0:
+            assert response_create.status_code == 201
+        else:
+            assert response_create.status_code == 100
+
+        assert response_create_json["uploaded_files"][0]["original_name"] == chunk_file.name
+
+    file_object = DataFile.objects.get(
+        file_name=response_create_json["uploaded_files"][0]["file_name"])
+    file_path = file_object.full_path()
+
+    assert os.path.exists(file_path)
+
+    object_url = f"{api_url}{file_object.pk}/"
+
+    # delete the object and clear the file
+    response_delete = api_client_with_credentials.delete(
+        object_url, format="json")
+    print(f"Response: {response_delete}")
+    assert response_delete.status_code == 204
+
+    assert not os.path.exists(file_path)
