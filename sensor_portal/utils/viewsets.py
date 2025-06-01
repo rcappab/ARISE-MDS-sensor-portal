@@ -4,13 +4,14 @@ from rest_framework.viewsets import ModelViewSet
 
 class OptionalPaginationViewSetMixIn(ModelViewSet):
     """By default, paginate_queryset returns None when no paginator is set. This extends
-    it to also return None if no 'page' query param is set"""
+    it to also return None if no 'page' query param is set, so long as the queryset is not too large"""
 
     def paginate_queryset(self, queryset):
         if self.paginator \
-                and self.request.query_params.get(self.paginator.page_query_param, None) is None \
-                and queryset.count() < settings.REST_FRAMEWORK['MAX_PAGE_SIZE']:
-            return None
+                and self.request.query_params.get(self.paginator.page_size_query_param, None) is None \
+                and self.request.query_params.get(self.paginator.page_query_param, None) is None:
+            if queryset.approx_count() < settings.REST_FRAMEWORK['MAX_PAGE_SIZE']:
+                return None
         return super().paginate_queryset(queryset)
 
 

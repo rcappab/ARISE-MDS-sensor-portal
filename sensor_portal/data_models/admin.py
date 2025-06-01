@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib import admin
 from utils.admin import AddOwnerAdmin, GenericAdmin
+from utils.paginators import LargeTablePaginator
 
 from .forms import DeviceForm
 from .models import (DataFile, DataType, Deployment, Device, DeviceModel,
@@ -70,6 +71,7 @@ class FileAdmin(GenericAdmin):
     list_filter = ['archived', 'local_storage', 'file_type']
     readonly_fields = GenericAdmin.readonly_fields + \
         ["upload_dt", "original_name", "local_path", "path", "file_url", "thumb_url"]
+    paginator = LargeTablePaginator
 
 
 @admin.register(ProjectJob)

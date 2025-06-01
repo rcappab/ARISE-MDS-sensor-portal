@@ -1,8 +1,11 @@
 from django.contrib import admin
 
+from .paginators import LargeTablePaginator
+
 
 class GenericAdmin(admin.ModelAdmin):
     readonly_fields = ['created_on', 'modified_on']
+    paginator = LargeTablePaginator
 
 
 class AddOwnerAdmin(GenericAdmin):

@@ -22,6 +22,7 @@ from sizefield.models import FileSizeField
 from timezone_field import TimeZoneField
 from utils.general import convert_unit
 from utils.models import BaseModel
+from utils.querysets import ApproximateCountQuerySet
 
 from . import validators
 from .general_functions import check_dt
@@ -396,7 +397,7 @@ class Deployment(BaseModel):
             self.thumb_url = None
 
 
-class DataFileQuerySet(models.QuerySet):
+class DataFileQuerySet(ApproximateCountQuerySet):
     def full_paths(self):
         self = self.relative_paths()
         return self.annotate(full_path=Concat(F('local_path'), Value(os.sep), F('relative_path')))

@@ -6,6 +6,7 @@ from django.db.models.signals import m2m_changed, post_delete, post_save
 from django.dispatch import receiver
 from requests.exceptions import ConnectionError, ConnectTimeout
 from utils.models import BaseModel
+from utils.querysets import ApproximateCountQuerySet
 
 from .GBIF_functions import (GBIF_get_species, GBIF_taxoncode_from_search,
                              GBIF_to_avibase)
@@ -29,7 +30,7 @@ taxonomic_level_choice = (
 )
 
 
-class TaxonQuerySet(models.QuerySet):
+class TaxonQuerySet(ApproximateCountQuerySet):
     def get_taxonomic_level(self, target_level=1):
         annotated_qs = self.annotate(
             parent_taxon_pk=Case(
@@ -122,7 +123,7 @@ def post_taxon_save(sender, instance, created, **kwargs):
         create_taxon_parents.apply_async([instance.pk])
 
 
-class ObservationQuerySet(models.QuerySet):
+class ObservationQuerySet(ApproximateCountQuerySet):
     def get_taxonomic_level(self, target_level=1):
         annotated_qs = self.annotate(
             parent_taxon_pk=Case(

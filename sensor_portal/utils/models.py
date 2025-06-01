@@ -1,4 +1,5 @@
 from django.db import models
+from utils.querysets import ApproximateCountQuerySet
 
 
 class BaseModel(models.Model):
@@ -14,3 +15,5 @@ class BaseModel(models.Model):
     def save(self, *args, **kwargs):
         self.clean()
         return super().save(*args, **kwargs)
+
+    objects = ApproximateCountQuerySet
