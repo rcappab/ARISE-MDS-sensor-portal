@@ -1,10 +1,11 @@
 from django.db import models
-from utils.querysets import ApproximateCountManager
+from utils.querysets import ApproximateCountQuerySet
 
 
 class BaseModel(models.Model):
     created_on = models.DateTimeField(auto_now_add=True)
     modified_on = models.DateTimeField(auto_now=True)
+    objects = ApproximateCountQuerySet.as_manager()
 
     class Meta:
         abstract = True
@@ -15,5 +16,3 @@ class BaseModel(models.Model):
     def save(self, *args, **kwargs):
         self.clean()
         return super().save(*args, **kwargs)
-
-    objects = ApproximateCountManager
