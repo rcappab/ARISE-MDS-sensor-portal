@@ -73,7 +73,7 @@ const DeploymentMap = ({ deployments }: Props) => {
 
 	const setBounds = useCallback(() => {
 		if (!map) return;
-		if (deployments.length === 0) return;
+		if (!deployments || deployments.length === 0) return;
 		let newBounds = featureGroupRef.current.getBounds();
 		map.fitBounds(newBounds);
 	}, [map]);
@@ -95,15 +95,16 @@ const DeploymentMap = ({ deployments }: Props) => {
 					attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 					url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
 				/>
-				<FeatureGroup ref={featureGroupRef}>
-					{deployments.map((deploymentData) => {
-						let latLng = {
-							lat: deploymentData.latitude,
-							lng: deploymentData.longitude,
-						};
-						return (
-							<>
+				{deployments && (
+					<FeatureGroup ref={featureGroupRef}>
+						{deployments.map((deploymentData) => {
+							let latLng = {
+								lat: deploymentData.latitude,
+								lng: deploymentData.longitude,
+							};
+							return (
 								<CompMarker
+									key={deploymentData.deployment_device_ID}
 									position={latLng}
 									icon={
 										<DeploymentIcon
@@ -114,10 +115,10 @@ const DeploymentMap = ({ deployments }: Props) => {
 								>
 									<Popup>{deploymentData.deployment_device_ID}</Popup>
 								</CompMarker>
-							</>
-						);
-					})}
-				</FeatureGroup>
+							);
+						})}
+					</FeatureGroup>
+				)}
 				<UserLocationMarker />
 				<ResetLocation
 					handleChangeLatLong={(e) => {

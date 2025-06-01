@@ -10,8 +10,11 @@ const HomePage = () => {
 	const { authTokens, user } = useContext(AuthContext);
 
 	const getDataFunc = async () => {
-		let apiURL = `${"deployment"}/`;
+		let apiURL = `${"deployment"}/?is_active=True`;
 		let response_json = await getData(apiURL, authTokens.access);
+		if (response_json.hasOwnProperty("results")) {
+			return response_json.results;
+		}
 		return response_json;
 	};
 

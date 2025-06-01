@@ -1,5 +1,5 @@
 from django.db import models
-from utils.querysets import ApproximateCountQuerySet
+from utils.querysets import ApproximateCountManager
 
 
 class BaseModel(models.Model):
@@ -16,4 +16,4 @@ class BaseModel(models.Model):
         self.clean()
         return super().save(*args, **kwargs)
 
-    objects = ApproximateCountQuerySet
+    objects = ApproximateCountManager
