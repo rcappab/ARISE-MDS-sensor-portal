@@ -68,7 +68,7 @@ const DetailDisplayFile = ({ fileData }: Props) => {
 	}, []);
 
 	const getDataFunc = async () => {
-		let apiURL = `observation/?data_files=${fileData["id"]}`;
+		let apiURL = `observation/?data_files=${fileData["id"]}&page_size=50`;
 		let response_json = await getData(apiURL, authTokens.access);
 		setTempObsData(response_json);
 		return response_json;
