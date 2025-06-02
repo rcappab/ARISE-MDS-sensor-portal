@@ -303,16 +303,18 @@ CELERY_BEAT_SCHEDULE = {
         "task": "data_models.tasks.check_deployment_active",
         "schedule": crontab(minute="0", hour="*"),
     },
-    "check_device_status": {
-        "task": "data_models.tasks.check_device_status",
-        "schedule": crontab(hour="12", minute="0",
-                            day_of_week="mon-fri"),
-    },
     "clean_local_storage": {
         "task": "data_models.tasks.clean_all_files",
         "schedule": crontab(hour="1", minute="0"),
     },
 }
+
+if not DEVMODE:
+    CELERY_BEAT_SCHEDULE["check_device_status"] = {
+        "task": "data_models.tasks.check_device_status",
+        "schedule": crontab(hour="12", minute="0",
+                            day_of_week="mon-fri"),
+    },
 
 # SENSOR-PORTAL SETTINGS
 # name of the global project all deployments will be added to.
