@@ -12,7 +12,7 @@ from .models import (DataFile, DataType, Deployment, Device, DeviceModel,
 
 @admin.register(DataType, DeviceModel)
 class GenericAdmin(GenericAdmin):
-    pass
+    paginator = LargeTablePaginator
 
 
 @admin.register(Site)
@@ -71,7 +71,6 @@ class FileAdmin(GenericAdmin):
     list_filter = ['archived', 'local_storage', 'file_type']
     readonly_fields = GenericAdmin.readonly_fields + \
         ["upload_dt", "original_name", "local_path", "path", "file_url", "thumb_url"]
-    paginator = LargeTablePaginator
 
 
 @admin.register(ProjectJob)

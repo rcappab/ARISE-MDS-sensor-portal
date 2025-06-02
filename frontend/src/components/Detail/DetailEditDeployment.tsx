@@ -173,7 +173,7 @@ const DetailEditDeployment = ({
 							label="Device type"
 							choices={[]}
 							value={device_type_ID}
-							apiURL="datatype/"
+							apiURL="datatype/?page_size=20"
 							valueKey="id"
 							labelKey="name"
 							handleChange={setDevice_type_ID}
@@ -228,7 +228,11 @@ const DetailEditDeployment = ({
 							label="Device"
 							choices={[]}
 							value={device_ID}
-							apiURL={device_type_ID ? `device/?type=${device_type_ID}` : ""}
+							apiURL={
+								device_type_ID
+									? `device/?type=${device_type_ID}&page_size=50`
+									: ""
+							}
 							valueKey="id"
 							labelKey="device_ID"
 							creatable={false}
@@ -280,7 +284,7 @@ const DetailEditDeployment = ({
 							label="Site"
 							choices={[]}
 							value={site_ID}
-							apiURL="site/"
+							apiURL="site/?page_size=50"
 							valueKey="id"
 							labelKey="name"
 							creatable={true}

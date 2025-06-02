@@ -30,21 +30,21 @@ class LargeTablePaginator(Paginator):
         except OperationalError:
             pass
 
-        if not self.object_list.query.where:
-            try:
-                with transaction.atomic(), connection.cursor() as cursor:
-                    # Obtain estimated values (only valid with PostgreSQL)
-                    cursor.execute('SET LOCAL statement_timeout TO 300;')
-                    cursor.execute(
-                        "SELECT reltuples FROM pg_class WHERE relname = %s",
-                        [self.object_list.query.model._meta.db_table]
-                    )
-                    estimate = int(cursor.fetchone()[0])
-                    return estimate
-            except OperationalError:
-                pass
-            except Exception:
-                pass
+        # if not self.object_list.query.where:
+        try:
+            with transaction.atomic(), connection.cursor() as cursor:
+                # Obtain estimated values (only valid with PostgreSQL)
+                cursor.execute('SET LOCAL statement_timeout TO 300;')
+                cursor.execute(
+                    "SELECT reltuples FROM pg_class WHERE relname = %s",
+                    [self.object_list.query.model._meta.db_table]
+                )
+                estimate = int(cursor.fetchone()[0])
+                return estimate
+        except OperationalError:
+            pass
+        except Exception:
+            pass
 
         return 9999999999
 

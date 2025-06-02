@@ -330,7 +330,7 @@ function GalleryForm({
 						label="All"
 						choices={[]}
 						value={filterData.site}
-						apiURL="site/"
+						apiURL="site/?page_size=20"
 						valueKey="id"
 						labelKey="short_name"
 						handleChange={(newValue) => setNewDataValue("site", newValue)}
@@ -354,7 +354,7 @@ function GalleryForm({
 						label="All"
 						choices={[]}
 						value={filterData.device_type}
-						apiURL="datatype/?device_type=true"
+						apiURL="datatype/?device_type=true&page_size=20"
 						valueKey="id"
 						labelKey="name"
 						handleChange={(newValue) =>
@@ -380,7 +380,7 @@ function GalleryForm({
 						label="All"
 						choices={[]}
 						value={filterData.file_type}
-						apiURL="datatype/?file_type=true"
+						apiURL="datatype/?file_type=true&page_size=20"
 						valueKey="id"
 						labelKey="name"
 						handleChange={(newValue) => setNewDataValue("file_type", newValue)}

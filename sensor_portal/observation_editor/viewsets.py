@@ -3,11 +3,8 @@ from camtrap_dp_export.serializers import ObservationSerializerCTDP
 from rest_framework import pagination, status, viewsets
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
-from utils.viewsets import (
-    AddOwnerViewSetMixIn,
-    CheckAttachmentViewSetMixIn,
-    OptionalPaginationViewSetMixIn,
-)
+from utils.viewsets import (AddOwnerViewSetMixIn, CheckAttachmentViewSetMixIn,
+                            OptionalPaginationViewSetMixIn)
 
 from .filtersets import ObservationFilter
 from .GBIF_functions import GBIF_species_search
@@ -18,7 +15,7 @@ from .serializers import EvenShorterTaxonSerialier, ObservationSerializer
 class ObservationViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
     search_fields = ["taxon__species_name", "taxon__species_common_name"]
     ordering_fields = ["obs_dt", "created_on"]
-    queryset = Observation.objects.all().distinct()
+    queryset = Observation.objects.all().prefetch_related("taxon").distinct()
     serializer_class = ObservationSerializer
     filterset_class = ObservationFilter
 

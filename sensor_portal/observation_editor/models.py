@@ -154,10 +154,10 @@ class Observation(BaseModel):
                               on_delete=models.SET_NULL, null=True)
     label = models.CharField(max_length=300, blank=True, editable=False)
     taxon = models.ForeignKey(
-        Taxon, on_delete=models.PROTECT, related_name="observations", null=True)
+        Taxon, on_delete=models.PROTECT, related_name="observations", null=True, db_index=True)
 
     data_files = models.ManyToManyField(
-        DataFile, related_name="observations")
+        DataFile, related_name="observations", db_index=True)
     obs_dt = models.DateTimeField(null=True, blank=True)
     source = models.CharField(max_length=100, default="human")
     number = models.IntegerField(default=1)

@@ -41,7 +41,7 @@ const FormSelectAPI = ({
 	handleChange = () => {},
 	valid = true,
 }: Props) => {
-	const { authTokens } = useContext(AuthContext);
+	const { user, authTokens } = useContext(AuthContext);
 	const [searchString, setSearchString] = useState(value);
 	const getDataFunc = async () => {
 		if (apiURL === "") {
@@ -72,8 +72,9 @@ const FormSelectAPI = ({
 	};
 
 	const { data, isLoading, refetch } = useQuery({
-		queryKey: [apiURL],
+		queryKey: [user, apiURL],
 		queryFn: getDataFunc,
+		refetchOnWindowFocus: false,
 	});
 
 	const handleCreate = async (newvalue: string) => {

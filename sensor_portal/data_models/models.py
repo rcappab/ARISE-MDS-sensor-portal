@@ -79,7 +79,7 @@ class Project(BaseModel):
 
     # User ownership
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, related_name="owned_projects",
-                              on_delete=models.SET_NULL, null=True)
+                              on_delete=models.SET_NULL, null=True, db_index=True)
     managers = models.ManyToManyField(
         settings.AUTH_USER_MODEL, blank=True, related_name="managed_projects")
     viewers = models.ManyToManyField(
@@ -133,7 +133,7 @@ class Device(BaseModel):
 
     # User ownership
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, related_name="owned_devices",
-                              on_delete=models.SET_NULL, null=True)
+                              on_delete=models.SET_NULL, null=True, db_index=True)
     managers = models.ManyToManyField(
         settings.AUTH_USER_MODEL, blank=True, related_name="managed_devices")
     viewers = models.ManyToManyField(
@@ -291,7 +291,7 @@ class Deployment(BaseModel):
 
     # User ownership
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, related_name="owned_deployments",
-                              on_delete=models.SET_NULL, null=True)
+                              on_delete=models.SET_NULL, null=True, db_index=True)
     managers = models.ManyToManyField(
         settings.AUTH_USER_MODEL, blank=True, related_name="managed_deployments")
     viewers = models.ManyToManyField(

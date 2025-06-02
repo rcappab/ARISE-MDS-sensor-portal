@@ -155,7 +155,7 @@ const DetailEditDevice = ({
 							label="Device type"
 							choices={[]}
 							value={typeID}
-							apiURL="datatype/"
+							apiURL="datatype/?page_size=50"
 							valueKey="id"
 							labelKey="name"
 							handleChange={setTypeID}
@@ -183,7 +183,11 @@ const DetailEditDevice = ({
 							label="Device model"
 							choices={[]}
 							value={modelID}
-							apiURL={typeID !== null ? `devicemodel/?type=${typeID}` : ""}
+							apiURL={
+								typeID !== null
+									? `devicemodel/?type=${typeID}&page_size=50`
+									: ""
+							}
 							valueKey="id"
 							labelKey="name"
 							handleChange={setModelID}
@@ -215,7 +219,7 @@ const DetailEditDevice = ({
 								label="Input storage"
 								choices={[]}
 								value={storageID}
-								apiURL="datastorageinput/"
+								apiURL="datastorageinput/?page_size=50"
 								valueKey="id"
 								labelKey="name"
 								apiSearchKey={"name"}

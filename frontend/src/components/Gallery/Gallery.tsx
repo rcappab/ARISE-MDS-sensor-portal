@@ -21,7 +21,7 @@ const Gallery = () => {
 	const { fromID, fromObject, objectType, nameKey, filterKey } =
 		useObjectType();
 
-	const defaultPageSize = 28;
+	const defaultPageSize = 30;
 	const [searchParams, setSearchParams] = useSearchParams();
 	const [formKeys, setFormKeys] = useState<String[]>([]);
 	const [pageNum, setPageNum] = useState(Number(searchParams.get("page")) || 1);
@@ -46,7 +46,7 @@ const Gallery = () => {
 		];
 		defaultTableMode = false;
 	} else if (objectType === "datafile") {
-		defaultOrdering = "recording_dt";
+		defaultOrdering = "-recording_dt";
 		additionalOrdering = [
 			{ value: "recording_dt", label: "Recording datetime ascending" },
 			{ value: "-recording_dt", label: "Recording datetime descending" },
@@ -124,6 +124,7 @@ const Gallery = () => {
 		queryFn: () => getDataFunc(searchParams),
 		enabled: searchParams.size > 0,
 		placeholderData: keepPreviousData,
+		refetchOnWindowFocus: false,
 	});
 
 	const newDELETE = async function (objID) {

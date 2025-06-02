@@ -222,16 +222,13 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
     filterset_class = DataFileFilter
 
     search_fields = ['file_name',
-                     'deployment__deployment_device_ID',
-                     'deployment__device__name',
-                     'deployment__device__device_ID',
                      '=tag',
                      'observations__taxon__species_name',
                      'observations__taxon__species_common_name']
 
     def get_queryset(self):
         qs = DataFile.objects.prefetch_related(
-            "observations", "observations__taxon", "deployment", "deployment__device").all().distinct()
+            "observations", "observations__taxon").all().distinct()
         if 'CTDP' in self.request.GET.keys():
             qs = get_ctdp_media_qs(qs)
         return qs
