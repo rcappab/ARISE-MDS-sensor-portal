@@ -106,17 +106,22 @@ def check_device_status():
         # for each manager, get their bad devices
         users_bad_devices = perms['data_models.change_device'].filter(
             user, bad_devices_values).distinct()
+
+        if not users_bad_devices.exists():
+            continue
+
         device_list = [
             f'{x.get("device_ID")} - {x.get("name")} - {x.get("file_hours")}' for x in users_bad_devices]
-        device_list_string = "\n".join(device_list)
+        device_list_string = " \n".join(device_list)
 
         # send them an email
         email_body = f"""
-        Dear {user.first_name} {user.last_name} 
-        
-        The following devices which you manage have not transmitted in their alloted time:
+        Dear {user.first_name} {user.last_name},\n
+        \n
+        The following devices which you manage have not transmitted in their alloted time: \n
         {device_list_string}
         """
+
         send_email_to_user(
             user,
             subject=f"{Site.objects.get_current().name} - {users_bad_devices.count()} devices have not transmitted in alloted time",
