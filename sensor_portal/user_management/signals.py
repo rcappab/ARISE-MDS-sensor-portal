@@ -45,6 +45,17 @@ def on_change(sender, instance: User, **kwargs):
                 If you feel this was an error, please contact your system administrator.""")
                 pass
 
+        if previous.password != instance.password:
+            if instance.is_active:
+                # Send email alerting user their password was changed
+                send_email_to_user(instance,
+                                   f"{Site.objects.get_current().name} - Password was changed",
+                                   f"""Your account at {Site.objects.get_current().name} has had its password changed. \n
+                                If you did not request this password change, contact your system administrator immediately.""")
+                # Set a users owned devices device users password to be their new password
+                DeviceUser.objects.filter(device__in=instance.owned_devices, password=previous.password).update(
+                    password=instance.password)
+
 
 @receiver(reset_password_token_created)
 def password_reset_token_created(sender, instance, reset_password_token, *args, **kwargs):
@@ -100,10 +111,13 @@ def post_save_device(sender, instance, created, **kwargs):
         device_user = DeviceUser(username=user_name,
                                  device=instance,
                                  is_active=True)
-        if (instance.password is not None) and (instance.password != ""):
-            device_user.password = instance.password
+        # if (instance.password is not None) and (instance.password != ""):
+        #     device_user.password = instance.password
         if instance.owner:
             device_user.email = instance.owner.email
+            if (instance.password is not None) and (instance.password != ""):
+                # Set device user password to owner password
+                device_user.password = instance.owner.password
         device_user.save()
 
     # always make sure device user as a manager
