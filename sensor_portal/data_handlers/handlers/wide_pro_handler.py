@@ -59,12 +59,24 @@ class Snyper4GHandler(DataTypeHandler):
         else:
             split_image_filename = split_filename[0].split("-")
 
-            match split_image_filename[1]:
+            expected_codes = ["TL", "DR", "ME", "RC"]
+
+            type_code = split_image_filename[1]
+            # Support some different software versions
+            if type_code not in expected_codes:
+                type_code = split_image_filename[0]
+
+            if type_code not in expected_codes:
+                type_code = "ME"
+
+            match type_code:
                 case "TL":
                     data_type = "timelapsecamera"
                 case "DR":
                     data_type = "timelapsecamera"
                     extra_data["daily_report"] = True
+                case "RC":
+                    extra_data["manual_trigger"] = True
                 case "ME":
                     data_type = "wildlifecamera"
                 case _:
