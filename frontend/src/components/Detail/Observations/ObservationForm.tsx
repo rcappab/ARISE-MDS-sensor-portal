@@ -155,6 +155,10 @@ const ObservationFormRow = ({
 }: obsFormRowProps) => {
 	const [hover, setHover] = useState(false);
 
+	const canDraw = [".jpg", ".jpeg", ".png"].includes(
+		fileData["file_format"].toLowerCase()
+	);
+
 	const handleHover = useCallback(
 		(hover) => {
 			setHover(hover);
@@ -338,6 +342,7 @@ const ObservationFormRow = ({
 					<button
 						onClick={handleStartEditBoundingBox}
 						className="btn btn-secondary btn-sm"
+						disabled={!canDraw}
 					>
 						Draw box
 					</button>
