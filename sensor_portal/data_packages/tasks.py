@@ -51,11 +51,13 @@ def start_make_data_package_task(datafile_pks, user_pk, metadata_type=0, include
             all_package_pks.append(new_file_bundle.pk)
 
         archived_files = file_objs.filter(local_storage=False, archived=True)
-        if archived_files.exists():
+        if archived_files.exists() and ((not settings.ONLY_SUPER_UNARCHIVE) or
+                                        (settings.ONLY_SUPER_UNARCHIVE and user.is_superuser)):
             bundle_objs = DataPackage.objects.filter(pk__in=all_package_pks)
             bundle_objs.update(status=1)
             archive_callback = make_data_package_task.si(all_package_pks).on_error(
                 fail_data_package_task.si(all_package_pks))
+
             get_files_from_archive_task(datafile_pks, archive_callback)
             return
         else:
