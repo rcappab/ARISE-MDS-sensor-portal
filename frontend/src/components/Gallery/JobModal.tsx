@@ -160,6 +160,7 @@ const JobModal = ({
 			queryKey: ["data", objectType, user, "count", searchParams.toString()],
 			queryFn: () => getDataFunc(),
 			enabled: show,
+			refetchOnWindowFocus: false,
 		});
 
 	const {

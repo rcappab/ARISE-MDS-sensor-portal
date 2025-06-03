@@ -69,6 +69,7 @@ const ObjectDetailPage = ({
 	} = useQuery({
 		queryKey: ["data", user, fromID],
 		queryFn: () => getDataFunc(),
+		refetchOnWindowFocus: false,
 	});
 
 	const newDELETE = async function (objID) {

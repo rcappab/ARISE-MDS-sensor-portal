@@ -188,7 +188,9 @@ const UploadFile: React.FC<UploadFileProps> = ({ id, objectType }) => {
 					id: toastId,
 				}
 			);
-			setErrorDict(response);
+			if (response.hasOwnProperty("file_success")) {
+				setErrorDict(response);
+			}
 		} else {
 			toast.success("All files uploaded", {
 				id: toastId,
@@ -228,17 +230,28 @@ const UploadFile: React.FC<UploadFileProps> = ({ id, objectType }) => {
 								/>
 							</div>
 						</div>
-
-						<input
-							type="file"
-							id="file"
-							name="file"
-							multiple
-							ref={filesRef}
-							onChange={updateCanUpload}
-							className="form-control"
-							webkitdirectory={dirMode ? "true" : "false"}
-						/>
+						{dirMode ? (
+							<input
+								type="file"
+								id="file"
+								name="file"
+								multiple
+								ref={filesRef}
+								onChange={updateCanUpload}
+								className="form-control"
+								webkitdirectory="true"
+							/>
+						) : (
+							<input
+								type="file"
+								id="file"
+								name="file"
+								multiple
+								ref={filesRef}
+								onChange={updateCanUpload}
+								className="form-control"
+							/>
+						)}
 					</div>
 					{Object.keys(errorDict).length > 0 && (
 						<FileStatusDisplay

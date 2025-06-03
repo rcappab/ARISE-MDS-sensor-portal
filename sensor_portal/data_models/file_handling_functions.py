@@ -2,8 +2,7 @@ import itertools
 import os
 from datetime import datetime as dt
 
-from celery import chain, chord
-from data_handlers.base_data_handler_class import DataTypeHandlerCollection
+from celery import chain
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.utils import timezone as djtimezone
@@ -473,6 +472,7 @@ def create_file_objects(files, check_filename=False, recording_dt=None, extra_da
         # For unique tasks, fire off jobs to perform them
         unique_tasks = list(
             set([x for x in all_handler_tasks if x is not None]))
+
         if len(unique_tasks) > 0:
             for task_name in unique_tasks:
                 # get filenames for this task

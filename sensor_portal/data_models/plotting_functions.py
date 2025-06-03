@@ -1,9 +1,11 @@
-from .models import DataFile
-from django.db.models import Count, Sum
-from datetime import datetime
-import pandas as pd
-import numpy as np
 import os
+from datetime import datetime
+
+import numpy as np
+import pandas as pd
+from django.db.models import Count, Sum
+
+from .models import DataFile
 
 
 def get_all_file_metric_dicts(data_files, get_report_metrics=True):
@@ -47,8 +49,6 @@ def get_database_file_metrics(data_files):
 
 
 def create_metric_dicts(file_dict, x_key, x_label, plot_type):
-
-    print(x_key, file_dict)
 
     x_values = [str(x) if type(x) is datetime or type(x) is pd.Timestamp else x
                 for x in file_dict[x_key]]
@@ -96,8 +96,6 @@ def report_file_metrics(data_files):
 
     full_df = pd.concat(all_df_list)
 
-    print(full_df.dtypes)
-
     # try and find datetime
     full_df = full_df.apply(lambda col: pd.to_datetime(col, errors='ignore')
                             if col.dtypes == object and 'date' in col.name
@@ -121,8 +119,6 @@ def report_file_metrics(data_files):
     full_df_numeric = full_df.select_dtypes(include=[np.datetime64, np.number])
 
     file_dict = full_df_numeric.to_dict(orient="list")
-
-    print(file_dict)
 
     metric_dict = create_metric_dicts(
         file_dict, date_time_key, "Date", ["scatter"])

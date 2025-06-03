@@ -68,6 +68,7 @@ const DetailDisplayUser = ({ id, authTokens, user }: UserProfileProps) => {
 	} = useQuery({
 		queryKey: ["profile", user],
 		queryFn: () => getDataFunc(),
+		refetchOnWindowFocus: false,
 	});
 
 	return (

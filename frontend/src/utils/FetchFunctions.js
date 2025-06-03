@@ -43,9 +43,15 @@ export async function postBody(url, token, body, json = true) {
 		headers: headers,
 		body: body,
 	});
-	let response_json = await response.json();
-	response_json["ok"] = response.ok;
-	response_json["statusText"] = response.statusText;
+
+	let response_json = { ok: response.ok, statusText: response.statusText };
+	if (!response.ok) {
+		return response_json;
+	}
+
+	const response_data = await response.json();
+
+	Object.assign(response_json, response_data);
 	// if (!response.ok) {
 	// 	throw new Error(response.statusText);
 	// }
@@ -64,7 +70,7 @@ export async function patchData(url, token, data) {
 
 	let response_json = await response.json();
 	response_json["ok"] = response.ok;
-	response_json["statusText"] = response.statusText;
+	response_json["status_text"] = response.statusText;
 
 	//if (!response.ok) {
 	//throw new Error(response.statusText);

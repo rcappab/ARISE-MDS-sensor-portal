@@ -23,7 +23,7 @@ const GalleryTile = ({
 			return (
 				<img
 					className="card-img-top"
-					src={cardImageURL}
+					src={"/" + cardImageURL}
 					alt=""
 					loading="lazy"
 					style={{ maxHeight: "160px" }}

@@ -499,6 +499,14 @@ class DataFile(BaseModel):
         else:
             self.file_url = None
 
+    def set_linked_files_urls(self):
+        for key in self.linked_files.keys():
+            file_path = self.linked_files[key]["path"]
+            rel_file_path = os.path.relpath(
+                file_path, settings.FILE_STORAGE_ROOT)
+            self.linked_files[key]["url"] = os.path.join(
+                settings.FILE_STORAGE_URL, rel_file_path)
+
     def set_thumb_url(self, has_thumb=True):
         if has_thumb:
             self.thumb_url = os.path.normpath(os.path.join(settings.FILE_STORAGE_URL,
@@ -537,11 +545,12 @@ class DataFile(BaseModel):
         except OSError:
             pass
 
-        for v in self.linked_files.values():
+        for key, value in self.linked_files.items():
             try:
-                extra_version_path = v["filepath"]
+                extra_version_path = value["path"]
                 os.remove(extra_version_path)
                 os.removedirs(extra_version_path)
+                self.linked_files.pop(key)
             except TypeError:
                 pass
             except OSError:

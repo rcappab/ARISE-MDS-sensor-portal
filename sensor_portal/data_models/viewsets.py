@@ -6,6 +6,7 @@ from camtrap_dp_export.serializers import (DataFileSerializerCTDP,
                                            DeploymentSerializerCTDP)
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import OperationalError, connection, transaction
 from django.db.models import Q
 from django.utils import timezone as djtimezone
 from rest_framework import status, viewsets
@@ -330,9 +331,12 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
 
         multipart = 'HTTP_CONTENT_RANGE' in request.META
 
-        uploaded_files, invalid_files, existing_files, status_code = create_file_objects(
-            files, check_filename, recording_dt, extra_data, deployment_object, device_object,
-            data_types, self.request.user, multipart)
+        with transaction.atomic(), connection.cursor() as cursor:
+            # Remove db limits during this function.
+            cursor.execute('SET LOCAL statement_timeout TO 0;')
+            uploaded_files, invalid_files, existing_files, status_code = create_file_objects(
+                files, check_filename, recording_dt, extra_data, deployment_object, device_object,
+                data_types, self.request.user, multipart)
 
         print(
             f"Uploaded files: {uploaded_files}, Invalid files: {invalid_files}, Existing files: {existing_files}, Status code: {status_code}")

@@ -25,6 +25,6 @@ def setup_postgres(connection, **kwargs):
 
     print("Set statement timeout")
 
-    # Timeout statements after 30 seconds.
+    # Timeout statements after 120 seconds.
     with connection.cursor() as cursor:
-        cursor.execute("SET statement_timeout TO 30000;")
+        cursor.execute("SET statement_timeout TO 120000;")

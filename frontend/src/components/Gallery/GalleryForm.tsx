@@ -354,7 +354,7 @@ function GalleryForm({
 						label="All"
 						choices={[]}
 						value={filterData.device_type}
-						apiURL="datatype/?device_type=true&page_size=20"
+						apiURL="datatype/?page_size=20"
 						valueKey="id"
 						labelKey="name"
 						handleChange={(newValue) =>

@@ -378,15 +378,15 @@ class DataFileUploadSerializer(serializers.Serializer):
                                                    "device_ID": f"Device ID {device_ID} does not exist"})
             data['device_object'] = device_object
 
-        #  if not an image, user must supply the recording date time
         files = data.get("files")
         recording_dt = data.get('recording_dt')
         if files:
-            is_not_image = ["image" not in magic.from_buffer(
-                x.read(), mime=True) for x in files]
-            if any(is_not_image) and recording_dt is None:
-                raise serializers.ValidationError(
-                    {"recording_dt": "Recording date times can only be extracted from images, please provide 'recording_dt' or upload only images"})
+            #  if not an image, user must supply the recording date time
+            # is_not_image = ["image" not in magic.from_buffer(
+            #     x.read(), mime=True) for x in files]
+            # if any(is_not_image) and recording_dt is None:
+            #     raise serializers.ValidationError(
+            #         {"recording_dt": "Recording date times can only be extracted from images, please provide 'recording_dt' or upload only images"})
 
             #  check recording_dt and number of files match
             if recording_dt is not None:

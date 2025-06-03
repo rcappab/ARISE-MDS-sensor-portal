@@ -46,6 +46,7 @@ const UserSelector = ({
 			),
 		enabled: searchString !== "",
 		placeholderData: keepPreviousData,
+		refetchOnWindowFocus: false,
 	});
 
 	const getDataFunc = async (apiURL) => {

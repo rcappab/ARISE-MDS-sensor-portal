@@ -119,9 +119,9 @@ def parse_report_file(file):
 
 
 @shared_task(name="snyper4G_convert_daily_report")
-def convert_daily_report_task(file_names: List[str]):
+def convert_daily_report_task(file_pks: List[int]):
     from data_handlers.post_upload_task_handler import post_upload_task_handler
-    post_upload_task_handler(file_names, convert_daily_report)
+    post_upload_task_handler(file_pks, convert_daily_report)
 
 
 def convert_daily_report(data_file) -> Tuple[Any | None, List[str] | None]:

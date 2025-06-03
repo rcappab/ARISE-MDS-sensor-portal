@@ -38,6 +38,7 @@ const DetailDisplayMetrics = ({ id, objectType }: Props) => {
 		queryKey: ["metrics", user, id, objectType],
 		queryFn: () => getDataFunc(),
 		placeholderData: keepPreviousData,
+		refetchOnWindowFocus: false,
 	});
 
 	const getTabs = function () {

@@ -11,6 +11,49 @@ import ObservationForm, {
 	obsDataType,
 } from "./Observations/ObservationForm.tsx";
 import ObservationTable from "./Observations/ObservationTable.tsx";
+import { Tab, TabList, TabPanel, Tabs } from "react-tabs";
+
+interface LinkedFileProps {
+	linkedFileData: object;
+}
+
+const DetailDisplayLinkedFiles = ({ linkedFileData }: LinkedFileProps) => {
+	const getTabs = function () {
+		const tabs = Object.keys(linkedFileData).map((key) => {
+			return <Tab>{key}</Tab>;
+		});
+		return tabs;
+	};
+
+	const getTabContent = function () {
+		const tabContent = Object.keys(linkedFileData).map((key) => {
+			return (
+				<TabPanel>
+					<div>
+						<img
+							src={"/" + linkedFileData[key]["url"]}
+							alt={key}
+							style={{
+								objectFit: "contain",
+								width: "100%",
+								maxHeight: "30rem",
+								userSelect: "none",
+							}}
+						/>
+					</div>
+				</TabPanel>
+			);
+		});
+		return tabContent;
+	};
+
+	return (
+		<Tabs>
+			<TabList>{getTabs()}</TabList>
+			{getTabContent()}
+		</Tabs>
+	);
+};
 
 interface Props {
 	fileData: Object;
@@ -23,6 +66,9 @@ const DetailDisplayFile = ({ fileData }: Props) => {
 	const isImage = [".jpg", ".jpeg", ".png"].includes(
 		fileData["file_format"].toLowerCase()
 	);
+	const hasLinkedFiles =
+		fileData["linked_files"] !== undefined &&
+		Object.keys(fileData["linked_files"]).length > 0;
 	const fileURL = "/" + fileData["file_url"];
 	const canAnnotate = fileData["can_annotate"];
 
@@ -154,10 +200,13 @@ const DetailDisplayFile = ({ fileData }: Props) => {
 					}
 				}}
 			>
+				{hasLinkedFiles && (
+					<DetailDisplayLinkedFiles linkedFileData={fileData["linked_files"]} />
+				)}
 				{isImage ? (
 					<div className={"rectdraw-container"}>
 						<img
-							src={fileURL}
+							src={"/" + fileURL}
 							alt={fileData["file_name"]}
 							style={{
 								objectFit: "contain",

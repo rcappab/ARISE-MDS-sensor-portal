@@ -19,6 +19,7 @@ const DetailDisplayStorage = ({ selectedDataID }: Props) => {
 	const { isLoading, data } = useQuery({
 		queryKey: ["datastorageinput", selectedDataID],
 		queryFn: () => getDataFunc(),
+		refetchOnWindowFocus: false,
 	});
 
 	if (!data || isLoading) {

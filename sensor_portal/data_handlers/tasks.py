@@ -9,7 +9,7 @@ def generate_thumbnails(file_pks):
     from .post_upload_task_handler import post_upload_task_handler
     post_upload_task_handler(file_pks, generate_thumbnail)
 
-    deployment_pk = DataFile.objects.values_list(
+    deployment_pk = DataFile.objects.filter(pk__in=file_pks).values_list(
         'deployment__pk', flat=True).distinct()
     deployment_objs = Deployment.objects.filter(pk__in=deployment_pk)
     for deployment_obj in deployment_objs:

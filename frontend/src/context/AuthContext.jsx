@@ -104,8 +104,8 @@ export const AuthProvider = () => {
 		queryKey: [`refreshToken-${user}`],
 		queryFn: updateToken,
 		enabled: authTokens != null,
-		refetchInterval: 1000 * 60 * 4,
-		refetchOnWindowFocus: true,
+		refetchInterval: 1000 * 60 * 30,
+		refetchOnWindowFocus: false,
 	});
 
 	let logoutUser = (e) => {
