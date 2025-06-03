@@ -323,7 +323,7 @@ GLOBAL_PROJECT_ID = "GLOBAL"
 # Automatically generated collection of data handlers.
 DATA_HANDLERS = DataTypeHandlerCollection()
 
-ONLY_SUPER_UNARCHIVE = False
+ONLY_SUPER_UNARCHIVE = True
 
 # Maximum number of files that can be submitted to a job through the start_job API endpoint.
 MAX_JOB_SIZE = 5000
