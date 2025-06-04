@@ -28,10 +28,10 @@ def fix_file_storage():
 
 
 @shared_task
-def fix_tar_paths(surf_archive_pk):
+def fix_tar_paths():
     old_path = "/nfs/archive04/uvaarise"
+    surf_archive = Archive.objects.get(name="UVAARISE SURF data archive")
     all_tars = TarFile.objects.filter(path__contains=old_path)
-    surf_archive = Archive.objects.get(pk=surf_archive_pk)
     surf_archive_path = surf_archive.root_folder
 
     objs_to_update = []
