@@ -7,6 +7,9 @@ interface Props {
 }
 
 const MetricPlot = ({ data }: Props) => {
+	if (data === undefined || data["plot_type"] === undefined) {
+		return null;
+	}
 	let plot_data = [] as object[];
 	if (data["plot_type"].includes("scatter")) {
 		plot_data.push({

@@ -22,6 +22,8 @@ const DetailDisplayMetrics = ({ id, objectType }: Props) => {
 		let apiURL = `${objectType}/${id}/metrics`;
 
 		let response_json = await getData(apiURL, authTokens.access);
+		delete response_json.ok;
+		delete response_json.statusText;
 		return response_json;
 	};
 
