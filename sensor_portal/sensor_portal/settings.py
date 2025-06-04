@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 import json
 import os
 from datetime import timedelta
+from glob import glob
 from pathlib import Path
 
 from celery.schedules import crontab
@@ -82,6 +83,10 @@ else:
 
 CORS_ORIGINS_WHITELIST = CSRF_TRUSTED_ORIGINS
 CSRF_USE_SESSIONS = True
+
+
+GDAL_LIBRARY_PATH = glob('/usr/lib/libgdal.so.*')[0]
+GEOS_LIBRARY_PATH = glob('/usr/lib/libgeos_c.so.*')[0]
 
 
 # DRF_RECAPTCHA_TESTING=True
