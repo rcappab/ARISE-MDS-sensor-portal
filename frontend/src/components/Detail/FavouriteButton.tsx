@@ -38,7 +38,7 @@ const FavouriteButton = ({ id, favourite }: Props) => {
 
 	return (
 		<button
-			className={`btn w-100 mt-1 ${
+			className={`btn w-100 ${
 				isFavourite ? "btn-secondary" : "btn-outline-secondary"
 			}`}
 			onClick={onClickFunction}

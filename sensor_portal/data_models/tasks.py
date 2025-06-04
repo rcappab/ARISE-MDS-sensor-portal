@@ -29,7 +29,7 @@ def clean_all_files():
     """
     Remove files that are archived and have not been modified in the projects clean time.
     """
-    projects_to_clean = Project.objects.filter(archive___isnull=False)
+    projects_to_clean = Project.objects.filter(archive__isnull=False)
     for project in projects_to_clean:
         clean_time = project.clean_time
         files_to_clean = DataFile.objects.filter(

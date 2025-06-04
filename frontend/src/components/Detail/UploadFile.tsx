@@ -182,7 +182,7 @@ const UploadFile: React.FC<UploadFileProps> = ({ id, objectType }) => {
 		if (!response["ok"]) {
 			toast.error(
 				`Error in submission ${
-					response["status_text"] ? ":" + response["status_text"] : ""
+					response["statusText"] ? ":" + response["statusText"] : ""
 				}`,
 				{
 					id: toastId,

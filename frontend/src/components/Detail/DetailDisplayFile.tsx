@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useState } from "react";
-
+import { Link } from "react-router-dom";
 import RectDraw from "./Observations/RectDraw.tsx";
 import FavouriteButton from "./FavouriteButton.tsx";
 import { ObsEditModeContext } from "../../context/ObsModeContext.jsx";
@@ -66,6 +66,7 @@ const DetailDisplayFile = ({ fileData }: Props) => {
 	const isImage = [".jpg", ".jpeg", ".png"].includes(
 		fileData["file_format"].toLowerCase()
 	);
+	const isLocal = fileData["file_format"];
 	const hasLinkedFiles =
 		fileData["linked_files"] !== undefined &&
 		Object.keys(fileData["linked_files"]).length > 0;
@@ -193,50 +194,67 @@ const DetailDisplayFile = ({ fileData }: Props) => {
 
 	return (
 		<div>
-			<div
-				onClick={() => {
-					if (isImage && !obsEditMode) {
-						setExpanded(!expanded);
-					}
-				}}
-			>
-				{hasLinkedFiles && (
-					<DetailDisplayLinkedFiles linkedFileData={fileData["linked_files"]} />
-				)}
-				{isImage ? (
-					<div className={"rectdraw-container"}>
-						<img
-							src={"/" + fileURL}
-							alt={fileData["file_name"]}
-							style={{
-								objectFit: "contain",
-								width: "100%",
-								maxHeight: expanded ? "100%" : "30rem",
-								userSelect: "none",
-							}}
+			{isLocal && (
+				<div
+					className="mb-2"
+					onClick={() => {
+						if (isImage && !obsEditMode) {
+							setExpanded(!expanded);
+						}
+					}}
+				>
+					{hasLinkedFiles && (
+						<DetailDisplayLinkedFiles
+							linkedFileData={fileData["linked_files"]}
 						/>
-						<RectDraw
-							obsData={tempObsData}
-							editMode={bboxEditMode.edit}
-							editIndex={bboxEditMode.index}
-							onFinishEditing={handleStopEditBoundingBox}
-							hoverIndex={hoverIndex}
-						/>
+					)}
+					{isImage && (
+						<div className={"rectdraw-container"}>
+							<img
+								src={"/" + fileURL}
+								alt={fileData["file_name"]}
+								style={{
+									objectFit: "contain",
+									width: "100%",
+									maxHeight: expanded ? "100%" : "30rem",
+									userSelect: "none",
+								}}
+							/>
+							<RectDraw
+								obsData={tempObsData}
+								editMode={bboxEditMode.edit}
+								editIndex={bboxEditMode.index}
+								onFinishEditing={handleStopEditBoundingBox}
+								hoverIndex={hoverIndex}
+							/>
+						</div>
+					)}
+				</div>
+			)}
+
+			<div className="row p-2">
+				{isLocal && (
+					<div className="col">
+						<Link
+							to={fileURL}
+							target="_blank"
+							download
+						>
+							<button className={"btn btn-outline-primary w-100 h-100"}>
+								Download File
+							</button>
+						</Link>
 					</div>
-				) : (
-					<a
-						href={fileURL}
-						target="_blank'"
-					>
-						"Download File"
-					</a>
 				)}
+				<div className="col">
+					<FavouriteButton
+						id={fileData["id"]}
+						favourite={fileData["favourite"]}
+					/>
+				</div>
+				{obsEditMode && <div className="row w-100"></div>}
+				<div className="col">{getObsTable()}</div>
 			</div>
-			<FavouriteButton
-				id={fileData["id"]}
-				favourite={fileData["favourite"]}
-			/>
-			{getObsTable()}
 		</div>
 	);
 };

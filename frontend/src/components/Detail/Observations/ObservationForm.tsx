@@ -155,9 +155,9 @@ const ObservationFormRow = ({
 }: obsFormRowProps) => {
 	const [hover, setHover] = useState(false);
 
-	const canDraw = [".jpg", ".jpeg", ".png"].includes(
-		fileData["file_format"].toLowerCase()
-	);
+	const canDraw =
+		[".jpg", ".jpeg", ".png"].includes(fileData["file_format"].toLowerCase()) &&
+		fileData["local_storage"];
 
 	const handleHover = useCallback(
 		(hover) => {
