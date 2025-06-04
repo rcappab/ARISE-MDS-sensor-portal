@@ -211,7 +211,7 @@ const DetailDisplayFile = ({ fileData }: Props) => {
 					{isImage && (
 						<div className={"rectdraw-container"}>
 							<img
-								src={"/" + fileURL}
+								src={fileURL}
 								alt={fileData["file_name"]}
 								style={{
 									objectFit: "contain",

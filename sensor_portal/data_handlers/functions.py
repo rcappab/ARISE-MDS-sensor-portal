@@ -1,15 +1,19 @@
-from datetime import datetime as dt
-from PIL import ExifTags, Image, TiffImagePlugin
 import os
+from datetime import datetime as dt
+
+from PIL import ExifTags, Image, TiffImagePlugin, UnidentifiedImageError
 
 
 def open_exif(uploaded_file):
-    si = uploaded_file.file
-    image = Image.open(si)
-    image_exif = {ExifTags.TAGS[k]: v for k,
-                  v in image.getexif().items() if k in ExifTags.TAGS}
+    try:
+        si = uploaded_file.file
+        image = Image.open(si)
+        image_exif = {ExifTags.TAGS[k]: v for k,
+                      v in image.getexif().items() if k in ExifTags.TAGS}
 
-    return image_exif
+        return image_exif
+    except UnidentifiedImageError:
+        return {}
 
 
 def check_exif_keys(image_exif, exif_keys, round_val=2):

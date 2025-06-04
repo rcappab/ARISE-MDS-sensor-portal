@@ -197,12 +197,14 @@ class DataStorageInput(BaseModel):
             print(f"{self.name} - {device.device_ID} - {status}")
 
             # delete files that are succesfully downloaded
-            for filename in downloaded_files:
+            for file_obj in downloaded_files:
                 print(
-                    f"{self.name} - {device.device_ID} -{filename} succesfully downloaded")
+                    f"{self.name} - {device.device_ID} - {file_obj.original_name} succesfully downloaded")
                 if not settings.DEVMODE:
-                    ssh_client.ftp_sftp.remove(join(device.username, filename))
-                    print(f"{self.name} - {device.device_ID} -{filename} removed")
+                    ssh_client.ftp_sftp.remove(
+                        join(device.username, file_obj.original_name))
+                    print(
+                        f"{self.name} - {device.device_ID} - {file_obj.original_name} removed")
 
             for problem_file in invalid_files:
                 print(
