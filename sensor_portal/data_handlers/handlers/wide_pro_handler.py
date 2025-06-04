@@ -16,7 +16,8 @@ from sensor_portal.celery import app
 
 class Snyper4GHandler(DataTypeHandler):
     data_types = ["wildlifecamera", "timelapsecamera"]
-    device_models = ["4G Wide Pro"]
+    device_models = ['Unknown 4g', '4GWireless', 'SY4.0CG-Wtimelapsecamera', 'Wilsus Tradenda WIDE', 'Wilsus Tradenda Wide Pro', 'Snyper', 'Wilsus Tradenda 4G Wide Pro', 'SnyperCommander4GWIDE',
+                     'SY4.0PCG-Wtimelapsecamera', 'Wilsius Tradenda 4G wide pro', 'Wilsus Tradenda 4G Wide', 'SY4.0CG-Rwildlifecamera', 'Wilsius Tradenda 4G', 'SYM8.0.2', 'SY4.0CG-Wwildlifecamera', 'SY4.0CG-Rtimelapsecamera']
     safe_formats = [".jpg", ".jpeg", ".txt"]
     full_name = "Wide 4G handler"
     description = """Data handler for wide 4G wildlifecamera"""
