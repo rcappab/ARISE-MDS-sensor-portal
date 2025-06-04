@@ -12,7 +12,9 @@ COPY ./sensor_portal /usr/src/sensor_portal
 WORKDIR /usr/src/sensor_portal
 
 # install dependencies
-RUN apk add --update --no-cache binutils gdal postgresql-client git
+RUN apk add --update --no-cache binutils gdal postgresql-libs postgresql-client git
+RUN apk add --no-cache --virtual .build-deps gcc musl-dev postgresql-dev
+
 
 
 
