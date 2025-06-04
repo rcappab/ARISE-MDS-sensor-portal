@@ -132,7 +132,7 @@ def get_files_from_archived_tar_task(self, tar_file_pk, target_file_pks):
     tar_name = tar_file_obj.name+'.tar.gz'
     tar_path = posixjoin(tar_file_obj.path, tar_name)
     status_code, stdout, stderr = ssh_client.send_ssh_command(
-        f"dmls -l {tar_path}")
+        f"dals -l {tar_path}")
 
     status_code, target_tar_status = check_tar_status(ssh_client, tar_path)
     print(
@@ -156,7 +156,7 @@ def get_files_from_archived_tar_task(self, tar_file_pk, target_file_pks):
         print(f"{tar_path}: Offline")
         if target_tar_status != '(UNM)':
             status_code, stdout, stderr = ssh_client.send_ssh_command(
-                f"dmget {tar_path}")
+                f"daget {tar_path}")
             print(
                 f"{tar_path}: Get TAR from tape {status_code} {stdout}")
 
