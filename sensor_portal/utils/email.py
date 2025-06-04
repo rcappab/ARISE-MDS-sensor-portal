@@ -10,6 +10,11 @@ def send_email_to_users(users: list[User], subject: str, body: str):
 
 
 def send_email_to_user(user: User, subject: str, body: str):
+    try:
+        user.deviceuser
+        return
+    except User.deviceuser.RelatedObjectDoesNotExist:
+        pass
 
     new_body = render_to_string(
         "email_body.html", {"user": user, "body": body})
