@@ -16,21 +16,21 @@ from .models import Archive
 from .tar_functions import check_tar_status, create_tar_files
 
 
-@shared_task
+@app.task()
 def check_all_archive_projects_task():
     all_archives = Archive.objects.all()
     for archive in all_archives:
         archive.check_projects()
 
 
-@shared_task
+@app.task()
 def check_all_uploads_task():
     all_archives = Archive.objects.all()
     for archive in all_archives:
         archive.check_upload()
 
 
-@shared_task
+@app.task()
 def create_tar_files_task(file_pks: list[int], archive_pk: int):
     """
     Task wrapper for create_tar_files function.
@@ -42,13 +42,13 @@ def create_tar_files_task(file_pks: list[int], archive_pk: int):
     create_tar_files(file_pks, archive_pk)
 
 
-@shared_task
+@app.task()
 def check_archive_upload_task(archive_pk: int):
     archive = Archive.objects.get(pk=archive_pk)
     archive.check_upload()
 
 
-@shared_task
+@app.task()
 def get_files_from_archive_task(file_pks, callback=None):
     file_objs = DataFile.objects.filter(pk__in=file_pks, archived=True)
 
@@ -75,7 +75,7 @@ def get_files_from_archive_task(file_pks, callback=None):
     task_chord.apply_async()
 
 
-@shared_task
+@app.task()
 def post_get_file_from_archive_task(all_file_pks):
     # flatten list of lists
 
@@ -111,12 +111,12 @@ def post_get_file_from_archive_task(all_file_pks):
                 new_task.apply_async()
 
 
-@shared_task(autoretry_for=(TooManyTasks, TAROffline),
-             max_retries=None,
-             retry_backoff=2*60,
-             retry_backoff_max=5 * 60,
-             retry_jitter=True,
-             bind=True)
+@app.task(autoretry_for=(TooManyTasks, TAROffline),
+          max_retries=None,
+          retry_backoff=2*60,
+          retry_backoff_max=5 * 60,
+          retry_jitter=True,
+          bind=True)
 def get_files_from_archived_tar_task(self, tar_file_pk, target_file_pks):
 
     check_simultaneous_tasks(self, 4)

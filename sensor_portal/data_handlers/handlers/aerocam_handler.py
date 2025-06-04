@@ -6,6 +6,8 @@ from aerocam_handler.reader import DatReader
 from celery import shared_task
 from data_handlers.base_data_handler_class import DataTypeHandler
 
+from sensor_portal.celery import app
+
 
 class AeroCamHandler(DataTypeHandler):
     data_types = ["aeroecologycamera"]
@@ -42,7 +44,7 @@ class AeroCamHandler(DataTypeHandler):
         return "aerocam_converter"
 
 
-@shared_task(name="aerocam_converter")
+@app.task(name="aerocam_converter")
 def aerocam_converter_task(file_pks: List[int]):
     from data_handlers.post_upload_task_handler import post_upload_task_handler
     from data_models.models import DataFile, Deployment

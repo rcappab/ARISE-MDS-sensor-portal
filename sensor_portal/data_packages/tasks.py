@@ -10,10 +10,12 @@ from data_models.permissions import perms
 from django.conf import settings
 from user_management.models import User
 
+from sensor_portal.celery import app
+
 from .models import DataPackage
 
 
-@shared_task(name="create_data_package")
+@app.task(name="create_data_package")
 @register_job("Create data package", "create_data_package", "datafile", False, default_args={"metadata_type": "0",
                                                                                              "include_files": True})
 def start_make_data_package_task(datafile_pks, user_pk, metadata_type=0, include_files=True):
@@ -76,7 +78,7 @@ def start_make_data_package_task(datafile_pks, user_pk, metadata_type=0, include
         return
 
 
-@shared_task
+@app.task()
 def make_data_package_task(all_package_pks):
     bundle_objs = DataPackage.objects.filter(pk__in=all_package_pks)
     bundle_objs.update(status=2)
@@ -84,7 +86,7 @@ def make_data_package_task(all_package_pks):
         bundle_obj.make_zip()
 
 
-@shared_task
+@app.task()
 def fail_data_package_task(all_package_pks):
     bundle_objs = DataPackage.objects.filter(pk__in=all_package_pks)
     bundle_objs.update(status=4)

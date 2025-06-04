@@ -8,25 +8,27 @@ from django.db.models.functions import Lower
 from django.utils import timezone
 from observation_editor.models import Observation, Taxon
 
+from sensor_portal.celery import app
+
 # While we are using django_results as a backend, the ultralytics worker cannot access this to trigger the callback.
 # Therefore we set up an app using redis as a backend
-app = Celery(broker_url=settings.CELERY_BROKER_URL,
-             result_backend=settings.CELERY_BROKER_URL)
+ai_app = Celery(broker_url=settings.CELERY_BROKER_URL,
+                result_backend=settings.CELERY_BROKER_URL)
 
 
 CharField.register_lookup(Lower)
 
 
-@shared_task(name="do_ultra_inference")
+@app.task(name="do_ultra_inference")
 @register_job("Do Ultralytic AI model inference", "do_ultra_inference", "datafile", True,
               default_args={"model_name": "yolov8s"})
 def do_ultra_inference(datafile_pks, model_name, target_labels=None, chunksize=500, chunksize2=100,
                        exclude_done=False, parallel=False, **kwargs):
 
     valid_formats = [".jpg", ".jpeg", ".png"]  # should be setting from env
-    target_queue_name = "ultralytics"  # should be setting from env
+    target_queue_name = settings.ULTRALYTICS_QUEUE  # should be setting from env
     queue_names = [x[0]['name']
-                   for x in app.control.inspect().active_queues().values()]
+                   for x in ai_app.control.inspect().active_queues().values()]
 
     if target_queue_name not in queue_names:
         print(f"No {target_queue_name} queue available")
@@ -64,7 +66,7 @@ def do_ultra_inference(datafile_pks, model_name, target_labels=None, chunksize=5
             file_paths = list(
                 job_qs.values_list("full_path", flat=True))
 
-            all_tasks.append(app.signature('AnalysisTask', [
+            all_tasks.append(ai_app.signature('AnalysisTask', [
                 file_paths, model_name, target_labels], queue="ultralytics", immutable=True))
 
         task_chord = chord(all_tasks, handle_ultra_results.s(
@@ -85,7 +87,7 @@ def do_ultra_inference(datafile_pks, model_name, target_labels=None, chunksize=5
             task_chord.apply_async()
 
 
-@shared_task
+@app.task()
 def handle_ultra_results(all_results, target_labels=None):
     through_class = Observation.data_files.through
     if target_labels is not None and type(target_labels) is not list:

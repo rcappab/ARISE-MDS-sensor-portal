@@ -1,11 +1,13 @@
 from celery import shared_task
 from requests.exceptions import ConnectionError, ConnectTimeout
 
+from sensor_portal.celery import app
+
 from .GBIF_functions import (GBIF_get_or_create_taxon_object_from_taxon_code,
                              GBIF_get_species, GBIF_get_taxoncodes)
 
 
-@shared_task()
+@app.task()
 def create_taxon_parents(taxon_pk):
     from .models import Taxon
 

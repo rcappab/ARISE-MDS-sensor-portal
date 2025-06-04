@@ -17,3 +17,4 @@ class TaxonAdmin(GenericAdmin):
 class ObservationAdmin(AddOwnerAdmin):
     model = Observation
     raw_id_fields = ["data_files", "taxon", "validation_of"]
+    list_display = ["label", "source", "owner"]
