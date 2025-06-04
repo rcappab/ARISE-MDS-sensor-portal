@@ -10,7 +10,7 @@ from .models import (DataFile, DataType, Deployment, Device, DeviceModel,
 # Register your models here.
 
 
-@admin.register(DataType, DeviceModel)
+@admin.register(DataType)
 class GenericAdmin(GenericAdmin):
     paginator = LargeTablePaginator
 
@@ -34,6 +34,13 @@ class DeviceAdmin(AddOwnerAdmin):
             request, form, formsets, change)
         if form.instance.device_user:
             form.instance.device_user.save()
+
+
+@admin.register(DeviceModel)
+class DeviceModelAdmin(AddOwnerAdmin):
+    list_display = ['name', 'manufacturer', 'type']
+    search_fields = ['name', 'manufacturer']
+    list_filter = ['type']
 
 
 @admin.register(Project)

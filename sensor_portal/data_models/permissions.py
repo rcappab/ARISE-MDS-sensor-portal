@@ -20,12 +20,12 @@ from .rules import (CanAnnotateDeploymentContainingDataFile,
 
 # PROJECT
 perms['data_models.add_project'] = is_authenticated & is_active
-perms['data_models.change_project'] = is_authenticated & (is_staff
+perms['data_models.change_project'] = is_authenticated & (is_superuser
                                                           | IsOwner()
                                                           | IsManager()) & is_active  # must be project owner OR manager
 perms['data_models.delete_project'] = is_authenticated & (
     is_staff | IsOwner()) & is_active  # must be project owner
-perms['data_models.view_project'] = is_authenticated & (is_staff
+perms['data_models.view_project'] = is_authenticated & (is_superuser
                                                         | IsOwner()
                                                         | IsManager()  # project owner OR project manager
                                                         | IsAnnotator()

@@ -10,6 +10,7 @@ TokenAdmin.raw_id_fields = ['user']
 
 class TokenInline(admin.StackedInline):
     model = Token
+    readonly_fields = ["key"]
 
 
 admin.site.unregister(TokenProxy)
@@ -20,6 +21,8 @@ class InlineUserAdmin(UserAdmin):
                     'last_name', 'is_active', 'date_joined')
     list_filter = ('is_active', 'is_staff', 'is_superuser', 'groups')
     search_fields = ('username', 'first_name', 'last_name')
+
+    readonly_fields = ["last_login"]
 
     fieldsets = UserAdmin.fieldsets + (
         ('Profile', {'fields': ('organisation', 'bio')}),
