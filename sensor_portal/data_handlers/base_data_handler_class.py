@@ -17,7 +17,6 @@ class DataTypeHandler():
     post_handling_description = "No post handling description provided"
 
     def format_check(self, file, device_label=None):
-        print(os.path.splitext(file.name)[1].lower(), self.safe_formats)
         return os.path.splitext(file.name)[1].lower() in self.safe_formats
 
     def all_file_format_check(self, files, device_label=None):
