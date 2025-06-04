@@ -53,7 +53,7 @@ def on_change(sender, instance: User, **kwargs):
                                    f"""Your account at {Site.objects.get_current().name} has had its password changed. \n
                                 If you did not request this password change, contact your system administrator immediately.""")
                 # Set a users owned devices device users password to be their new password
-                DeviceUser.objects.filter(device__in=instance.owned_devices, password=previous.password).update(
+                DeviceUser.objects.filter(device__in=instance.owned_devices.all(), password=previous.password).update(
                     password=instance.password)
 
 
