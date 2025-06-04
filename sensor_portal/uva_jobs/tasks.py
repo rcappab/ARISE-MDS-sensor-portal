@@ -14,15 +14,20 @@ from sensor_portal.celery import app
 
 @app.task()
 def fix_file_storage():
-    file_objs = DataFile.objects.filter(localstorage=True).exclude(
+    print("Starting fix_file_storage task...")
+    file_objs = DataFile.objects.filter(local_storage=True).exclude(
         local_path=settings.FILE_STORAGE_ROOT)
 
     batch_size = 2000
     total_obs = file_objs.count()
+    print(f"Total files to process: {total_obs}")
     for start in range(0, total_obs, batch_size):
+        print(
+            f"Processing batch {start // batch_size + 1} of {((total_obs - 1) // batch_size) + 1}")
         objs_to_update = []
-        batch = total_obs[start:start + batch_size]
+        batch = file_objs[start:start + batch_size]
         for file_obj in batch.iterator():
+            print(f"Updating file ID {file_obj.id}")
             first_part = os.path.split(file_obj.local_path)[1]
             file_obj.local_path = settings.FILE_STORAGE_ROOT
             file_obj.path = os.path.join(first_part, file_obj.path)
@@ -31,6 +36,7 @@ def fix_file_storage():
 
         DataFile.objects.bulk_update(
             objs_to_update, ["local_path", "path", "file_url"], 500)
+    print("Completed fix_file_storage task.")
 
 
 @app.task()
