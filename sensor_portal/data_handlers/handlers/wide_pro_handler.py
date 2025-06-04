@@ -11,6 +11,8 @@ from data_handlers.functions import (check_exif_keys, get_image_recording_dt,
 from data_handlers.handlers.default_image_handler import DataTypeHandler
 from django.core.files import File
 
+from sensor_portal.celery import app
+
 
 class Snyper4GHandler(DataTypeHandler):
     data_types = ["wildlifecamera", "timelapsecamera"]
@@ -118,7 +120,7 @@ def parse_report_file(file):
     return report_dict
 
 
-@shared_task(name="snyper4G_convert_daily_report")
+@app.task(name="snyper4G_convert_daily_report")
 def convert_daily_report_task(file_pks: List[int]):
     from data_handlers.post_upload_task_handler import post_upload_task_handler
     post_upload_task_handler(file_pks, convert_daily_report)

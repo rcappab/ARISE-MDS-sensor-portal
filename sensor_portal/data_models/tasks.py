@@ -11,10 +11,12 @@ from django.utils import timezone
 from user_management.models import User
 from utils.email import send_email_to_user
 
+from sensor_portal.celery import app
+
 from .models import DataFile, Deployment, Device, Project
 
 
-@shared_task(name="flag_humans")
+@app.task(name="flag_humans")
 @register_job("Change human flag", "flag_humans", "datafile", True,
               default_args={"has_human": False})
 def flag_humans(datafile_pks, has_human: bool = False, **kwargs):
@@ -24,7 +26,7 @@ def flag_humans(datafile_pks, has_human: bool = False, **kwargs):
     file_objs.update(has_human=has_human)
 
 
-@shared_task
+@app.task()
 def clean_all_files():
     """
     Remove files that are archived and have not been modified in the projects clean time.
@@ -47,7 +49,7 @@ def clean_all_files():
             file.clean()
 
 
-@shared_task
+@app.task()
 def check_deployment_active():
     """
     Check if a deployment is active or not
@@ -68,7 +70,7 @@ def check_deployment_active():
     make_inactive.update(is_active=False, modified_on=timezone.now())
 
 
-@shared_task
+@app.task()
 def check_device_status():
     """
     Check if device has transmitted in the allotted time and email managers

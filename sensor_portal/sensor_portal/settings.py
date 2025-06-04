@@ -298,7 +298,7 @@ CELERY_RESULT_EXTENDED = True
 
 
 CELERY_TASK_DEFAULT_QUEUE = 'main_worker'
-
+CELERY_TASK_DEFAULT_ROUTING_KEY = 'main_worker'
 
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_ENABLE_UTC = False
@@ -360,4 +360,4 @@ EMAIL_USE_SSL = True
 
 
 # Name of queue to use for ultralytics tasks.
-CELERY_ULTRALYTICS_QUEUE = 'ultralytics'
+ULTRALYTICS_QUEUE = 'ultralytics'
