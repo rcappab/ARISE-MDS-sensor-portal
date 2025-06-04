@@ -9,25 +9,31 @@ from django.db.models.functions import Concat
 from observation_editor.models import Observation
 from user_management.models import User
 
+from sensor_portal.celery import app
 
-@shared_task
+
+@app.task()
 def fix_file_storage():
     file_objs = DataFile.objects.filter(localstorage=True).exclude(
         local_path=settings.FILE_STORAGE_ROOT)
-    objs_to_update = []
 
-    for file_obj in file_objs:
-        first_part = os.path.split(file_obj.local_path)[1]
-        file_obj.local_path = settings.FILE_STORAGE_ROOT
-        file_obj.path = os.path.join(first_part, file_obj.path)
-        file_obj.set_file_url()
-        objs_to_update.append(file_obj)
+    batch_size = 2000
+    total_obs = file_objs.count()
+    for start in range(0, total_obs, batch_size):
+        objs_to_update = []
+        batch = total_obs[start:start + batch_size]
+        for file_obj in batch.iterator():
+            first_part = os.path.split(file_obj.local_path)[1]
+            file_obj.local_path = settings.FILE_STORAGE_ROOT
+            file_obj.path = os.path.join(first_part, file_obj.path)
+            file_obj.set_file_url()
+            objs_to_update.append(file_obj)
 
-    DataFile.objects.bulk_update(
-        objs_to_update, ["local_path", "path", "file_url"], 500)
+        DataFile.objects.bulk_update(
+            objs_to_update, ["local_path", "path", "file_url"], 500)
 
 
-@shared_task
+@app.task()
 def fix_tar_paths():
     old_path = "/nfs/archive04/uvaarise"
     surf_archive = Archive.objects.get(name="UVAARISE SURF data archive")
@@ -43,7 +49,7 @@ def fix_tar_paths():
     TarFile.objects.bulk_update(objs_to_update, ["path", "archive"])
 
 
-@shared_task
+@app.task()
 def fix_obs():
 
     users = User.objects.all()
