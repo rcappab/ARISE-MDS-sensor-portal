@@ -116,6 +116,8 @@ def report_file_metrics(data_files):
     if len(date_time_keys) > 1:
         full_df.drop(date_time_keys[1:])
 
+    full_df = full_df.sort_values(by=date_time_key)
+
     full_df_numeric = full_df.select_dtypes(include=[np.datetime64, np.number])
 
     file_dict = full_df_numeric.to_dict(orient="list")
