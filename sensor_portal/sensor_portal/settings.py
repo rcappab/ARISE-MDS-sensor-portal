@@ -323,7 +323,7 @@ if not DEVMODE:
 
 # SENSOR-PORTAL SETTINGS
 # name of the global project all deployments will be added to.
-GLOBAL_PROJECT_ID = "ARISE-MDS"
+GLOBAL_PROJECT_ID = os.environ.get("GLOBAL_PROJECT_ID", "GLOBAL")
 
 # Automatically generated collection of data handlers.
 DATA_HANDLERS = DataTypeHandlerCollection()

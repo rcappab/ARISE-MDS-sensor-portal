@@ -13,6 +13,7 @@ def open_exif(uploaded_file):
 
         return image_exif
     except UnidentifiedImageError:
+        print("Unable to open exif")
         return {}
 
 
