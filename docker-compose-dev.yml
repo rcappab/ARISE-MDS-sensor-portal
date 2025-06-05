@@ -34,6 +34,7 @@ services:
     command: npm start
     restart: always
     environment:
+      - GLOBAL_PROJECT_ID=${GLOBAL_PROJECT_ID}
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
       - REACT_APP_API_BASE_URL=api
@@ -52,6 +53,7 @@ services:
       - "8000"
     environment:
       - DEV=True
+      - GLOBAL_PROJECT_ID=${GLOBAL_PROJECT_ID}
       - POSTGRES_NAME=${POSTGRES_NAME}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -82,6 +84,7 @@ services:
       - ./sensor_portal:/usr/src/sensor_portal
     environment:
       - DEV=True
+      - GLOBAL_PROJECT_ID=${GLOBAL_PROJECT_ID}
       - POSTGRES_NAME=${POSTGRES_NAME}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -115,6 +118,7 @@ services:
     command: bash -c "celery -A sensor_portal beat --loglevel=INFO"
     environment:
       - DEV=True
+      - GLOBAL_PROJECT_ID=${GLOBAL_PROJECT_ID}
       - POSTGRES_NAME=${POSTGRES_NAME}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}

@@ -25,6 +25,7 @@ services:
     command: npm start
     restart: always
     environment:
+      - GLOBAL_PROJECT_ID=${GLOBAL_PROJECT_ID}
       - REACT_APP_API_BASE_URL=api
       - REACT_APP_CAPTCHA_SECRET_KEY=${CAPTCHA_SECRET_KEY}
       - REACT_APP_CAPTCHA_SITE_KEY=${CAPTCHA_SITE_KEY}
@@ -39,6 +40,7 @@ services:
     ports:
       - "8000"
     environment:
+      - GLOBAL_PROJECT_ID=${GLOBAL_PROJECT_ID}
       - POSTGRES_NAME=${POSTGRES_NAME}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -72,6 +74,7 @@ services:
     volumes:
       - ./file_storage:/media/file_storage
     environment:
+      - GLOBAL_PROJECT_ID=${GLOBAL_PROJECT_ID}
       - POSTGRES_NAME=${POSTGRES_NAME}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -104,6 +107,7 @@ services:
     image: sensor_portal_django_image
     command: bash -c "celery -A sensor_portal beat --loglevel=INFO"
     environment:
+      - GLOBAL_PROJECT_ID=${GLOBAL_PROJECT_ID}
       - POSTGRES_NAME=${POSTGRES_NAME}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
