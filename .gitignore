@@ -36,6 +36,5 @@ db_struct.erd
 /sensor_portal_database_2
 .env
 /sensor_portal_database_3
-/sensor_portal/static
 .env copy
 sensor_portal/celerybeat-schedule
