@@ -25,7 +25,7 @@ def get_job_from_name(job_name, obj_type, obj_pks, job_args, user_pk=None):
     all_args = {f"{obj_type}_pks": obj_pks, **job_args}
     if user_pk is not None:
         all_args["user_pk"] = user_pk
-    print(all_args)
+    print(job_args)
 
     new_task = app.signature(
         job_name, kwargs=all_args, immutable=True)
