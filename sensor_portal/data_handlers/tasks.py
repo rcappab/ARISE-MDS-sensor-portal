@@ -1,7 +1,9 @@
 from celery import shared_task
 
+from sensor_portal.celery import app
 
-@shared_task(name="data_handler_generate_thumbnails")
+
+@app.task(name="data_handler_generate_thumbnails")
 def generate_thumbnails(file_pks):
     from data_models.models import DataFile, Deployment
 
