@@ -30,7 +30,7 @@ def get_all_file_metric_dicts(data_files, get_report_metrics=True):
 def get_database_file_metrics(data_files):
     # do aggregation of files per day
 
-    file_dict = data_files.values('recording_dt__date').annotate(
+    file_dict = data_files.values('recording_dt__date').order_by('recording_dt__date').annotate(
         files_per_day__number_of_files=Count('id'),
         file_volume_per_day__bytes=Sum('file_size')).values(
             'recording_dt__date',
@@ -115,6 +115,8 @@ def report_file_metrics(data_files):
     date_time_key = date_time_keys[0]
     if len(date_time_keys) > 1:
         full_df.drop(date_time_keys[1:])
+
+    full_df = full_df.sort_values(by=date_time_key)
 
     full_df_numeric = full_df.select_dtypes(include=[np.datetime64, np.number])
 
