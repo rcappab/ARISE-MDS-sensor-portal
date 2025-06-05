@@ -189,8 +189,6 @@ class DataStorageInput(BaseModel):
                     file_object = File(f_bytes, name=filename)
                     files.append(file_object)
 
-            print(files)
-
             # import files
             downloaded_files, invalid_files, existing_files, status = create_file_objects(
                 files, device_object=device)

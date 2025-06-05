@@ -118,6 +118,7 @@ def parse_report_file(file):
             report_dict[line_split[0]] = []
 
         report_dict[line_split[0]].append(line_split[1])
+        print(report_dict)
     return report_dict
 
 
