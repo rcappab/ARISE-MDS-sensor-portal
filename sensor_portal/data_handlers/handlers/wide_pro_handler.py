@@ -51,10 +51,12 @@ class Snyper4GHandler(DataTypeHandler):
         if file_extension == ".txt":
 
             report_dict = parse_report_file(file)
-
-            dates = [dateutil.parser.parse(x, dayfirst=True)
-                     for x in report_dict['Date']]
-            recording_dt = min(dates)
+            if report_dict.get('Date') is None:
+                recording_dt = None
+            else:
+                dates = [dateutil.parser.parse(x, dayfirst=True)
+                         for x in report_dict['Date']]
+                recording_dt = min(dates)
             extra_data["daily_report"] = True
 
             data_type = "report"
@@ -118,7 +120,7 @@ def parse_report_file(file):
             report_dict[line_split[0]] = []
 
         report_dict[line_split[0]].append(line_split[1])
-        print(report_dict)
+
     return report_dict
 
 
