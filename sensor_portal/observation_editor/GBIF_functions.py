@@ -2,6 +2,7 @@ import math
 import statistics
 
 import requests
+from django.core.exceptions import MultipleObjectsReturned
 from thefuzz import fuzz
 
 
@@ -132,11 +133,20 @@ def GBIF_get_or_create_taxon_object_from_taxon_code(taxon_code):
     from .models import Taxon
     species_data = GBIF_get_species(taxon_code)
     all_taxon_codes = GBIF_get_taxoncodes(species_data)
-    taxon_obj, created = Taxon.objects.get_or_create(
-        species_name=species_data.get("canonicalName"),
-        species_common_name=species_data.get("vernacularName", ""),
-        taxon_source=1,
-        taxon_code=all_taxon_codes[0][0],
-        taxonomic_level=all_taxon_codes[0][1]
-    )
+    try:
+        taxon_obj, created = Taxon.objects.get_or_create(
+            species_name=species_data.get("canonicalName"),
+            species_common_name=species_data.get("vernacularName", ""),
+            taxon_source=1,
+            taxon_code=all_taxon_codes[0][0],
+            taxonomic_level=all_taxon_codes[0][1]
+        )
+    except MultipleObjectsReturned:
+        taxon_obj = Taxon.objects.filter(species_name=species_data.get("canonicalName"),
+                                         species_common_name=species_data.get(
+                                             "vernacularName", ""),
+                                         taxon_source=1,
+                                         taxon_code=all_taxon_codes[0][0],
+                                         taxonomic_level=all_taxon_codes[0][1]).first()
+
     return taxon_obj, created
