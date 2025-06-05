@@ -28,14 +28,15 @@ def fix_file_storage():
         batch = file_objs[start:start + batch_size]
         for file_obj in batch.iterator():
             print(f"Updating file ID {file_obj.id}")
-            first_part = os.path.split(file_obj.local_path)[1]
+            first_part = file_obj.local_path.replace('/media/exportdir/', '')
             file_obj.local_path = settings.FILE_STORAGE_ROOT
             file_obj.path = os.path.join(first_part, file_obj.path)
             file_obj.set_file_url()
             objs_to_update.append(file_obj)
-
+        print("Update objects")
         DataFile.objects.bulk_update(
             objs_to_update, ["local_path", "path", "file_url"], 500)
+
     print("Completed fix_file_storage task.")
 
 
