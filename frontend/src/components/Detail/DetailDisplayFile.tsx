@@ -155,7 +155,14 @@ const DetailDisplayFile = ({ fileData }: Props) => {
 
 	const getObsTable = () => {
 		if (isLoading || isPending || isRefetching) {
-			return <Loading />;
+			return (
+				<>
+					<div className="row w-100"></div>
+					<div className="row w-100">
+						<Loading />
+					</div>
+				</>
+			);
 		} else {
 			return (
 				<div>
@@ -176,16 +183,20 @@ const DetailDisplayFile = ({ fileData }: Props) => {
 						/>
 					)}
 					{canAnnotate ? (
-						<button
-							className={`btn ${
-								obsEditMode ? "btn-outline-danger" : "btn-outline-primary w-100"
-							}`}
-							onClick={() => {
-								handleSetEditMode(!obsEditMode);
-							}}
-						>
-							{obsEditMode ? "Cancel annotating" : "Start annotating"}
-						</button>
+						<div className="col">
+							<button
+								className={`btn ${
+									obsEditMode
+										? "btn-outline-danger"
+										: "btn-outline-primary w-100"
+								}`}
+								onClick={() => {
+									handleSetEditMode(!obsEditMode);
+								}}
+							>
+								{obsEditMode ? "Cancel annotating" : "Start annotating"}
+							</button>
+						</div>
 					) : null}
 				</div>
 			);
@@ -234,7 +245,7 @@ const DetailDisplayFile = ({ fileData }: Props) => {
 
 			<div className="row p-2">
 				{isLocal && (
-					<div className="col">
+					<div className="col mb-2">
 						<Link
 							to={fileURL}
 							target="_blank"
@@ -246,14 +257,14 @@ const DetailDisplayFile = ({ fileData }: Props) => {
 						</Link>
 					</div>
 				)}
-				<div className="col">
+				<div className="col mb-2">
 					<FavouriteButton
 						id={fileData["id"]}
 						favourite={fileData["favourite"]}
 					/>
 				</div>
 				{obsEditMode && <div className="row w-100"></div>}
-				<div className="col">{getObsTable()}</div>
+				{getObsTable()}
 			</div>
 		</div>
 	);
