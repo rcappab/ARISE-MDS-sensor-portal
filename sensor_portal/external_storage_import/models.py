@@ -1,4 +1,5 @@
 import io
+from datetime import datetime, timedelta
 from posixpath import join, splitext
 
 from data_models.file_handling_functions import create_file_objects
@@ -149,7 +150,7 @@ class DataStorageInput(BaseModel):
             print(repr(e))
             return False, None
 
-    def check_input(self):
+    def check_input(self, remove_bad=False):
         connection_success, ssh_client = self.check_connection()
         if not connection_success:
             print(f"{self.name} - unable to connect")
@@ -207,4 +208,14 @@ class DataStorageInput(BaseModel):
             for problem_file in invalid_files:
                 print(
                     f"{self.name} - {device.device_ID} - {problem_file}")
+                if remove_bad:
+                    mtime = ssh_client.ftp_sftp.stat(
+                        join(device.username, filename)).st_mtime
+                    last_modified = datetime.fromtimestamp(mtime)
+                    if (datetime.now()-last_modified) <= timedelta(days=7):
+                        ssh_client.ftp_sftp.remove(
+                            join(device.username, file_obj.original_name))
+                        print(
+                            f"{self.name} - {device.device_ID} - {file_obj.original_name} removed")
+
         ssh_client.close_connection_to_ftp()
