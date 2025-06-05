@@ -181,6 +181,7 @@ DATABASES = {
         'PASSWORD': os.environ.get('POSTGRES_PASSWORD', "postgres"),
         'HOST': 'sensor_portal_db',
         'PORT': 5432,
+        'CONN_MAX_AGE': 600
     }
 }
 AUTH_USER_MODEL = "user_management.User"
