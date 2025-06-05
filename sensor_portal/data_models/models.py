@@ -179,6 +179,12 @@ class Device(BaseModel):
 
     def deployment_from_date(self, dt):
 
+        print(
+            f"Attempt to find deployment for device {self.device_ID} for {dt}")
+
+        if dt is None:
+            return None
+
         # print(dt)
         all_deploys = self.deployments.all()
 
