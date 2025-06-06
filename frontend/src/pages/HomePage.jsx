@@ -10,12 +10,13 @@ const HomePage = () => {
 	const { authTokens, user } = useContext(AuthContext);
 
 	const getDataFunc = async () => {
-		let apiURL = `${"deployment"}/?is_active=True`;
+		let apiURL = `${"deployment"}/?is_active=True&page_size=25`;
 		let response_json = await getData(apiURL, authTokens.access);
 		if (response_json.hasOwnProperty("results")) {
 			return response_json.results;
+		} else {
+			return [];
 		}
-		return response_json;
 	};
 
 	const {
@@ -37,6 +38,7 @@ const HomePage = () => {
 	if ((isLoading || isPending || isRefetching) & !isPlaceholderData) {
 		return <Loading />;
 	}
+
 	return <DeploymentMap deployments={data} />;
 };
 

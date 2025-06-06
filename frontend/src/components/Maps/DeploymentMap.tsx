@@ -95,7 +95,8 @@ const DeploymentMap = ({ deployments }: Props) => {
 					attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 					url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
 				/>
-				{deployments && (
+
+				{deployments && Array.isArray(deployments) ? (
 					<FeatureGroup ref={featureGroupRef}>
 						{deployments.map((deploymentData) => {
 							let latLng = {
@@ -118,7 +119,7 @@ const DeploymentMap = ({ deployments }: Props) => {
 							);
 						})}
 					</FeatureGroup>
-				)}
+				) : null}
 				<UserLocationMarker />
 				<ResetLocation
 					handleChangeLatLong={(e) => {
