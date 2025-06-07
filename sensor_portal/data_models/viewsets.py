@@ -350,20 +350,20 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
                         status=status_code, headers=headers)
 
 
-class SiteViewSet(viewsets.ReadOnlyModelViewSet):
+class SiteViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSetMixIn):
     serializer_class = SiteSerializer
     queryset = Site.objects.all().distinct()
     search_fields = ['name', 'short_name']
 
 
-class DataTypeViewSet(viewsets.ReadOnlyModelViewSet):
+class DataTypeViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSetMixIn):
     serializer_class = DataTypeSerializer
     queryset = DataType.objects.all().distinct()
     search_fields = ['name']
     filterset_class = DataTypeFilter
 
 
-class DeviceModelViewSet(viewsets.ReadOnlyModelViewSet):
+class DeviceModelViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSetMixIn):
     serializer_class = DeviceModelSerializer
     queryset = DeviceModel.objects.all().distinct()
     search_fields = ['name']

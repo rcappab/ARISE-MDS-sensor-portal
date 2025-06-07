@@ -45,7 +45,7 @@ FIELD_ENCRYPTION_KEY = os.environ.get(
 
 STATIC_URL = 'staticfiles/'
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static_files'),
+    os.path.join(BASE_DIR, 'staticfiles'),
 ]
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
