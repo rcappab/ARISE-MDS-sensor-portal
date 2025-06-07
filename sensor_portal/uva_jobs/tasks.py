@@ -1,4 +1,5 @@
 import os
+from glob import glob
 
 from archiving.models import Archive, TarFile
 from celery import shared_task
@@ -10,6 +11,43 @@ from observation_editor.models import Observation
 from user_management.models import User
 
 from sensor_portal.celery import app
+
+
+@app.task()
+def check_file_path(file_pks):
+    print("Starting fix_file_storage task...")
+    file_objs = DataFile.objects.filter(local_storage=True, pk__in=file_pks)
+
+    batch_size = 2000
+    total_obs = file_objs.count()
+    print(f"Total files to process: {total_obs}")
+    for start in range(0, total_obs, batch_size):
+        print(
+            f"Processing batch {start // batch_size + 1} of {((total_obs - 1) // batch_size) + 1}")
+        objs_to_update = []
+        batch = file_objs[start:start + batch_size]
+        for file_obj in batch.iterator():
+            file_exists = os.path.exists(file_obj.full_path())
+            if not file_exists:
+                print(f"Updating file ID {file_obj.id}")
+                # Use glob to recursively search for the file
+                search_path = os.path.join(
+                    settings.FILE_STORAGE_ROOT, '**', (file_obj.file_name+file_obj.file_format))
+                matching_files = glob(search_path, recursive=True)
+
+                if matching_files:
+                    # Update the file path if a match is found
+                    file_obj.local_path = settings.FILE_STORAGE_ROOT
+                    file_obj.path = os.path.relpath(
+                        matching_files[0], settings.FILE_STORAGE_ROOT)
+                    file_obj.set_file_url()
+                    objs_to_update.append(file_obj)
+
+        print("Update objects")
+        DataFile.objects.bulk_update(
+            objs_to_update, ["local_path", "path", "file_url"], 500)
+
+    print("Completed fix_file_storage task.")
 
 
 @app.task()
