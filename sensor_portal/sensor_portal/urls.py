@@ -18,6 +18,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path, re_path
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from rest_framework.authtoken import views
 from rest_framework_simplejwt import views as jwt_views
 
 from . import api
@@ -27,6 +28,7 @@ urlpatterns = [
     path("api/", include(api)),
     path('api/', include('user_management.urls')),
     path('api/', include('utils.urls')),
+    path('api-token-auth/', views.obtain_auth_token),
     path("icon_picker/", include("django_icon_picker.urls")),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/schema/swagger-ui/',
