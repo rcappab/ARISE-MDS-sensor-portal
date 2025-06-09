@@ -81,11 +81,11 @@ class Project(BaseModel):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, related_name="owned_projects",
                               on_delete=models.SET_NULL, null=True, db_index=True)
     managers = models.ManyToManyField(
-        settings.AUTH_USER_MODEL, blank=True, related_name="managed_projects")
+        settings.AUTH_USER_MODEL, blank=True, related_name="managed_projects", db_index=True)
     viewers = models.ManyToManyField(
-        settings.AUTH_USER_MODEL, blank=True, related_name="viewable_projects")
+        settings.AUTH_USER_MODEL, blank=True, related_name="viewable_projects", db_index=True)
     annotators = models.ManyToManyField(
-        settings.AUTH_USER_MODEL, blank=True, related_name="annotatable_projects")
+        settings.AUTH_USER_MODEL, blank=True, related_name="annotatable_projects", db_index=True)
 
     clean_time = models.IntegerField(default=90)
 
@@ -135,11 +135,11 @@ class Device(BaseModel):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, related_name="owned_devices",
                               on_delete=models.SET_NULL, null=True, db_index=True)
     managers = models.ManyToManyField(
-        settings.AUTH_USER_MODEL, blank=True, related_name="managed_devices")
+        settings.AUTH_USER_MODEL, blank=True, related_name="managed_devices", db_index=True)
     viewers = models.ManyToManyField(
-        settings.AUTH_USER_MODEL, blank=True, related_name="viewable_devices")
+        settings.AUTH_USER_MODEL, blank=True, related_name="viewable_devices", db_index=True)
     annotators = models.ManyToManyField(
-        settings.AUTH_USER_MODEL, blank=True, related_name="annotatable_devices")
+        settings.AUTH_USER_MODEL, blank=True, related_name="annotatable_devices", db_index=True)
 
     autoupdate = models.BooleanField(default=False)
     update_time = models.IntegerField(default=48)
@@ -275,10 +275,10 @@ class Deployment(BaseModel):
     deployment_end = models.DateTimeField(blank=True, null=True)
 
     device = models.ForeignKey(
-        Device, on_delete=models.PROTECT, related_name="deployments")
+        Device, on_delete=models.PROTECT, related_name="deployments", db_index=True)
     site = models.ForeignKey(Site, models.PROTECT, related_name="deployments")
     project = models.ManyToManyField(
-        Project, related_name="deployments", blank=True)
+        Project, related_name="deployments", blank=True, db_index=True)
 
     latitude = models.DecimalField(
         max_digits=8, decimal_places=6, blank=True, null=True)
@@ -298,12 +298,6 @@ class Deployment(BaseModel):
     # User ownership
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, related_name="owned_deployments",
                               on_delete=models.SET_NULL, null=True, db_index=True)
-    managers = models.ManyToManyField(
-        settings.AUTH_USER_MODEL, blank=True, related_name="managed_deployments")
-    viewers = models.ManyToManyField(
-        settings.AUTH_USER_MODEL, blank=True, related_name="viewable_deployments")
-    annotators = models.ManyToManyField(
-        settings.AUTH_USER_MODEL, blank=True, related_name="annotatable_deployments")
 
     combo_project = models.CharField(
         max_length=100, blank=True, null=True, editable=False)
@@ -439,11 +433,11 @@ class DataFileQuerySet(ApproximateCountQuerySet):
 
 class DataFile(BaseModel):
     deployment = models.ForeignKey(
-        Deployment, on_delete=models.CASCADE, related_name="files")
+        Deployment, on_delete=models.CASCADE, related_name="files", db_index=True)
 
     file_type = models.ForeignKey(
         DataType, models.PROTECT, related_name="files", null=True, default=None)
-    file_name = models.CharField(max_length=150, unique=True)
+    file_name = models.CharField(max_length=150, unique=True, db_index=True)
     file_size = FileSizeField()
     file_format = models.CharField(max_length=10)
 
@@ -467,7 +461,8 @@ class DataFile(BaseModel):
     do_not_remove = models.BooleanField(default=False)
     original_name = models.CharField(max_length=100, blank=True, null=True)
     file_url = models.CharField(max_length=500, null=True, blank=True)
-    tag = models.CharField(max_length=250, null=True, blank=True)
+    tag = models.CharField(max_length=250, null=True,
+                           blank=True, db_index=True)
 
     has_human = models.BooleanField(default=False)
 

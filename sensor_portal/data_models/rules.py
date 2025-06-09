@@ -287,254 +287,115 @@ class CanViewDeployedDevice(R):
 
 class CanManageProjectContainingDataFile(R):
     def check(self, user, instance=None):
-        initial_bool = check_super(user)
 
-        if initial_bool is not None:
-            return initial_bool
+        if user.pk in instance.deployment.project.all().values_list("managers__pk", flat=True):
+            return True
+        elif user.pk in instance.deployment.project.all().values_list("owner__pk", flat=True):
+            return True
         else:
-            is_manager = user.pk in instance.deployment.project.all().values_list(
-                "managers__pk", flat=True)
-            is_owner = user.pk in instance.deployment.project.all().values_list(
-                "owner__pk", flat=True)
-
-            return any([is_manager, is_owner])
+            return False
 
     def query(self, user):
-        accumulated_q = query_super(user)
 
-        if accumulated_q is not None:
-            return accumulated_q
-        else:
-            # can view/manage/own a deployment within project
-            # view
-            accumulated_q = Q(deployment__project__managers=user)
-            # own
-            accumulated_q = accumulated_q | Q(deployment__project__owner=user)
+        # can view/manage/own a deployment within project
+        # view
+        accumulated_q = Q(deployment__project__managers=user)
+        # own
+        accumulated_q = accumulated_q | Q(deployment__project__owner=user)
 
         return final_query(accumulated_q)
 
 
 class CanAnnotateProjectContainingDataFile(R):
     def check(self, user, instance=None):
-        initial_bool = check_super(user)
 
-        if initial_bool is not None:
-            return initial_bool
-        else:
-
-            is_annotator = user.pk in instance.deployment.project.all().values_list(
-                "annotators__pk", flat=True)
-            return is_annotator
+        is_annotator = user.pk in instance.deployment.project.all().values_list(
+            "annotators__pk", flat=True)
+        return is_annotator
 
     def query(self, user):
-        accumulated_q = query_super(user)
-
-        if accumulated_q is not None:
-            return accumulated_q
-        else:
-            # can view/manage/own a deployment within project
-            # view
-            accumulated_q = Q(
-                deployment__project__annotators=user)
+        # can view/manage/own a deployment within project
+        # view
+        accumulated_q = Q(
+            deployment__project__annotators=user)
 
         return final_query(accumulated_q)
 
 
 class CanViewProjectContainingDataFile(R):
     def check(self, user, instance=None):
-        initial_bool = check_super(user)
 
-        if initial_bool is not None:
-            return initial_bool
-        else:
-            is_viewer = user.pk in instance.deployment.project.all().values_list(
-                "viewers__pk", flat=True)
+        is_viewer = user.pk in instance.deployment.project.all().values_list(
+            "viewers__pk", flat=True)
 
-            return is_viewer
+        return is_viewer
 
     def query(self, user):
-        accumulated_q = query_super(user)
 
-        if accumulated_q is not None:
-            return accumulated_q
-        else:
-            # can view/manage/own a deployment within project
-            # view
-            accumulated_q = Q(deployment__project__viewers=user)
-
-        return final_query(accumulated_q)
-
-
-class CanManageDeploymentContainingDataFile(R):
-    def check(self, user, instance=None):
-        initial_bool = check_super(user)
-
-        if initial_bool is not None:
-            return initial_bool
-        else:
-            is_manager = user.pk in instance.deployment.managers.all().values_list("pk",
-                                                                                   flat=True)
-            is_owner = user == instance.deployment.owner
-
-            return any([is_manager, is_owner])
-
-    def query(self, user):
-        accumulated_q = query_super(user)
-
-        if accumulated_q is not None:
-            return accumulated_q
-        else:
-            # can view/manage/own a deployment within project
-            # view
-            accumulated_q = Q(deployment__managers=user)
-            # own
-            accumulated_q = accumulated_q | Q(deployment__owner=user)
-
-        return final_query(accumulated_q)
-
-
-class CanAnnotateDeploymentContainingDataFile(R):
-    def check(self, user, instance=None):
-        initial_bool = check_super(user)
-
-        if initial_bool is not None:
-            return initial_bool
-        else:
-            is_annotator = user.pk in instance.deployment.annotators.all().values_list(
-                "pk", flat=True)
-            return is_annotator
-
-    def query(self, user):
-        accumulated_q = query_super(user)
-
-        if accumulated_q is not None:
-            return accumulated_q
-        else:
-            # can view/manage/own a deployment within project
-            # view
-            accumulated_q = Q(
-                deployment__annotators=user)
-
-        return final_query(accumulated_q)
-
-
-class CanViewDeploymentContainingDataFile(R):
-    def check(self, user, instance=None):
-        initial_bool = check_super(user)
-
-        if initial_bool is not None:
-            return initial_bool
-        else:
-
-            is_viewer = user.pk in instance.deployment.viewers.all().values_list(
-                "pk", flat=True)
-
-            return is_viewer
-
-    def query(self, user):
-        accumulated_q = query_super(user)
-
-        if accumulated_q is not None:
-            return accumulated_q
-        else:
-            # can view/manage/own a deployment within project
-            # view
-            accumulated_q = Q(deployment__viewers=user)
+        # can view/manage/own a deployment within project
+        # view
+        accumulated_q = Q(deployment__project__viewers=user)
 
         return final_query(accumulated_q)
 
 
 class CanManageDeviceContainingDataFile(R):
     def check(self, user, instance=None):
-        initial_bool = check_super(user)
 
-        if initial_bool is not None:
-            return initial_bool
+        if user == instance.deployment.device.owner:
+            return True
+        elif user in instance.deployment.device.managers.all().values_list("pk", flat=True):
+            return True
         else:
-            is_manager = user.pk in instance.deployment.device.managers.all()\
-                .values_list(
-                "pk", flat=True)
-            is_owner = user == instance.deployment.device.owner
-
-            return any([is_manager, is_owner])
+            return False
 
     def query(self, user):
-        accumulated_q = query_super(user)
 
-        if accumulated_q is not None:
-            return accumulated_q
-        else:
-            # can view/manage/own a deployment within project
-            # view
-            accumulated_q = Q(deployment__device__managers=user)
-            # own
-            accumulated_q = accumulated_q | Q(deployment__device__owner=user)
+        # can view/manage/own a deployment within project
+        # manage
+        accumulated_q = Q(deployment__device__managers=user)
+        # own
+        accumulated_q = accumulated_q | Q(deployment__device__owner=user)
 
         return final_query(accumulated_q)
 
 
 class CanAnnotateDeviceContainingDataFile(R):
     def check(self, user, instance=None):
-        initial_bool = check_super(user)
-
-        if initial_bool is not None:
-            return initial_bool
-        else:
-
-            is_annotator = user.pk in instance.deployment.device.annotators.all().values_list(
-                "pk", flat=True)
-            return is_annotator
+        is_annotator = user.pk in instance.deployment.device.annotators.all().values_list(
+            "pk", flat=True)
+        return is_annotator
 
     def query(self, user):
-        accumulated_q = query_super(user)
 
-        if accumulated_q is not None:
-            return accumulated_q
-        else:
-            # can view/manage/own a deployment within project
-            # view
-            accumulated_q = Q(
-                deployment__device__annotators=user)
+        # can view/manage/own a deployment within project
+        # view
+        accumulated_q = Q(
+            deployment__device__annotators=user)
 
         return final_query(accumulated_q)
 
 
 class CanViewDeviceContainingDataFile(R):
     def check(self, user, instance=None):
-        initial_bool = check_super(user)
-
-        if initial_bool is not None:
-            return initial_bool
-        else:
-            is_viewer = user.pk in instance.deployment.device.viewers.all().values_list(
-                "pk", flat=True)
-            return is_viewer
+        is_viewer = user.pk in instance.deployment.device.viewers.all().values_list(
+            "pk", flat=True)
+        return is_viewer
 
     def query(self, user):
-        accumulated_q = query_super(user)
-
-        if accumulated_q is not None:
-            return accumulated_q
-        else:
-            # can view/manage/own a deployment within project
-            # view
-            accumulated_q = Q(deployment__device__viewers=user)
+        # can view/manage/own a deployment within project
+        # view
+        accumulated_q = Q(deployment__device__viewers=user)
 
         return final_query(accumulated_q)
 
 
-class CanViewHuman(R):
+class DataFileHasNoHuman(R):
     def check(self, user, instance=None):
-        user.is_superuser | (not instance.has_human)
-        return user.is_superuser | (not instance.has_human)
+        return not instance.has_human
 
     def query(self, user):
 
-        accumulated_q = query_super(user)
-
-        if accumulated_q is not None:
-            return accumulated_q
-        else:
-            accumulated_q = Q(has_human=False)
+        accumulated_q = Q(has_human=False)
 
         return final_query(accumulated_q)

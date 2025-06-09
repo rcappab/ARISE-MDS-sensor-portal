@@ -174,24 +174,6 @@ const DetailDisplayUser = ({ id, authTokens, user }: UserProfileProps) => {
 								ids={data.owned_deployments_ID}
 								basePath="/deployments"
 							/>
-							<DataList
-								title="Managed Deployments"
-								data={data.managed_deployments}
-								ids={data.managed_deployments_ID}
-								basePath="/deployments"
-							/>
-							<DataList
-								title="Annotatable Deployments"
-								data={data.annotatable_deployments}
-								ids={data.annotatable_deployments_ID}
-								basePath="/deployments"
-							/>
-							<DataList
-								title="Viewable Deployments"
-								data={data.viewable_deployments}
-								ids={data.viewable_deployments_ID}
-								basePath="/deployments"
-							/>
 						</div>
 					</div>
 				</>

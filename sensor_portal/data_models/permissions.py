@@ -3,20 +3,16 @@ from bridgekeeper.rules import (is_active, is_authenticated, is_staff,
                                 is_superuser)
 from utils.rules import IsOwner
 
-from .rules import (CanAnnotateDeploymentContainingDataFile,
-                    CanAnnotateDeviceContainingDataFile,
+from .rules import (CanAnnotateDeviceContainingDataFile,
                     CanAnnotateProjectContainingDataFile,
-                    CanManageDeployedDevice,
-                    CanManageDeploymentContainingDataFile,
-                    CanManageDeviceContainingDataFile,
+                    CanManageDeployedDevice, CanManageDeviceContainingDataFile,
                     CanManageProjectContainingDataFile,
                     CanManageProjectContainingDeployment,
-                    CanViewDeployedDevice, CanViewDeploymentContainingDataFile,
-                    CanViewDeviceContainingDataFile, CanViewHuman,
+                    CanViewDeployedDevice, CanViewDeviceContainingDataFile,
                     CanViewProjectContainingDataFile,
                     CanViewProjectContainingDeployment,
-                    CanViewProjectContainingDevice, IsAnnotator, IsManager,
-                    IsViewer)
+                    CanViewProjectContainingDevice, DataFileHasNoHuman,
+                    IsAnnotator, IsManager, IsViewer)
 
 # PROJECT
 perms['data_models.add_project'] = is_authenticated & is_active
@@ -51,7 +47,6 @@ perms['data_models.view_device'] = is_authenticated & (is_superuser
 perms['data_models.add_deployment'] = is_authenticated & is_active
 perms['data_models.change_deployment'] = is_authenticated & (is_superuser
                                                              | IsOwner()
-                                                             | IsManager()
                                                              | CanManageDeployedDevice()
                                                              | CanManageProjectContainingDeployment()
                                                              ) & is_active  # must be device owner OR manager
@@ -62,9 +57,6 @@ perms['data_models.delete_deployment'] = is_authenticated & (is_superuser
                                                              ) & is_active  # must be device owner OR manager
 perms['data_models.view_deployment'] = is_authenticated & (is_superuser
                                                            | IsOwner()
-                                                           | IsManager()
-                                                           | IsAnnotator()
-                                                           | IsViewer()
                                                            | CanManageProjectContainingDeployment()
                                                            | CanViewProjectContainingDeployment()
                                                            | CanManageDeployedDevice()
@@ -73,29 +65,26 @@ perms['data_models.view_deployment'] = is_authenticated & (is_superuser
 
 # DATAFILES
 perms['data_models.add_datafile'] = is_authenticated & is_active
+
 perms['data_models.change_datafile'] = is_authenticated & (is_superuser
                                                            | CanManageProjectContainingDataFile()
-                                                           | CanManageDeploymentContainingDataFile()
                                                            | CanManageDeviceContainingDataFile()) & is_active
+
 perms['data_models.delete_datafile'] = is_authenticated & (is_superuser
                                                            | CanManageProjectContainingDataFile()
-                                                           | CanManageDeploymentContainingDataFile()
                                                            | CanManageDeviceContainingDataFile()) & is_active
-perms['data_models.view_datafile'] = is_authenticated & CanViewHuman() & (is_superuser
-                                                                          | CanManageProjectContainingDataFile()
-                                                                          | CanManageDeploymentContainingDataFile()
-                                                                          | CanManageDeviceContainingDataFile()
-                                                                          | CanAnnotateDeploymentContainingDataFile()
-                                                                          | CanAnnotateDeviceContainingDataFile()
-                                                                          | CanAnnotateProjectContainingDataFile()
-                                                                          | CanViewProjectContainingDataFile()
-                                                                          | CanViewDeploymentContainingDataFile()
-                                                                          | CanViewDeviceContainingDataFile()) & is_active
+perms['data_models.view_datafile'] = is_authenticated & (is_superuser |
+                                                         ((CanManageProjectContainingDataFile()
+                                                           | CanManageDeviceContainingDataFile())
+                                                          | (CanAnnotateProjectContainingDataFile()
+                                                              | CanViewProjectContainingDataFile()
+                                                              | CanAnnotateDeviceContainingDataFile()
+                                                              | CanViewDeviceContainingDataFile()
+                                                             ) & DataFileHasNoHuman())) & is_active
+
 perms['data_models.annotate_datafile'] = is_authenticated & (is_superuser
                                                              | CanManageProjectContainingDataFile()
                                                              | CanAnnotateProjectContainingDataFile()
-                                                             | CanManageDeploymentContainingDataFile()
-                                                             | CanAnnotateDeploymentContainingDataFile()
                                                              | CanManageDeviceContainingDataFile()
                                                              | CanAnnotateDeviceContainingDataFile()
 
