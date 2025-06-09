@@ -36,8 +36,7 @@ class LargeTablePaginator(Paginator):
                 with transaction.atomic(), connection.cursor() as cursor:
                     # Obtain estimated values (only valid with PostgreSQL)
                     cursor.execute(
-                        'SET LOCAL statement_timeout TO 150;'
-                        "SELECT reltuples FROM pg_class WHERE relname = %s",
+                        "SET LOCAL statement_timeout TO 150; SELECT reltuples FROM pg_class WHERE relname = %s",
                         [self.object_list.query.model._meta.db_table]
                     )
                     estimate = int(cursor.fetchone()[0])

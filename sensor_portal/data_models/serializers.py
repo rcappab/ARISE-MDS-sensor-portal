@@ -19,7 +19,7 @@ from .models import (DataFile, DataType, Deployment, Device, DeviceModel,
                      Project, Site)
 
 
-class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMixIn, ManagerMixIn, CreatedModifiedMixIn, CheckFormMixIn,
+class DeploymentFieldsMixIn(InstanceGetMixIn, ManagerMixIn, OwnerMixIn, CreatedModifiedMixIn, CheckFormMixIn,
                             serializers.ModelSerializer):
     device_type = serializers.SlugRelatedField(
         slug_field='name', queryset=DataType.objects.all(), required=False, allow_null=True)
@@ -56,6 +56,7 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMixIn, ManagerMixIn, CreatedM
     # check project permissions here or in viewpoint
 
     def to_representation(self, instance):
+        request_user = self.context['request'].user
         initial_rep = super(DeploymentFieldsMixIn,
                             self).to_representation(instance)
         projects_no_global = [(x, y) for x, y in zip(
@@ -63,6 +64,8 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMixIn, ManagerMixIn, CreatedM
 
         initial_rep["project"], initial_rep["project_ID"] = zip(
             *projects_no_global) if projects_no_global else ([], [])
+        initial_rep["can_manage"] = perms['data_models.change_deployment'].check(
+            request_user, instance)
 
         if not self.context.get('request'):
             initial_rep.pop('thumb_url')

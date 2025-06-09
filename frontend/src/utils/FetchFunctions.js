@@ -73,7 +73,11 @@ async function handleResponse(response) {
 	let response_json = { ok: response.ok, statusText: response.statusText };
 	try {
 		const response_data = await response.json();
-		Object.assign(response_json, response_data);
+		if (Array.isArray(response_data)) {
+			response_json.results = response_data;
+		} else {
+			Object.assign(response_json, response_data);
+		}
 	} catch (error) {}
 
 	return response_json;

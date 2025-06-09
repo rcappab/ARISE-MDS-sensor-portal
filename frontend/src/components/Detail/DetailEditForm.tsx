@@ -204,6 +204,7 @@ const DetailEditForm = ({
 	});
 
 	const permissionEditor = () => {
+		if (!["device", "project"].includes(objectType)) return null;
 		if (
 			!selectedData ||
 			Object.keys(selectedData as object).includes("managers_ID")

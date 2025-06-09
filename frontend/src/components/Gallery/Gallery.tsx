@@ -120,7 +120,7 @@ const Gallery = () => {
 		isPlaceholderData,
 		refetch,
 	} = useQuery({
-		queryKey: ["data", user, checkSearchParameters().toString()],
+		queryKey: [objectType, user, checkSearchParameters().toString()],
 		queryFn: () => getDataFunc(searchParams),
 		enabled: searchParams.size > 0,
 		placeholderData: keepPreviousData,

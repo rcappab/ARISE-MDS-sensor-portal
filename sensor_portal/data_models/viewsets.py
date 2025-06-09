@@ -9,6 +9,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import OperationalError, connection, transaction
 from django.db.models import Q
 from django.utils import timezone as djtimezone
+from observation_editor.models import Observation
+from observation_editor.serializers import ObservationSerializer
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
@@ -222,14 +224,14 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
 
     filterset_class = DataFileFilter
 
-    search_fields = ['file_name',
-                     '=tag',
+    search_fields = ['=tag',
+                     'file_name',
                      'observations__taxon__species_name',
                      'observations__taxon__species_common_name']
 
     def get_queryset(self):
         qs = DataFile.objects.prefetch_related(
-            "observations", "observations__taxon").all().distinct()
+            "observations__taxon").all().distinct()
         if 'CTDP' in self.request.GET.keys():
             qs = get_ctdp_media_qs(qs)
         return qs
@@ -284,6 +286,15 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
             job_name, "datafile", obj_pks, job_args, user_pk)
 
         return Response({"detail": detail}, status=job_status)
+
+    @action(detail=True, methods=['get'])
+    def observations(self, request, pk=None):
+        data_file = self.get_object()
+        observation_qs = Observation.objects.filter(
+            data_files=data_file).distinct()
+        observation_serializer = ObservationSerializer(
+            observation_qs, many=True)
+        return Response(observation_serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])
     def favourite_file(self, request, pk=None):
