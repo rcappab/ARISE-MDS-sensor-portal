@@ -39,7 +39,7 @@ def check_file_path(file_pks):
                     # Update the file path if a match is found
                     file_obj.local_path = settings.FILE_STORAGE_ROOT
                     file_obj.path = os.path.relpath(
-                        matching_files[0], settings.FILE_STORAGE_ROOT)
+                        os.path.split(matching_files[0])[0], settings.FILE_STORAGE_ROOT)
                     file_obj.set_file_url()
                     objs_to_update.append(file_obj)
 
