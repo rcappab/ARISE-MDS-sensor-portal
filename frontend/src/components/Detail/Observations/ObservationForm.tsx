@@ -659,7 +659,7 @@ const ObservationForm = ({
 			</button>
 			<button
 				className="btn btn-outline-primary"
-				onClick={() => submitForms}
+				onClick={() => submitForms()}
 			>
 				Save and keep annotating
 			</button>
