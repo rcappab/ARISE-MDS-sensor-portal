@@ -296,7 +296,7 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
         observation_qs = Observation.objects.filter(
             data_files=data_file).distinct()
         observation_serializer = ObservationSerializer(
-            observation_qs, many=True)
+            observation_qs, many=True, context={'request': request})
         return Response(observation_serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])

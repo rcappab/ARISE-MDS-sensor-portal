@@ -34,7 +34,7 @@ services:
       context: .
       dockerfile: ./dockerfiles/sensor_portal_django.dockerfile
     image: sensor_portal_django_image
-    command: bash -c "python manage.py wait_for_db && gunicorn sensor_portal.wsgi:application --bind 0.0.0.0:8000  --worker-class gthread --workers 48 --threads=2 --timeout 120 --graceful-timeout 120 --max-requests 1200 --max-requests-jitter 50"
+    command: bash -c "gunicorn sensor_portal.wsgi:application --bind 0.0.0.0:8000  --worker-class gthread --workers 24 --threads=2 --timeout 120 --graceful-timeout 120 --max-requests 1200 --max-requests-jitter 50"
     volumes:
       - ./file_storage:/media/file_storage
     ports:
