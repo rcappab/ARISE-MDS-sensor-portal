@@ -129,7 +129,7 @@ class Device(BaseModel):
         DeviceModel, models.PROTECT, related_name="registered_devices")
 
     type = models.ForeignKey(DataType, models.PROTECT,
-                             related_name="devices", null=True)
+                             related_name="devices", null=True, db_index=True)
 
     # User ownership
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, related_name="owned_devices",
@@ -268,7 +268,7 @@ class Deployment(BaseModel):
         max_length=110, blank=True, editable=False, unique=True)
     deployment_ID = models.CharField(max_length=80)
     device_type = models.ForeignKey(
-        DataType, models.PROTECT, related_name="deployments", null=True)
+        DataType, models.PROTECT, related_name="deployments", null=True, db_index=True)
     device_n = models.IntegerField(default=1)
 
     deployment_start = models.DateTimeField(default=djtimezone.now)
@@ -436,7 +436,7 @@ class DataFile(BaseModel):
         Deployment, on_delete=models.CASCADE, related_name="files", db_index=True)
 
     file_type = models.ForeignKey(
-        DataType, models.PROTECT, related_name="files", null=True, default=None)
+        DataType, models.PROTECT, related_name="files", null=True, default=None, db_index=True)
     file_name = models.CharField(max_length=150, unique=True, db_index=True)
     file_size = FileSizeField()
     file_format = models.CharField(max_length=10)
@@ -451,7 +451,7 @@ class DataFile(BaseModel):
 
     thumb_url = models.CharField(max_length=500, null=True, blank=True)
 
-    local_storage = models.BooleanField(default=True)
+    local_storage = models.BooleanField(default=True, db_index=True)
     archived = models.BooleanField(default=False)
     tar_file = models.ForeignKey(
         TarFile, on_delete=models.SET_NULL, blank=True, null=True, related_name="files")
@@ -464,7 +464,7 @@ class DataFile(BaseModel):
     tag = models.CharField(max_length=250, null=True,
                            blank=True, db_index=True)
 
-    has_human = models.BooleanField(default=False)
+    has_human = models.BooleanField(default=False, db_index=True)
 
     objects = DataFileQuerySet.as_manager()
 

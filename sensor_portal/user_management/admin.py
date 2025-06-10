@@ -10,7 +10,7 @@ TokenAdmin.raw_id_fields = ['user']
 
 class TokenInline(admin.StackedInline):
     model = Token
-    readonly_fields = ["key"]
+    # readonly_fields = ["key"]
 
 
 admin.site.unregister(TokenProxy)
