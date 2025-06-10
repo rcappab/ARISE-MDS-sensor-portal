@@ -16,7 +16,7 @@ class DataTypeFilter(GenericFilterMixIn):
     def is_file_type(self, queryset, name, value):
         print(name)
         if (name == "file_type"):
-            return queryset.filter(files__isnull=not value)
+            return queryset
         else:
             return queryset.filter(device_models__isnull=not value)
 

@@ -9,6 +9,9 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import OperationalError, connection, transaction
 from django.db.models import Q
 from django.utils import timezone as djtimezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_cookie, vary_on_headers
 from observation_editor.models import Observation
 from observation_editor.serializers import ObservationSerializer
 from rest_framework import status, viewsets
@@ -366,6 +369,11 @@ class SiteViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSetMixIn)
     queryset = Site.objects.all().distinct()
     search_fields = ['name', 'short_name']
 
+    @method_decorator(cache_page(60 * 60 * 2))
+    @method_decorator(vary_on_cookie)
+    def list(self, request):
+        return super().list(request)
+
 
 class DataTypeViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSetMixIn):
     serializer_class = DataTypeSerializer
@@ -373,12 +381,20 @@ class DataTypeViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSetMi
     search_fields = ['name']
     filterset_class = DataTypeFilter
 
+    @method_decorator(cache_page(60 * 60 * 2))
+    def list(self, request):
+        return super().list(request)
+
 
 class DeviceModelViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSetMixIn):
     serializer_class = DeviceModelSerializer
     queryset = DeviceModel.objects.all().distinct()
     search_fields = ['name']
     filterset_class = DeviceModelFilter
+
+    @method_decorator(cache_page(60 * 60 * 2))
+    def list(self, request):
+        return super().list(request)
 
 
 class GenericJobViewSet(viewsets.ViewSet):
@@ -398,6 +414,8 @@ class GenericJobViewSet(viewsets.ViewSet):
             job_list = [x for x in job_list if x["data_type"] == data_type]
         return job_list
 
+    @method_decorator(cache_page(60 * 60 * 2))
+    @method_decorator(vary_on_cookie)
     def list(self, request):
 
         serializer = self.serializer_class(
@@ -405,6 +423,8 @@ class GenericJobViewSet(viewsets.ViewSet):
 
         return Response(serializer.data)
 
+    @method_decorator(cache_page(60 * 60 * 2))
+    @method_decorator(vary_on_cookie)
     def retrieve(self, request, pk=None):
         try:
             job_dict = list(settings.GENERIC_JOBS.values())[int(pk)]
