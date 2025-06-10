@@ -1,7 +1,9 @@
 from data_models.models import DataFile
 from django.conf import settings
+from django.contrib.postgres.indexes import GinIndex, OpClass
 from django.db import models
 from django.db.models import Case, F, Min, Q, Value, When
+from django.db.models.functions import Upper
 from django.db.models.signals import m2m_changed, post_delete, post_save
 from django.dispatch import receiver
 from requests.exceptions import ConnectionError, ConnectTimeout
@@ -42,9 +44,10 @@ class TaxonQuerySet(ApproximateCountQuerySet):
 
 
 class Taxon(BaseModel):
-    species_name = models.CharField(max_length=100, unique=False)
+    species_name = models.CharField(
+        max_length=100, unique=False, db_index=True)
     species_common_name = models.CharField(
-        max_length=100, unique=False, blank=True)
+        max_length=100, unique=False, blank=True, db_index=True)
     taxon_code = models.CharField(max_length=100, blank=True)
 
     taxon_source = models.IntegerField(choices=source_choice, default=0)

@@ -9,10 +9,12 @@ import toast from "react-hot-toast";
 import DetailDisplayUser from "./DetailDisplayUser.tsx";
 import { useObjectType } from "../../context/ObjectTypeCheck.tsx";
 import Error404page from "../../pages/Error404page.jsx";
+import { ObsEditModeContext } from "../../context/ObsModeContext.jsx";
 
 const DetailPage = () => {
 	const { authTokens, user } = useContext(AuthContext);
 	const { fromID, objectType, nameKey } = useObjectType();
+
 	if (objectType === "user") {
 		return (
 			<DetailDisplayUser
@@ -50,6 +52,7 @@ const ObjectDetailPage = ({
 	nameKey,
 }: DetailProps) => {
 	const [editMode, setEditMode] = useState(false);
+	const [obsEditMode, setObsEditMode] = useState(false);
 	const navigate = useNavigate();
 
 	const getDataFunc = async () => {
@@ -143,12 +146,13 @@ const ObjectDetailPage = ({
 	}
 
 	return (
-		<>
+		<ObsEditModeContext.Provider value={{ obsEditMode, setObsEditMode }}>
 			<div className="row">
 				<h1 className="col-auto">{data[nameKey]}</h1>
 				{editButton()}
 				{deleteButton()}
 			</div>
+
 			<DetailModalContent
 				objectType={objectType}
 				selectedData={data}
@@ -160,7 +164,7 @@ const ObjectDetailPage = ({
 					refetch();
 				}}
 			/>
-		</>
+		</ObsEditModeContext.Provider>
 	);
 };
 

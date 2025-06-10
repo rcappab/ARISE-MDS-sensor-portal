@@ -157,7 +157,7 @@ const ObservationFormRow = ({
 
 	const canDraw =
 		[".jpg", ".jpeg", ".png"].includes(fileData["file_format"].toLowerCase()) &&
-		fileData["local_storage"];
+		fileData["file_url"];
 
 	const handleHover = useCallback(
 		(hover) => {
@@ -451,10 +451,13 @@ const ObservationForm = ({
 				if (newRow["validation_requested"]) {
 					newRow["validation_of"] = newRow["id"];
 					newRow["validation_requested"] = false;
+					newRow["can_annotate"] = true;
 				}
-				newRow["id"] = "";
+				newRow["can_annotate"] = true;
+				newRow["user_is_owner"] = true;
 				newRow["source"] = "human";
 				newRow["edited"] = false;
+				newRow["id"] = "";
 			}
 
 			newRow = getNewRow(newRow);

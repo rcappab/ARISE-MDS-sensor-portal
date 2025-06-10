@@ -12,7 +12,7 @@ services:
       sensor_portal_frontend:
         condition: service_started
         restart: true
-    restart: unless-stopped
+    restart: always
     volumes:
       - /data/file_storage:/file_storage:z
   sensor_portal_frontend:
@@ -64,8 +64,8 @@ services:
         restart: true
     healthcheck:
       test: ["CMD-SHELL", "curl --fail http://localhost:8000/api || exit 1"]
-      interval: 30s
-      timeout: 60s
+      interval: 600s
+      timeout: 120s
       retries: 5
     restart: always
   sensor_portal_worker:

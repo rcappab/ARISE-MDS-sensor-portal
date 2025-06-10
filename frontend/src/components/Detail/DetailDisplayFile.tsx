@@ -66,7 +66,7 @@ const DetailDisplayFile = ({ fileData }: Props) => {
 	const isImage = [".jpg", ".jpeg", ".png"].includes(
 		fileData["file_format"].toLowerCase()
 	);
-	const isLocal = fileData["file_format"];
+	const isLocal = fileData["file_url"];
 	const hasLinkedFiles =
 		fileData["linked_files"] !== undefined &&
 		Object.keys(fileData["linked_files"]).length > 0;
