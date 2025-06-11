@@ -42,10 +42,14 @@ def check_file_path(file_pks):
                         os.path.split(matching_files[0])[0], settings.FILE_STORAGE_ROOT)
                     file_obj.set_file_url()
                     objs_to_update.append(file_obj)
+                else:
+                    file_obj.local_storage = False
+                    file_obj.set_file_url()
+                    objs_to_update.append(file_obj)
 
         print("Update objects")
         DataFile.objects.bulk_update(
-            objs_to_update, ["local_path", "path", "file_url"], 500)
+            objs_to_update, ["local_path", "path", "file_url", "local_storage"], 500)
 
     print("Completed fix_file_storage task.")
 
