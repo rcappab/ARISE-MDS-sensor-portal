@@ -97,7 +97,6 @@ def check_device_status():
         Q(managed_projects__deployments__device__in=bad_devices) |
         Q(owned_devices__in=bad_devices) |
         Q(managed_devices__in=bad_devices) |
-        Q(managed_deployments__device__in=bad_devices) |
         Q(owned_deployments__device__in=bad_devices)
     ).distinct()
 

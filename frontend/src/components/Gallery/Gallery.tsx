@@ -17,9 +17,29 @@ import { ObsEditModeContext } from "../../context/ObsModeContext.jsx";
 import JobModal from "./JobModal.tsx";
 import { useObjectType } from "../../context/ObjectTypeCheck.tsx";
 
-const Gallery = () => {
-	const { fromID, fromObject, objectType, nameKey, filterKey } =
-		useObjectType();
+interface GalleryType {
+	fromID?: string;
+	fromObject?: string;
+	objectType?: string;
+	nameKey?: string;
+}
+
+const Gallery = ({ fromID, fromObject, objectType, nameKey }: GalleryType) => {
+	const {
+		fromID: contextFromID,
+		fromObject: contextFromObject,
+		objectType: contextObjectType,
+		nameKey: contextNameKey,
+	} = useObjectType();
+
+	fromID = fromID ?? contextFromID;
+	fromObject = fromObject ?? contextFromObject;
+	objectType = objectType ?? contextObjectType;
+	nameKey = nameKey ?? contextNameKey;
+
+	if (!nameKey) {
+		nameKey = "";
+	}
 
 	const defaultPageSize = 30;
 	const [searchParams, setSearchParams] = useSearchParams();
@@ -93,7 +113,9 @@ const Gallery = () => {
 	}, [orderBy, updateSearchParameters]);
 
 	const getDataFunc = async (currentSearchParams) => {
-		let apiURL = `${objectType}/?${currentSearchParams.toString()}`;
+		let apiURL = `${objectType}${fromObject ? `/${fromObject}` : ""}
+		${fromID ? `/${fromID}` : ""}
+		/?${currentSearchParams.toString()}`;
 		let response_json = await getData(apiURL, authTokens.access);
 		return response_json;
 	};
@@ -304,6 +326,7 @@ const Gallery = () => {
 						onClick={handleClick}
 						tableMode={tableMode}
 						selectedIndexes={selectedIndexes}
+						nameKey={nameKey}
 					/>
 				</div>
 			</div>
@@ -403,7 +426,6 @@ const Gallery = () => {
 				objectType={objectType}
 				fromObject={fromObject}
 				fromID={fromID}
-				filterKey={filterKey}
 				key={`${objectType}-${fromObject}-${fromID}`}
 				selectedItemsCount={selectedIndexes.length}
 				noData={

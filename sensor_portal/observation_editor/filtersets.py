@@ -7,7 +7,21 @@ from .models import Observation
 class ObservationFilter(GenericFilterMixIn, ExtraDataFilterMixIn):
     class Meta:
         model = Observation
-        fields = GenericFilterMixIn.get_fields().copy()
-        fields.update({
-            'data_files': ['exact']
-        })
+
+        fields = {
+            'data_files__id': ['exact'],
+            'data_files__deployment__id': ['exact'],
+            'taxon__id': ['exact', 'in'],
+            'obs_dt': ['exact', 'lte', 'gte'],
+            'confidence': ['exact', 'lte', 'gte'],
+            'source': ['exact'],
+            'sex': ['exact'],
+            'lifestage': ['exact'],
+            'behavior': ['exact'],
+            'validation_requested': ['exact'],
+            'validation_of__id': ['exact'],
+            'taxon__species_name': ['exact', 'contains'],
+            'taxon__species_common_name': ['exact', 'contains'],
+            'taxon__taxon_code': ['exact', 'contains'],
+            'owner__id': ['exact'],
+        }

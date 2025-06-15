@@ -45,7 +45,7 @@ services:
       context: .
       dockerfile: ./dockerfiles/sensor_portal_django.dockerfile
     image: sensor_portal_django_image
-    command: bash -c "python manage.py wait_for_db && python manage.py runserver 0.0.0.0:8000"
+    command: bash -c "python manage.py runserver 0.0.0.0:8000"
     volumes:
       - ./file_storage:/media/file_storage
       - ./sensor_portal:/usr/src/sensor_portal
@@ -160,6 +160,7 @@ services:
       retries: 100
       start_period: 80s 
     restart: always
+    command: ["postgres", "-c", "log_statement=all"]
   sensor_portal_redis:
       image: "redis:alpine"
       healthcheck:

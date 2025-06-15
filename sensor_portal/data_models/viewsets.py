@@ -1,4 +1,6 @@
+import datetime
 import os
+from datetime import datetime
 
 from camtrap_dp_export.querysets import (get_ctdp_deployment_qs,
                                          get_ctdp_media_qs)
@@ -12,6 +14,7 @@ from django.utils import timezone as djtimezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
+from observation_editor.filtersets import ObservationFilter
 from observation_editor.models import Observation
 from observation_editor.serializers import ObservationSerializer
 from rest_framework import status, viewsets
@@ -116,6 +119,44 @@ class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, Check
             if not self.request.user.has_perm('data_models.change_device', device_object):
                 raise PermissionDenied(
                     f"You don't have permission to deploy {device_object.device_ID}")
+
+    @action(detail=False, methods=['get'], url_path=r'project/(?P<project_pk>\w+)', url_name="project_deployments")
+    def project_deployments(self, request, project_pk=None):
+        # Filter deployments based on the project primary key (project_pk)
+        deployment_qs = Deployment.objects.filter(
+            project__pk=project_pk)
+        deployment_qs = self.filter_queryset(deployment_qs)
+
+        # Paginate the queryset
+        page = self.paginate_queryset(deployment_qs)
+        if page is not None:
+            deployment_serializer = DeploymentSerializer(
+                page, many=True, context={'request': request})
+            return self.get_paginated_response(deployment_serializer.data)
+
+        # If no pagination, serialize all data
+        deployment_serializer = DeploymentSerializer(
+            deployment_qs, many=True, context={'request': request})
+        return Response(deployment_serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'], url_path=r'device/(?P<device_pk>\w+)', url_name="device_deployments")
+    def device_deployments(self, request, device_pk=None):
+        # Filter deployments based on the device primary key (device_pk)
+        deployment_qs = Deployment.objects.filter(
+            device__pk=device_pk)
+        deployment_qs = self.filter_queryset(deployment_qs)
+
+        # Paginate the queryset
+        page = self.paginate_queryset(deployment_qs)
+        if page is not None:
+            deployment_serializer = DeploymentSerializer(
+                page, many=True, context={'request': request})
+            return self.get_paginated_response(deployment_serializer.data)
+
+        # If no pagination, serialize all data
+        deployment_serializer = DeploymentSerializer(
+            deployment_qs, many=True, context={'request': request})
+        return Response(deployment_serializer.data, status=status.HTTP_200_OK)
 
 
 class ProjectViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
@@ -222,6 +263,29 @@ class DeviceViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
         file_metric_dicts = get_all_file_metric_dicts(data_files)
         return Response(file_metric_dicts, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=['get'])
+    def datafiles(self, request, pk=None):
+        device = self.get_object()
+
+        data_file_qs = DataFile.objects.filter(
+            deployment__device=device)
+
+        # Apply filters from URL query parameters
+        data_file_qs = DataFileFilter(
+            queryset=data_file_qs, request=request).qs
+
+        # Paginate the queryset
+        page = self.paginate_queryset(data_file_qs)
+        if page is not None:
+            serializer = DataFileSerializer(
+                page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
+
+        # If no pagination, serialize all data
+        serializer = DataFileSerializer(
+            data_file_qs, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixIn):
 
@@ -293,8 +357,20 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
     @action(detail=True, methods=['get'])
     def observations(self, request, pk=None):
         data_file = self.get_object()
+
+        # Filter observations based on URL query parameters
         observation_qs = Observation.objects.filter(
-            data_files=data_file).distinct()
+            data_files=data_file)
+
+        # Paginate the queryset
+        print(self.request)
+        page = self.paginate_queryset(observation_qs)
+        if page is not None:
+            observation_serializer = ObservationSerializer(
+                page, many=True, context={'request': request})
+            return self.get_paginated_response(observation_serializer.data)
+
+        # If no pagination, serialize all data
         observation_serializer = ObservationSerializer(
             observation_qs, many=True, context={'request': request})
         return Response(observation_serializer.data, status=status.HTTP_200_OK)
@@ -362,6 +438,123 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
 
         return Response({"uploaded_files": uploaded_files, "invalid_files": invalid_files, "existing_files": existing_files},
                         status=status_code, headers=headers)
+
+    @action(detail=False, methods=['get'], url_path=r'deployment/(?P<deployment_pk>\w+)', url_name="deployment_datafiles")
+    def deployment_datafiles(self, request, deployment_pk=None):
+        # Filter data files based on the deployment primary key (deployment_pk)
+        data_file_qs = DataFile.objects.filter(deployment__pk=deployment_pk)
+
+        # Apply filters from URL query parameters
+        data_file_qs = DataFileFilter(
+            queryset=data_file_qs, request=request).qs
+
+        # Paginate the queryset
+        page = self.paginate_queryset(data_file_qs)
+        if page is not None:
+            serializer = DataFileSerializer(
+                page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
+
+        # If no pagination, serialize all data
+        serializer = DataFileSerializer(
+            data_file_qs, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'], url_path=r'project/(?P<project_pk>\w+)', url_name="project_datafiles")
+    def project_datafiles(self, request, project_pk=None):
+        # Filter data files based on the project primary key (project_pk) through deployments
+        data_file_qs = DataFile.objects.filter(
+            deployment__project__pk=project_pk)
+
+        # Apply filters from URL query parameters
+        data_file_qs = DataFileFilter(
+            queryset=data_file_qs, request=request).qs
+
+        # Paginate the queryset
+        page = self.paginate_queryset(data_file_qs)
+        if page is not None:
+            serializer = DataFileSerializer(
+                page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
+
+        # If no pagination, serialize all data
+        serializer = DataFileSerializer(
+            data_file_qs, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'], url_path=r'device/(?P<device_pk>\w+)', url_name="device_datafiles")
+    def device_datafiles(self, request, device_pk=None):
+        # Filter data files based on the device primary key (device_pk) through deployments
+        data_file_qs = DataFile.objects.filter(
+            deployment__device__pk=device_pk)
+
+        # Apply filters from URL query parameters
+        data_file_qs = DataFileFilter(
+            queryset=data_file_qs, request=request).qs
+
+        # Paginate the queryset
+        page = self.paginate_queryset(data_file_qs)
+        if page is not None:
+            serializer = DataFileSerializer(
+                page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
+
+        # If no pagination, serialize all data
+        serializer = DataFileSerializer(
+            data_file_qs, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'], url_path=r'user', url_name="user_favourite_datafiles")
+    def user_favourite_datafiles(self, request):
+        # Get the data files favorited by the current user
+        user = request.user
+        if not user.is_authenticated:
+            return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        data_file_qs = DataFile.objects.filter(favourite_of=user)
+
+        # Apply filters from URL query parameters
+        data_file_qs = DataFileFilter(
+            queryset=data_file_qs, request=request).qs
+
+        # Paginate the queryset
+        page = self.paginate_queryset(data_file_qs)
+        if page is not None:
+            serializer = DataFileSerializer(
+                page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
+
+        # If no pagination, serialize all data
+        serializer = DataFileSerializer(
+            data_file_qs, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'], url_path=r'highlights', url_name="highlight_datafiles")
+    def favourited_datafiles(self, request):
+
+        user = request.user
+        if not user.is_authenticated:
+            return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        # Get the data files where the favourite_of column is not null
+        data_file_qs = perms['data_models.view_datafile'].filter(
+            user, DataFile.objects.filter(favourite_of__isnull=False))
+
+        # Apply filters from URL query parameters
+        data_file_qs = DataFileFilter(
+            queryset=data_file_qs, request=request).qs
+
+        # Paginate the queryset
+        page = self.paginate_queryset(data_file_qs)
+        if page is not None:
+            serializer = DataFileSerializer(
+                page, many=True, context={'request': request})
+            return self.get_paginated_response(serializer.data)
+
+        # If no pagination, serialize all data
+        serializer = DataFileSerializer(
+            data_file_qs, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class SiteViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSetMixIn):
