@@ -45,7 +45,7 @@ class EvenShorterTaxonSerialier(serializers.ModelSerializer):
         return initial_rep
 
 
-class ObservationSerializer(OwnerMixIn, CreatedModifiedMixIn, CheckFormMixIn, serializers.ModelSerializer):
+class ObservationSerializer(OwnerMixIn, CreatedModifiedMixIn, serializers.ModelSerializer):
     taxon_obj = ShortTaxonSerializer(source='taxon', read_only=True)
     taxon = serializers.PrimaryKeyRelatedField(
         queryset=Taxon.objects.all(),

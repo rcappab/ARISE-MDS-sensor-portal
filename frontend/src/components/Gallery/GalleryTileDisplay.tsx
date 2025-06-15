@@ -7,6 +7,7 @@ interface Props {
 	data: [];
 	onClick?: (e: React.MouseEvent<Element, MouseEvent>, index: number) => void;
 	selectedIndexes: number[];
+	nameKey: string;
 }
 
 const GalleryTileDisplay = ({
@@ -14,8 +15,8 @@ const GalleryTileDisplay = ({
 	data = [],
 	onClick = (e, index) => {},
 	selectedIndexes,
+	nameKey,
 }: Props) => {
-	const { nameKey } = useObjectType();
 	let thumbKey = "";
 	let textKey = "";
 	if (objectType === "deployment") {

@@ -23,27 +23,12 @@ const validParents = {
 	datafile: ["deployment"],
 };
 
-const filterKey = {
-	deployment: "deployment",
-	device: "device",
-	project: "project",
-	datafile: "datafile",
-	user: "favourite_of",
-};
-
 export const getNameKey = function (objectType) {
 	return nameKeys[objectType];
 };
 
 export const getValidGalleries = function (fromObject) {
 	return validGalleries[fromObject];
-};
-
-export const getFilterKey = function (fromObject) {
-	if (fromObject === undefined) {
-		return undefined;
-	}
-	return filterKey[fromObject];
 };
 
 export const getValidParents = function (fromObject) {

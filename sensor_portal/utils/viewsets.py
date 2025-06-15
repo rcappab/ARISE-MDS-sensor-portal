@@ -7,11 +7,15 @@ class OptionalPaginationViewSetMixIn(ModelViewSet):
     it to also return None if no 'page' query param is set, so long as the queryset is not too large"""
 
     def paginate_queryset(self, queryset):
+        print("Optional pagination")
         if self.paginator \
                 and self.request.query_params.get(self.paginator.page_size_query_param, None) is None \
                 and self.request.query_params.get(self.paginator.page_query_param, None) is None:
             if queryset.approx_count() < settings.REST_FRAMEWORK['MAX_PAGE_SIZE']:
+                print("No pagination")
                 return None
+        print("Paginate")
+        print(self.paginator)
         return super().paginate_queryset(queryset)
 
 

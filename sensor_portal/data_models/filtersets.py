@@ -34,10 +34,10 @@ class DeploymentFilter(GenericFilterMixIn, ExtraDataFilterMixIn):
             'site': ['exact', 'in'],
             'site__name': ['exact', 'icontains', 'in'],
             'site__short_name': ['exact', 'icontains', 'in'],
-            'device': ['exact', 'in'],
+            'device__id': ['exact', 'in'],
             'device__device_ID': ['exact', 'icontains', 'in'],
             'device__name': ['exact', 'icontains', 'in'],
-            'project': ['exact'],
+            'project__id': ['exact'],
             'project__project_ID': ['exact'],
             'device_type': ['exact', 'in'],
             'device_type__name': ['exact', 'icontains', 'in'],
@@ -150,7 +150,7 @@ class DataFileFilter(GenericFilterMixIn, ExtraDataFilterMixIn):
         model = DataFile
         fields = GenericFilterMixIn.get_fields().copy()
         fields.update({
-            'deployment': ['exact', 'in'],
+            'deployment__id': ['exact', 'in'],
             'deployment__deployment_device_ID': ['exact', 'in', 'icontains'],
             'deployment__device': ['exact', 'in'],
             'file_type': ['exact', 'in'],
@@ -163,7 +163,7 @@ class DataFileFilter(GenericFilterMixIn, ExtraDataFilterMixIn):
             'local_storage': ['exact'],
             'archived': ['exact'],
             'original_name': ['exact', 'icontains', 'in'],
-            'favourite_of': ['exact', 'contains'],
+            'favourite_of__id': ['exact', 'contains'],
         })
 
 

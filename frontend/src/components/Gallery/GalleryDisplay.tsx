@@ -8,6 +8,7 @@ interface Props {
 	tableMode: boolean;
 	onClick: (e: React.MouseEvent<Element, MouseEvent>, index: number) => void;
 	selectedIndexes: number[];
+	nameKey: string;
 }
 
 const GalleryDisplay = ({
@@ -16,6 +17,7 @@ const GalleryDisplay = ({
 	tableMode = false,
 	onClick = (e, index) => {},
 	selectedIndexes,
+	nameKey,
 }: Props) => {
 	if (objectType === undefined) {
 		return null;
@@ -27,6 +29,7 @@ const GalleryDisplay = ({
 			data={data}
 			onClick={onClick}
 			selectedIndexes={selectedIndexes}
+			nameKey={nameKey}
 		/>
 	) : (
 		<GalleryTileDisplay
@@ -34,6 +37,7 @@ const GalleryDisplay = ({
 			data={data}
 			onClick={onClick}
 			selectedIndexes={selectedIndexes}
+			nameKey={nameKey}
 		/>
 	);
 };

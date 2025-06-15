@@ -1,6 +1,8 @@
 from camtrap_dp_export.querysets import get_ctdp_obs_qs
 from camtrap_dp_export.serializers import ObservationSerializerCTDP
+from data_models.models import DataFile
 from rest_framework import pagination, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from utils.viewsets import (AddOwnerViewSetMixIn, CheckAttachmentViewSetMixIn,
@@ -15,12 +17,13 @@ from .serializers import EvenShorterTaxonSerialier, ObservationSerializer
 class ObservationViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
     search_fields = ["taxon__species_name", "taxon__species_common_name"]
     ordering_fields = ["obs_dt", "created_on"]
-    queryset = Observation.objects.all().prefetch_related("taxon").distinct()
+    queryset = Observation.objects.all().prefetch_related("taxon")
     serializer_class = ObservationSerializer
+    filter_backend = viewsets.ModelViewSet.filter_backends
     filterset_class = ObservationFilter
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        qs = Observation.objects.all().prefetch_related("taxon")
         if (target_taxon_level := self.request.GET.get("target_taxon_level")) is not None:
             qs = qs.get_taxonomic_level(target_taxon_level).filter(
                 parent_taxon_pk__isnull=False)
@@ -49,6 +52,29 @@ class ObservationViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, Opti
                 if not self.request.user.has_perm('data_models.annotate_datafile', data_file_object):
                     raise PermissionDenied(
                         f"You don't have permission to add an observation to {data_file_object.file_name}")
+
+    @action(detail=False, methods=['get'], url_path=r'datafile/(?P<datafile_pk>\w+)', url_name="datafile_observations")
+    def datafile_observations(self, request, datafile_pk=None):
+
+        # Filter observations based on URL query parameters
+        observation_qs = Observation.objects.filter(
+            data_files__pk=datafile_pk).select_related('taxon', 'owner')
+        observation_qs = self.filter_queryset(observation_qs)
+
+        # Paginate the queryset
+
+        page = self.paginate_queryset(observation_qs)
+        if page is not None:
+
+            observation_serializer = self.get_serializer(
+                page, many=True, context={'request': request})
+
+            return self.get_paginated_response(observation_serializer.data)
+
+        # If no pagination, serialize all data
+        observation_serializer = self.get_serializer(
+            page, many=True, context={'request': request})
+        return Response(observation_serializer.data, status=status.HTTP_200_OK)
 
 
 class TaxonAutocompleteViewset(viewsets.ReadOnlyModelViewSet):

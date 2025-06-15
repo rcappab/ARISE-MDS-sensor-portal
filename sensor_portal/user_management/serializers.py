@@ -94,10 +94,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
         many=True, read_only=True, slug_field='deployment_device_ID')
     owned_deployments_ID = serializers.PrimaryKeyRelatedField(
         many=True, read_only=True, source='owned_deployments')
-    managed_deployments = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field='deployment_device_ID')
-    managed_deployments_ID = serializers.PrimaryKeyRelatedField(
-        many=True, read_only=True, source='managed_deployments')
     annotatable_deployments = serializers.SlugRelatedField(
         many=True, read_only=True, slug_field='deployment_device_ID')
     annotatable_deployments_ID = serializers.PrimaryKeyRelatedField(
@@ -121,7 +117,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
                   'annotatable_devices', 'annotatable_devices_ID',
                   'viewable_devices', 'viewable_devices_ID',
                   'owned_deployments', 'owned_deployments_ID',
-                  'managed_deployments', 'managed_deployments_ID',
                   'annotatable_deployments', 'annotatable_deployments_ID',
                   'viewable_deployments', 'viewable_deployments_ID'
                   )

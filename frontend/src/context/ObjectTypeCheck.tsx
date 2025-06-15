@@ -5,7 +5,6 @@ import {
 	getValidGalleries,
 	getValidParents,
 	getValidObject,
-	getFilterKey,
 } from "../utils/objectChecks";
 import Error404page from "../pages/Error404page";
 
@@ -13,10 +12,9 @@ type objectContextType = {
 	fromObject: string | undefined;
 	fromID: string | undefined;
 	objectType: string | undefined;
-	nameKey: string;
+	nameKey: string | undefined;
 	validGalleries: string[];
 	validParents: string[];
-	filterKey: string;
 };
 
 export const ObjectTypeCheck = () => {
@@ -30,6 +28,18 @@ export const ObjectTypeCheck = () => {
 	}
 	if (objectType !== undefined) {
 		objectType = objectType.substring(0, objectType.length - 1);
+	}
+
+	if (!fromObject && !fromID && !objectType) {
+		const contextData = {
+			fromObject: fromObject,
+			fromID: fromID,
+			objectType: objectType,
+			nameKey: undefined,
+			validGalleries: [],
+			validParents: [],
+		} as objectContextType;
+		return <Outlet context={contextData} />;
 	}
 
 	let error = false;
@@ -53,7 +63,6 @@ export const ObjectTypeCheck = () => {
 
 	const validGalleries = getValidGalleries(objectType) as string[];
 	const validParents = getValidParents(objectType) as string[];
-	const filterKey = getFilterKey(fromObject) as string;
 
 	const contextData = {
 		fromObject: fromObject,
@@ -62,7 +71,6 @@ export const ObjectTypeCheck = () => {
 		nameKey: nameKey,
 		validGalleries: validGalleries,
 		validParents: validParents,
-		filterKey: filterKey,
 	} as objectContextType;
 
 	if (error) {

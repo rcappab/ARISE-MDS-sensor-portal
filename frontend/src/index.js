@@ -42,6 +42,26 @@ const router = createBrowserRouter([
 						element: <ObjectTypeCheck />,
 						children: [
 							{
+								path: "/users/favourites",
+								element: (
+									<Gallery
+										objectType="datafile"
+										fromObject="user"
+										nameKey="file_name"
+									/>
+								),
+							},
+						],
+					},
+				],
+			},
+			{
+				element: <ProtectedRoute />,
+				children: [
+					{
+						element: <ObjectTypeCheck />,
+						children: [
+							{
 								path: "/:fromObject",
 								children: [
 									{

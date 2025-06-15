@@ -10,7 +10,6 @@ interface Props {
 	objectType?: string;
 	fromObject?: string;
 	fromID?: string;
-	filterKey?: string;
 	onSubmit: () => void;
 	addNew: () => void;
 	jobID: string | null;
@@ -39,7 +38,6 @@ function GalleryForm({
 	objectType = "deployment",
 	fromObject = undefined,
 	fromID = undefined,
-	filterKey = undefined,
 	selectedItemsCount = 0,
 	noData = true,
 }: Props) {
@@ -390,21 +388,6 @@ function GalleryForm({
 		);
 	};
 
-	const fromObjectFilter = function () {
-		if (fromID === undefined) {
-			return null;
-		} else {
-			return (
-				<input
-					name={filterKey}
-					className="d-none"
-					id={fromObject}
-					defaultValue={fromID}
-				/>
-			);
-		}
-	};
-
 	const addNewButton = function () {
 		if (objectType !== "datafile") {
 			return (
@@ -521,7 +504,6 @@ function GalleryForm({
 					value={pageSize}
 					readOnly={true}
 				/>
-				{fromObjectFilter()}
 			</Form>
 		</div>
 	);

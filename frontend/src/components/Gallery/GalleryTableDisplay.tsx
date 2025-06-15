@@ -8,6 +8,7 @@ interface Props {
 	data: [];
 	onClick: (e: React.MouseEvent<Element, MouseEvent>, index: number) => void;
 	selectedIndexes: number[];
+	nameKey: string;
 }
 
 const GalleryTableDisplay = ({
@@ -15,8 +16,8 @@ const GalleryTableDisplay = ({
 	data = [],
 	onClick = (e, index) => {},
 	selectedIndexes,
+	nameKey,
 }: Props) => {
-	const { nameKey } = useObjectType();
 	const [sortConfig, setSortConfig] = useState<{
 		key: string;
 		direction: "asc" | "desc";
