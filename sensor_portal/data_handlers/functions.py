@@ -12,6 +12,9 @@ def open_exif(uploaded_file):
                       v in image.getexif().items() if k in ExifTags.TAGS}
 
         return image_exif
+    except OSError:
+        print("Unable to open exif")
+        return {}
     except UnidentifiedImageError:
         print("Unable to open exif")
         return {}
