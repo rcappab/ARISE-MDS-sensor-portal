@@ -46,7 +46,10 @@ def clean_all_files():
         files_to_clean = files_to_clean.filter(
             file_age__gt=timedelta(days=clean_time))
         for file in files_to_clean:
-            file.clean()
+            try:
+                file.clean_file()
+            except Exception as e:
+                print(e)
 
 
 @app.task()
