@@ -76,6 +76,26 @@ class ObservationViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, Opti
             page, many=True, context={'request': request})
         return Response(observation_serializer.data, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=['get'], url_path=r'deployment/(?P<deployment_pk>\w+)', url_name="deployment_observations")
+    def deployment_observations(self, request, deployment_pk=None):
+
+        # Filter observations based on URL query parameters
+        observation_qs = Observation.objects.filter(
+            data_files__deployment=deployment_pk).select_related('taxon', 'owner')
+        observation_qs = self.filter_queryset(observation_qs)
+
+        # Paginate the queryset
+        page = self.paginate_queryset(observation_qs)
+        if page is not None:
+            observation_serializer = self.get_serializer(
+                page, many=True, context={'request': request})
+            return self.get_paginated_response(observation_serializer.data)
+
+        # If no pagination, serialize all data
+        observation_serializer = self.get_serializer(
+            observation_qs, many=True, context={'request': request})
+        return Response(observation_serializer.data, status=status.HTTP_200_OK)
+
 
 class TaxonAutocompleteViewset(viewsets.ReadOnlyModelViewSet):
     http_method_names = ['get']
