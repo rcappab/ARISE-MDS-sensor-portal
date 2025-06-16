@@ -275,7 +275,7 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
 
     def get_queryset(self):
         qs = DataFile.objects.prefetch_related(
-            "observations__taxon").all().distinct()
+            "observations__taxon").all()
         if 'CTDP' in self.request.GET.keys():
             qs = get_ctdp_media_qs(qs)
         return qs
