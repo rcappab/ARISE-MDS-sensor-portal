@@ -38,7 +38,7 @@ def check_archive_projects(archive: Archive):
                 continue
 
             # check files for archiving
-            total_file_size = file_objs.file_size("GB")
+            total_file_size = file_objs.file_size_unit("GB")
             if total_file_size > settings.MIN_ARCHIVE_SIZE_GB:
                 print(
                     f"Check {project_combo} for archiving: check {device_type}: Sufficient files")
