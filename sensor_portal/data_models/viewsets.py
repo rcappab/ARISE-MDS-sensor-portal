@@ -263,29 +263,6 @@ class DeviceViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
         file_metric_dicts = get_all_file_metric_dicts(data_files)
         return Response(file_metric_dicts, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=['get'])
-    def datafiles(self, request, pk=None):
-        device = self.get_object()
-
-        data_file_qs = DataFile.objects.filter(
-            deployment__device=device)
-
-        # Apply filters from URL query parameters
-        data_file_qs = DataFileFilter(
-            queryset=data_file_qs, request=request).qs
-
-        # Paginate the queryset
-        page = self.paginate_queryset(data_file_qs)
-        if page is not None:
-            serializer = DataFileSerializer(
-                page, many=True, context={'request': request})
-            return self.get_paginated_response(serializer.data)
-
-        # If no pagination, serialize all data
-        serializer = DataFileSerializer(
-            data_file_qs, many=True, context={'request': request})
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
 
 class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixIn):
 
@@ -445,8 +422,7 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
         data_file_qs = DataFile.objects.filter(deployment__pk=deployment_pk)
 
         # Apply filters from URL query parameters
-        data_file_qs = DataFileFilter(
-            queryset=data_file_qs, request=request).qs
+        data_file_qs = self.filter_queryset(data_file_qs)
 
         # Paginate the queryset
         page = self.paginate_queryset(data_file_qs)
@@ -467,8 +443,7 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
             deployment__project__pk=project_pk)
 
         # Apply filters from URL query parameters
-        data_file_qs = DataFileFilter(
-            queryset=data_file_qs, request=request).qs
+        data_file_qs = self.filter_queryset(data_file_qs)
 
         # Paginate the queryset
         page = self.paginate_queryset(data_file_qs)
@@ -489,8 +464,7 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
             deployment__device__pk=device_pk)
 
         # Apply filters from URL query parameters
-        data_file_qs = DataFileFilter(
-            queryset=data_file_qs, request=request).qs
+        data_file_qs = self.filter_queryset(data_file_qs)
 
         # Paginate the queryset
         page = self.paginate_queryset(data_file_qs)
@@ -514,8 +488,7 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
         data_file_qs = DataFile.objects.filter(favourite_of=user)
 
         # Apply filters from URL query parameters
-        data_file_qs = DataFileFilter(
-            queryset=data_file_qs, request=request).qs
+        data_file_qs = self.filter_queryset(data_file_qs)
 
         # Paginate the queryset
         page = self.paginate_queryset(data_file_qs)
@@ -541,8 +514,7 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
             user, DataFile.objects.filter(favourite_of__isnull=False))
 
         # Apply filters from URL query parameters
-        data_file_qs = DataFileFilter(
-            queryset=data_file_qs, request=request).qs
+        data_file_qs = self.filter_queryset(data_file_qs)
 
         # Paginate the queryset
         page = self.paginate_queryset(data_file_qs)

@@ -152,7 +152,7 @@ const Header = () => {
 										<li className="dropdown-item">
 											<NavLink
 												className="nav-link"
-												to={`/users/datafiles`}
+												to={`/users/favourites`}
 											>
 												Favourites
 											</NavLink>
