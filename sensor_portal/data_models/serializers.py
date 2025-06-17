@@ -19,7 +19,7 @@ from .models import (DataFile, DataType, Deployment, Device, DeviceModel,
                      Project, Site)
 
 
-class DeploymentFieldsMixIn(InstanceGetMixIn, ManagerMixIn, OwnerMixIn, CreatedModifiedMixIn, CheckFormMixIn,
+class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMixIn, CreatedModifiedMixIn, CheckFormMixIn,
                             serializers.ModelSerializer):
     device_type = serializers.SlugRelatedField(
         slug_field='name', queryset=DataType.objects.all(), required=False, allow_null=True)
@@ -59,6 +59,12 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, ManagerMixIn, OwnerMixIn, CreatedM
         request_user = self.context['request'].user
         initial_rep = super(DeploymentFieldsMixIn,
                             self).to_representation(instance)
+        if initial_rep.get('properties') is not None:
+            geojson_rep = initial_rep
+            initial_rep = initial_rep.get('properties')
+        else:
+            geojson_rep = None
+
         projects_no_global = [(x, y) for x, y in zip(
             initial_rep["project"], initial_rep["project_ID"]) if x != settings.GLOBAL_PROJECT_ID]
 
@@ -69,6 +75,10 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, ManagerMixIn, OwnerMixIn, CreatedM
 
         if not self.context.get('request'):
             initial_rep.pop('thumb_url')
+
+        if geojson_rep is not None:
+            geojson_rep['properties'] = initial_rep
+
         return initial_rep
 
     class Meta:

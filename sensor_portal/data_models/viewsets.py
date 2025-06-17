@@ -83,14 +83,14 @@ class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, Check
 
     def get_queryset(self):
         qs = Deployment.objects.all().distinct()
-        if 'CTDP' in self.request.GET.keys():
+        if 'ctdp' in self.request.GET.keys():
             qs = get_ctdp_deployment_qs(qs)
         return qs
 
     def get_serializer_class(self):
-        if 'geoJSON' in self.request.GET.keys():
+        if 'geojson' in self.request.GET.keys():
             return DeploymentSerializer_GeoJSON
-        elif 'CTDP' in self.request.GET.keys():
+        elif 'ctdp' in self.request.GET.keys():
             return DeploymentSerializerCTDP
         else:
             return DeploymentSerializer
@@ -127,15 +127,18 @@ class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, Check
             project__pk=project_pk)
         deployment_qs = self.filter_queryset(deployment_qs)
 
+        if 'ctdp' in request.GET.keys():
+            deployment_qs = get_ctdp_deployment_qs(deployment_qs)
+
         # Paginate the queryset
         page = self.paginate_queryset(deployment_qs)
         if page is not None:
-            deployment_serializer = DeploymentSerializer(
+            deployment_serializer = self.get_serializer(
                 page, many=True, context={'request': request})
             return self.get_paginated_response(deployment_serializer.data)
 
         # If no pagination, serialize all data
-        deployment_serializer = DeploymentSerializer(
+        deployment_serializer = self.get_serializer(
             deployment_qs, many=True, context={'request': request})
         return Response(deployment_serializer.data, status=status.HTTP_200_OK)
 
@@ -144,17 +147,22 @@ class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, Check
         # Filter deployments based on the device primary key (device_pk)
         deployment_qs = Deployment.objects.filter(
             device__pk=device_pk)
+
         deployment_qs = self.filter_queryset(deployment_qs)
+
+        if 'ctdp' in request.GET.keys():
+            deployment_qs = get_ctdp_deployment_qs(deployment_qs)
 
         # Paginate the queryset
         page = self.paginate_queryset(deployment_qs)
         if page is not None:
-            deployment_serializer = DeploymentSerializer(
+
+            deployment_serializer = self.get_serializer(
                 page, many=True, context={'request': request})
             return self.get_paginated_response(deployment_serializer.data)
 
         # If no pagination, serialize all data
-        deployment_serializer = DeploymentSerializer(
+        deployment_serializer = self.get_serializer(
             deployment_qs, many=True, context={'request': request})
         return Response(deployment_serializer.data, status=status.HTTP_200_OK)
 
@@ -276,7 +284,7 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
     def get_queryset(self):
         qs = DataFile.objects.prefetch_related(
             "observations__taxon").all()
-        if 'CTDP' in self.request.GET.keys():
+        if 'ctdp' in self.request.GET.keys():
             qs = get_ctdp_media_qs(qs)
         return qs
 
@@ -376,7 +384,7 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
         if self.action == 'create':
             return DataFileUploadSerializer
         else:
-            if 'CTDP' in self.request.GET.keys():
+            if 'ctdp' in self.request.GET.keys():
                 return DataFileSerializerCTDP
             else:
                 return DataFileSerializer
@@ -424,15 +432,18 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
         # Apply filters from URL query parameters
         data_file_qs = self.filter_queryset(data_file_qs)
 
+        if 'ctdp' in request.GET.keys():
+            data_file_qs = get_ctdp_media_qs(data_file_qs)
+
         # Paginate the queryset
         page = self.paginate_queryset(data_file_qs)
         if page is not None:
-            serializer = DataFileSerializer(
+            serializer = self.get_serializer(
                 page, many=True, context={'request': request})
             return self.get_paginated_response(serializer.data)
 
         # If no pagination, serialize all data
-        serializer = DataFileSerializer(
+        serializer = self.get_serializer(
             data_file_qs, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -445,15 +456,18 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
         # Apply filters from URL query parameters
         data_file_qs = self.filter_queryset(data_file_qs)
 
+        if 'ctdp' in request.GET.keys():
+            data_file_qs = get_ctdp_media_qs(data_file_qs)
+
         # Paginate the queryset
         page = self.paginate_queryset(data_file_qs)
         if page is not None:
-            serializer = DataFileSerializer(
+            serializer = self.get_serializer(
                 page, many=True, context={'request': request})
             return self.get_paginated_response(serializer.data)
 
         # If no pagination, serialize all data
-        serializer = DataFileSerializer(
+        serializer = self.get_serializer(
             data_file_qs, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -466,15 +480,19 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
         # Apply filters from URL query parameters
         data_file_qs = self.filter_queryset(data_file_qs)
 
+        if 'ctdp' in request.GET.keys():
+            data_file_qs = get_ctdp_media_qs(data_file_qs)
+
         # Paginate the queryset
         page = self.paginate_queryset(data_file_qs)
         if page is not None:
-            serializer = DataFileSerializer(
+            serializer = self.get_serializer(
                 page, many=True, context={'request': request})
             return self.get_paginated_response(serializer.data)
 
         # If no pagination, serialize all data
-        serializer = DataFileSerializer(
+
+        serializer = self.get_serializer(
             data_file_qs, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -490,15 +508,18 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
         # Apply filters from URL query parameters
         data_file_qs = self.filter_queryset(data_file_qs)
 
+        if 'ctdp' in request.GET.keys():
+            data_file_qs = get_ctdp_media_qs(data_file_qs)
+
         # Paginate the queryset
         page = self.paginate_queryset(data_file_qs)
         if page is not None:
-            serializer = DataFileSerializer(
+            serializer = self.get_serializer(
                 page, many=True, context={'request': request})
             return self.get_paginated_response(serializer.data)
 
         # If no pagination, serialize all data
-        serializer = DataFileSerializer(
+        serializer = self.get_serializer(
             data_file_qs, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -516,15 +537,18 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
         # Apply filters from URL query parameters
         data_file_qs = self.filter_queryset(data_file_qs)
 
+        if 'ctdp' in request.GET.keys():
+            data_file_qs = get_ctdp_media_qs(data_file_qs)
+
         # Paginate the queryset
         page = self.paginate_queryset(data_file_qs)
         if page is not None:
-            serializer = DataFileSerializer(
+            serializer = self.get_serializer(
                 page, many=True, context={'request': request})
             return self.get_paginated_response(serializer.data)
 
         # If no pagination, serialize all data
-        serializer = DataFileSerializer(
+        serializer = self.get_serializer(
             data_file_qs, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
