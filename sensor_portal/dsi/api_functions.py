@@ -19,7 +19,7 @@ def DSI_client(func):
 
 
 @DSI_client
-def post_data(api_client, media_pks, dsi_project_id):
+def post_data(api_client, media_pks, dsi_project_id, dsi_site_id):
 
     # get DataFile
     datafile_objs = DataFile.objects.filter(

@@ -132,7 +132,8 @@ INSTALLED_APPS = [
     'data_packages',
     'ai_integration',
     'data_handlers',
-    'uva_jobs'
+    'uva_jobs',
+    'dsi'
 ]
 
 MIDDLEWARE = [
