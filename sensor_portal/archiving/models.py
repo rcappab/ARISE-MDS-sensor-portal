@@ -106,4 +106,4 @@ class TarFile(BaseModel):
 def pre_remove_tar(sender, instance: TarFile, **kwargs):
     success = instance.clean_tar(True)
     if not success:
-        raise Exception(f"Unable to remove TAR file {instance.name}")
+        raise (Exception(f"Unable to remove TAR file {instance.name}"))
