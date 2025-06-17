@@ -6,13 +6,14 @@ from colorfield.fields import ColorField
 from django.conf import settings
 from django.contrib.gis.db import models as gis_models
 from django.contrib.gis.geos import Point
+from django.contrib.postgres.indexes import GinIndex, OpClass
 from django.core.exceptions import (MultipleObjectsReturned,
                                     ObjectDoesNotExist, ValidationError)
 from django.db import models
 from django.db.models import (BooleanField, Case, Count, DateTimeField,
                               ExpressionWrapper, F, Max, Min, Q, Sum, Value,
                               When)
-from django.db.models.functions import Cast, Concat
+from django.db.models.functions import Cast, Concat, Upper
 from django.urls import reverse
 from django.utils import timezone as djtimezone
 from django_icon_picker.field import IconField
@@ -468,6 +469,18 @@ class DataFile(BaseModel):
 
     objects = DataFileQuerySet.as_manager()
 
+    class Meta:
+        indexes = [
+            GinIndex(
+                OpClass(Upper('tag'), name='gin_trgm_ops'),
+                name='upper_tag_gin_idx',
+            ),
+            GinIndex(
+                OpClass(Upper('file_name'), name='gin_trgm_ops'),
+                name='upper_file_name_gin_idx',
+            )
+        ]
+
     def __str__(self):
         return f"{self.file_name}{self.file_format}"
 
@@ -526,21 +539,27 @@ class DataFile(BaseModel):
             self.deployment.set_thumb_url()
             self.deployment.save()
 
-    def clean_file(self, delete_obj=False):
-        print(f"clean {delete_obj}")
+    def clean_file(self, delete_obj=False, force_delete=False):
+        print(f"Clean {self.file_name} - Delete object: {delete_obj}")
         if (self.do_not_remove or self.deployment_last_image.exists()) and not delete_obj:
             return
         if self.local_storage:
             try:
                 os.remove(self.full_path())
                 os.removedirs(os.path.join(self.local_path, self.path))
+                print(f"Clean {self.file_name} - File removed")
             except OSError:
-                pass
+                print(f"Unable to delete {self.file_name}")
+                if delete_obj:
+                    print(f"Unable to delete {self.file_name}")
+                if not force_delete:
+                    return False
 
         try:
             thumb_path = self.thumb_path()
             os.remove(thumb_path)
             os.removedirs(os.path.split(thumb_path)[0])
+            print(f"Clean {self.file_name} - Thumbnail removed")
         except TypeError:
             pass
         except OSError:
@@ -552,6 +571,7 @@ class DataFile(BaseModel):
                 os.remove(extra_version_path)
                 os.removedirs(extra_version_path)
                 self.linked_files.pop(key)
+                print(f"Clean {self.file_name} - {key} removed")
             except TypeError:
                 pass
             except OSError:
@@ -563,6 +583,8 @@ class DataFile(BaseModel):
             self.linked_files = {}
             self.set_thumb_url(False)
             self.save()
+
+        return True
 
     def save(self, *args, **kwargs):
         if self.file_type is None:

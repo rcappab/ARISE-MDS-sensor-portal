@@ -34,12 +34,14 @@ def post_save_file(sender, instance, created, **kwargs):
 
 
 @receiver(pre_delete, sender=DataFile)
-def pre_remove_file(sender, instance, **kwargs):
-    # deletes the attached file form data storage
-    instance.clean_file(True)
+def pre_remove_file(sender, instance: DataFile, **kwargs):
+    # deletes the attached file from data storage
+    success = instance.clean_file(True)
+    if not success:
+        raise (Exception(f'Unable to delete file {instance.file_name}'))
 
 
 @receiver(post_delete, sender=DataFile)
-def post_remove_file(sender, instance, **kwargs):
+def post_remove_file(sender, instance: DataFile, **kwargs):
     instance.deployment.set_thumb_url()
     instance.deployment.save()

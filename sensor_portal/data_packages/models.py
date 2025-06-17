@@ -78,6 +78,8 @@ class DataPackage(BaseModel):
 
 
 @receiver(pre_delete, sender=DataPackage)
-def pre_remove_bundle(sender, instance, **kwargs):
+def pre_remove_bundle(sender, instance: DataPackage, **kwargs):
     # deletes the attached file form data storage
-    instance.clean_data_package()
+    success = instance.clean_data_package()
+    if not success:
+        raise (Exception(f"Could not remove data package {instance.name}"))

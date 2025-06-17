@@ -54,7 +54,7 @@ class TarFile(BaseModel):
     def __str__(self):
         return self.name
 
-    def clean_tar(self, delete_obj=False):
+    def clean_tar(self, delete_obj=False) -> bool:
 
         if self.local_storage:
             tar_name = self.name
@@ -67,15 +67,16 @@ class TarFile(BaseModel):
                     settings.FILE_STORAGE_ROOT, self.path))
             except OSError as e:
                 print(repr(e))
+                return False
 
             if not delete_obj:
                 self.local_storage = False
                 self.save()
         elif not self.local_storage and delete_obj:
             if not all(self.files.values_list("local_storage", flat=True)):
-                raise (
-                    Exception(f"{self.name}: Some files contained in this TAR are no longer stored locally.\
-                              The remote TAR cannot be deleted."))
+                print(f"{self.name}: Some files contained in this TAR are no longer stored locally.\
+                              The remote TAR cannot be deleted.")
+                return False
                 # deletes the attached file form data storage
             self.files.update(archived=False)
             ssh_client = self.archive.init_ssh_client()
@@ -90,15 +91,19 @@ class TarFile(BaseModel):
                 status_code, stdout, stderr = ssh_client.send_ssh_command(
                     f"rm {remote_path}")
             if status_code != 0:
-                raise (
-                    Exception(f"{self.name}: Cannot remove remote TAR. {stdout}"))
+                print(
+                    f"{self.name}: Cannot remove remote TAR. {stdout}")
+                return False
             else:
 
                 print(f"{self.name}: Remote TAR removed.")
                 status_code, stdout, stderr = ssh_client.send_ssh_command(
                     f"find {self.path} -type d -empty -delete")
+                return True
 
 
 @receiver(pre_delete, sender=TarFile)
-def pre_remove_tar(sender, instance, **kwargs):
-    instance.clean_tar(True)
+def pre_remove_tar(sender, instance: TarFile, **kwargs):
+    success = instance.clean_tar(True)
+    if not success:
+        raise Exception(f"Unable to remove TAR file {instance.name}")
