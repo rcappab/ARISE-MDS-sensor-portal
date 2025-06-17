@@ -14,7 +14,7 @@ def DSI_client(func):
         DSIclient = ARISEDSIClient()
         DSIclient.initialise_authentication()
         with openapi_client.ApiClient(DSIclient.openapi_client_configuration) as api_client:
-            func(api_client, *args, **kwargs)
+            func(*args, **kwargs, api_client=api_client)
     return wrapper
 
 
