@@ -40,6 +40,9 @@ scp==0.14.4
 # Aerocam
 aerocam_handler @ git+https://github.com/jevansbio/aerocam_handler
 
+#DSI 
+arise-dsi-sdk @ git+https://gitlab.com/arise-biodiversity/DSI/arise-dsi-sdk.git@v1.1.0
+
 # Other packages
 pytz==2022.1
 numpy==1.26.4
