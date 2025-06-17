@@ -32,8 +32,11 @@ def clean_all_files():
     Remove files that are archived and have not been modified in the projects clean time.
     """
     projects_to_clean = Project.objects.filter(archive__isnull=False)
+    print(f"Found {projects_to_clean.count()} projects to clean.")
     for project in projects_to_clean:
         clean_time = project.clean_time
+        print(
+            f"Cleaning project: {project.name} with clean time: {clean_time} days.")
         files_to_clean = DataFile.objects.filter(
             local_storage=True,
             archived=True,
@@ -45,11 +48,14 @@ def clean_all_files():
             timezone.now().date() - F('modified_on__date'), output_field=DurationField()))
         files_to_clean = files_to_clean.filter(
             file_age__gt=timedelta(days=clean_time))
+        print(
+            f"Found {files_to_clean.count()} files to clean for project: {project.name}.")
         for file in files_to_clean:
             try:
+                print(f"Cleaning file: {file.name} (ID: {file.pk})")
                 file.clean_file()
             except Exception as e:
-                print(e)
+                print(f"Error cleaning file {file.name} (ID: {file.pk}): {e}")
 
 
 @app.task()
