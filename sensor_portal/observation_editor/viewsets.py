@@ -28,13 +28,13 @@ class ObservationViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, Opti
             qs = qs.get_taxonomic_level(target_taxon_level).filter(
                 parent_taxon_pk__isnull=False)
 
-        if 'CTDP' in self.request.GET.keys():
+        if 'ctdp' in self.request.GET.keys():
             qs = get_ctdp_obs_qs(qs)
 
         return qs
 
     def get_serializer_class(self):
-        if 'CTDP' in self.request.GET.keys():
+        if 'ctdp' in self.request.GET.keys():
             return ObservationSerializerCTDP
         else:
             return ObservationSerializer
@@ -61,17 +61,19 @@ class ObservationViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, Opti
             data_files__pk=datafile_pk).select_related('taxon', 'owner')
         observation_qs = self.filter_queryset(observation_qs)
 
-        # Paginate the queryset
+        if 'ctdp' in self.request.GET.keys():
+            observation_qs = get_ctdp_obs_qs(observation_qs)
 
+        # Paginate the queryset
         page = self.paginate_queryset(observation_qs)
         if page is not None:
-
             observation_serializer = self.get_serializer(
                 page, many=True, context={'request': request})
 
             return self.get_paginated_response(observation_serializer.data)
 
         # If no pagination, serialize all data
+
         observation_serializer = self.get_serializer(
             page, many=True, context={'request': request})
         return Response(observation_serializer.data, status=status.HTTP_200_OK)
@@ -83,6 +85,9 @@ class ObservationViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, Opti
         observation_qs = Observation.objects.filter(
             data_files__deployment=deployment_pk).select_related('taxon', 'owner')
         observation_qs = self.filter_queryset(observation_qs)
+
+        if 'ctdp' in self.request.GET.keys():
+            observation_qs = get_ctdp_obs_qs(observation_qs)
 
         # Paginate the queryset
         page = self.paginate_queryset(observation_qs)
