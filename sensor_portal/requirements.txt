@@ -41,7 +41,8 @@ scp==0.14.4
 aerocam_handler @ git+https://github.com/jevansbio/aerocam_handler
 
 #Audio
-soundfile==0.13.1
+
+soundfile @ git+https://github.com/jevansbio/python-soundfile
 
 # Other packages
 pytz==2022.1

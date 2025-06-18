@@ -91,20 +91,43 @@ def check_device_status():
     """
     Check if device has transmitted in the allotted time and email managers
     """
-    bad_devices = Device.objects.filter(
+    print("Checking device status...")
+
+    auto_devices = Device.objects.filter(
         deployments__is_active=True,
         autoupdate=True,
-    ).annotate(
-        last_file_time=Max(
-            'deployments__files__recording_dt')
-    ).annotate(file_age=ExpressionWrapper(
-        timezone.now().date() - F('last_file_time'), output_field=DurationField())
-    ).annotate(
-        update_time_duration=ExpressionWrapper(
-            timedelta(hours=1)*F("update_time"), output_field=DurationField())
-    ).filter(
-        file_age__gt=F('update_time_duration')
-    ).annotate(file_hours=ExtractHour('file_age'))
+    )
+
+    bad_devices_pks = []
+    bad_devices_values = []
+    for device in auto_devices:
+        # get the last file time for each device
+        last_file_time = device.deployments.filter(is_active=True).aggregate(
+            Max('files__recording_dt')).get('files__recording_dt__max')
+        if last_file_time is None:
+            print(f"Device {device.device_ID} has no files.")
+            bad_devices_pks.append(device.pk)
+            bad_devices_values.append({
+                'device_ID': device.device_ID,
+                'name': device.name,
+                'file_hours': None
+            })
+            continue
+        # calculate the age of the last file
+        file_age = timezone.now() - last_file_time
+        # check if the file age is greater than the update time
+        if file_age > timedelta(hours=device.update_time):
+            print(
+                f"Device {device.device_ID} has not transmitted in the allotted time: {file_age.total_seconds() / 3600} hours.")
+            # add the device to the list of bad devices
+            bad_devices_pks.append(device.pk)
+            bad_devices_values.append({
+                'device_ID': device.device_ID,
+                'name': device.name,
+                'file_hours': file_age.total_seconds() / 3600  # convert to hours
+            })
+
+    bad_devices = Device.objects.filter(pk__in=bad_devices_pks)
 
     # get all unique managers
     all_bad_device_users = User.objects.filter(
@@ -115,9 +138,6 @@ def check_device_status():
         Q(managed_devices__in=bad_devices) |
         Q(owned_deployments__device__in=bad_devices)
     ).distinct()
-
-    bad_devices_values = bad_devices.values(
-        'device_ID', 'name', 'file_hours')
 
     for user in all_bad_device_users:
         # for each manager, get their bad devices

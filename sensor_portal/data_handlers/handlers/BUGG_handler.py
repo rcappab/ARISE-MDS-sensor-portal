@@ -43,7 +43,7 @@ class BUGGHandler(DataTypeHandler):
         recording_dt = dateutil.parser.parse(
             file_filename.replace("_", ":"), yearfirst=True)
 
-        with sf.SoundFile(file.file, 'r+') as f:
+        with sf.SoundFile(file.file, 'rb') as f:
 
             extra_data.update({
                 "sample_rate": f._info.samplerate,

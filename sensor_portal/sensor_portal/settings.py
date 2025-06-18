@@ -90,7 +90,6 @@ GEOS_LIBRARY_PATH = glob('/usr/lib/libgeos_c.so.*')[0]
 
 
 # DRF_RECAPTCHA_TESTING=True
-print("Reading settings!")
 
 # Application definition
 GENERIC_JOBS = {}

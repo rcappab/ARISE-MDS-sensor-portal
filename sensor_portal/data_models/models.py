@@ -402,32 +402,33 @@ class Device(BaseModel):
             new_end = new_start + timedelta(days=365 * 100)
         else:
             new_end = check_dt(new_end)
-            # Retrieve all deployments associated with the device, excluding the one specified by deployment_pk
-            all_deploys = self.deployments.all().exclude(pk=deployment_pk)
 
-            # Annotate deployments with an indefinite end date for those that have no end date
-            # If deployment_end is null, set deployment_end_indefinite to 100 years after deployment_start
-            all_deploys = all_deploys.annotate(deployment_end_indefinite=Case(
-                When(deployment_end__isnull=True,
-                     then=ExpressionWrapper(
-                         F('deployment_start') + timedelta(days=365 * 100),
-                         output_field=DateTimeField()
-                     )
-                     ),
-                # Otherwise, use the actual deployment_end value
-                default=F('deployment_end')
-            )
-            )
+        # Retrieve all deployments associated with the device, excluding the one specified by deployment_pk
+        all_deploys = self.deployments.all().exclude(pk=deployment_pk)
 
-            # Annotate deployments with a boolean field indicating whether they overlap with the new date range
-            # A deployment overlaps if its start date is before or equal to the new end date
-            # and its end date (or indefinite end date) is after or equal to the new start date
-            all_deploys = all_deploys.annotate(in_deployment=ExpressionWrapper(
-                Q(Q(deployment_end_indefinite__gte=new_start)
-                  & Q(deployment_start__lte=new_end)),
-                output_field=BooleanField()
-            )
-            )
+        # Annotate deployments with an indefinite end date for those that have no end date
+        # If deployment_end is null, set deployment_end_indefinite to 100 years after deployment_start
+        all_deploys = all_deploys.annotate(deployment_end_indefinite=Case(
+            When(deployment_end__isnull=True,
+                 then=ExpressionWrapper(
+                     F('deployment_start') + timedelta(days=365 * 100),
+                     output_field=DateTimeField()
+                 )
+                 ),
+            # Otherwise, use the actual deployment_end value
+            default=F('deployment_end')
+        )
+        )
+
+        # Annotate deployments with a boolean field indicating whether they overlap with the new date range
+        # A deployment overlaps if its start date is before or equal to the new end date
+        # and its end date (or indefinite end date) is after or equal to the new start date
+        all_deploys = all_deploys.annotate(in_deployment=ExpressionWrapper(
+            Q(Q(deployment_end_indefinite__gte=new_start)
+                & Q(deployment_start__lte=new_end)),
+            output_field=BooleanField()
+        )
+        )
 
         overlapping_deploys = all_deploys.filter(in_deployment=True)
         return list(overlapping_deploys.values_list('deployment_device_ID', flat=True))

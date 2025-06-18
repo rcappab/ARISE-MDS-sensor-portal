@@ -54,8 +54,11 @@ const FormSelect = ({
 			if (value) {
 				let chosenDefault = null;
 				if (multiple) {
+					let valueStrings = value.map(String);
 					chosenDefault = _choices.filter(function (item) {
-						return value.includes(item.value);
+						return (
+							value.includes(item.value) || valueStrings.includes(item.value)
+						);
 					});
 				} else {
 					chosenDefault = _choices.find(function (item) {

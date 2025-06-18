@@ -123,7 +123,7 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMixIn, CreatedModifiedMixIn, 
 
         initial_rep["project"], initial_rep["project_ID"] = zip(
             *projects_no_global) if projects_no_global else ([], [])
-        initial_rep["can_manage"] = perms['data_models.change_deployment'].check(
+        initial_rep["user_is_manager"] = perms['data_models.change_deployment'].check(
             request_user, instance)
 
         if not self.context.get('request'):

@@ -19,7 +19,6 @@ const FormDateSelector = ({
 	name,
 	label,
 	value = undefined,
-	defaultvalue = undefined,
 	className = "",
 	onChange = (e) => {},
 	valid = true,
@@ -34,7 +33,6 @@ const FormDateSelector = ({
 			id={id}
 			name={name}
 			value={value}
-			defaultValue={defaultvalue}
 			onChange={onChange}
 		/>
 	);

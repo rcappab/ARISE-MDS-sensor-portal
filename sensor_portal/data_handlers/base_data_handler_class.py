@@ -112,7 +112,7 @@ class DataTypeHandlerCollection():
         if device_model is None:
             return None
         print(f"Got data handler {data_type} {device_model}")
-        return self.data_type_handlers[data_type][device_model]
+        return self.data_type_handlers[data_type].get(device_model)
 
     def get_file_handler(self, data_type, device_model) -> Callable:
 
@@ -121,4 +121,5 @@ class DataTypeHandlerCollection():
         if device_model is None:
             return None
         print(f"Got data handler {data_type} {device_model}")
+
         return self.data_type_handlers[data_type][device_model].handle_file

@@ -47,6 +47,7 @@ const FormDateTZSelect = ({
 	};
 
 	const setDateTimeFromField = function (e: ChangeEvent<HTMLInputElement>) {
+		console.log("CHANGE");
 		if (!e.target) return;
 		let target = e.target as HTMLInputElement;
 		let newValue = target.value;
@@ -64,11 +65,11 @@ const FormDateTZSelect = ({
 					id={`${id}_dt`}
 					name={`${name}_dt`}
 					label={label}
-					handleChange={setDateTimeFromField}
-					defaultvalue={dateTime}
+					onChange={setDateTimeFromField}
 					valid={valid}
 					validated={validated}
 					float={false}
+					value={dateTime}
 				/>
 			</div>
 			<div className="col-md-5 ps-md-0">

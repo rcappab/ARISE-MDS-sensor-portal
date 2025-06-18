@@ -9,7 +9,7 @@ from .models import DataFile, Deployment, Project
 
 
 @receiver(post_save, sender=Deployment)
-def post_save_deploy(sender, instance, created, **kwargs):
+def post_save_deploy(sender, instance: Deployment, created, **kwargs):
     """
     Post save signal for Deployment model to ensure that the global project
     is always associated with the deployment instance.
@@ -19,7 +19,7 @@ def post_save_deploy(sender, instance, created, **kwargs):
     global_project, added = Project.objects.get_or_create(
         name=settings.GLOBAL_PROJECT_ID)
 
-    if global_project not in instance.project.all():
+    if global_project.pk not in instance.project.all().values_list('pk', flat=True):
         instance.project.add(global_project)
 
 
