@@ -12,6 +12,7 @@ import ObservationForm, {
 } from "./Observations/ObservationForm.tsx";
 import ObservationTable from "./Observations/ObservationTable.tsx";
 import { Tab, TabList, TabPanel, Tabs } from "react-tabs";
+import Audio from "../General/Audio.tsx";
 
 interface LinkedFileProps {
 	linkedFileData: object;
@@ -64,6 +65,9 @@ const DetailDisplayFile = ({ fileData }: Props) => {
 	const { obsEditMode, setObsEditMode } = useContext(ObsEditModeContext);
 
 	const isImage = [".jpg", ".jpeg", ".png"].includes(
+		fileData["file_format"].toLowerCase()
+	);
+	const isAudio = [".mp3", ".wav"].includes(
 		fileData["file_format"].toLowerCase()
 	);
 	const isLocal = fileData["file_url"];
@@ -238,6 +242,11 @@ const DetailDisplayFile = ({ fileData }: Props) => {
 								onFinishEditing={handleStopEditBoundingBox}
 								hoverIndex={hoverIndex}
 							/>
+						</div>
+					)}
+					{isAudio && (
+						<div>
+							<Audio src={fileURL} />
 						</div>
 					)}
 				</div>
