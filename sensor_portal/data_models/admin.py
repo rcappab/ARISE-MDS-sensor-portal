@@ -30,6 +30,20 @@ class DeviceAdmin(AddOwnerAdmin):
 
     #  admin form hack to make sure device user is assigned to managers
     def save_related(self, request, form, formsets, change):
+        """
+        Overrides the save_related method to perform additional actions 
+        after saving related objects. Specifically, it ensures that the 
+        `device_user` associated with the form instance is saved if it exists.
+        Args:
+            request (HttpRequest): The current HTTP request object.
+            form (ModelForm): The form instance being processed.
+            formsets (list): A list of formsets related to the form instance.
+            change (bool): A flag indicating whether the object is being changed 
+            (True) or added (False).
+        Returns:
+            None
+        """
+
         super(AddOwnerAdmin, self).save_related(
             request, form, formsets, change)
         if form.instance.device_user:
@@ -62,6 +76,24 @@ class DeployAdmin(AddOwnerAdmin):
 
     #  admin form hack to make sure global project is added
     def save_related(self, request, form, formsets, change):
+        """
+        Overrides the default save_related method to perform additional actions 
+        after saving related objects. Specifically, it ensures that the global 
+        project, defined by the GLOBAL_PROJECT_ID setting, is associated with 
+        the instance being saved.
+        Args:
+            request (HttpRequest): The current HTTP request object.
+            form (ModelForm): The form instance used to edit the model.
+            formsets (list): A list of formsets related to the model.
+            change (bool): A flag indicating whether the instance is being changed 
+            (True) or added (False).
+        Behavior:
+            - Calls the parent class's save_related method to handle default behavior.
+            - Retrieves or creates the global project based on the GLOBAL_PROJECT_ID setting.
+            - Ensures the global project is added to the instance's project relationship 
+              if it is not already associated.
+        """
+
         super(AddOwnerAdmin, self).save_related(
             request, form, formsets, change)
         global_project, exists = Project.objects.get_or_create(

@@ -21,6 +21,43 @@ from .models import (DataFile, DataType, Deployment, Device, DeviceModel,
 
 class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMixIn, CreatedModifiedMixIn, CheckFormMixIn,
                             serializers.ModelSerializer):
+    """
+    A mixin serializer for handling deployment-related fields and operations.
+    This serializer provides functionality for managing deployment data, including
+    relationships with devices, projects, sites, and time zones. It also includes
+    validation logic for ensuring data integrity and permissions.
+    Attributes:
+        device_type (SlugRelatedField): A slug-related field for the device type, linked to `DataType`.
+        device_type_ID (PrimaryKeyRelatedField): A primary key-related field for the device type, linked to `DataType`.
+        device (SlugRelatedField): A slug-related field for the device, linked to `Device`.
+        device_ID (PrimaryKeyRelatedField): A primary key-related field for the device, linked to `Device`.
+        project (SlugRelatedField): A slug-related field for projects, excluding the global project.
+        project_ID (PrimaryKeyRelatedField): A primary key-related field for projects, excluding the global project.
+        site (SlugRelatedGetOrCreateField): A slug-related field for the site, linked to `Site`.
+        site_ID (PrimaryKeyRelatedField): A primary key-related field for the site, linked to `Site`.
+        time_zone (TimeZoneSerializerField): A field for handling time zones, using pytz.
+        deployment_start (DateTimeField): A datetime field for the deployment start time, defaulting to UTC.
+        deployment_end (DateTimeField): A datetime field for the deployment end time, defaulting to UTC.
+    Methods:
+        to_representation(instance):
+            Customizes the representation of the serialized data, including filtering projects
+            and checking permissions.
+        create(*args, **kwargs):
+            Creates a new deployment instance and saves it.
+        update(*args, **kwargs):
+            Updates an existing deployment instance and saves it.
+        validate(data):
+            Validates the input data, ensuring relationships and constraints are met, such as
+            device and site attachments, deployment type compatibility, and time overlap checks.
+    Meta:
+        model (Deployment): Specifies the model associated with this serializer.
+        exclude (list): Excludes the `last_image` field from serialization.
+    Notes:
+        - This mixin includes validation logic for deployment-related constraints.
+        - Permissions are checked for managing deployments.
+        - Handles both slug and primary key relationships for related fields.
+    """
+
     device_type = serializers.SlugRelatedField(
         slug_field='name', queryset=DataType.objects.all(), required=False, allow_null=True)
     device_type_ID = serializers.PrimaryKeyRelatedField(source="device_type", queryset=DataType.objects.all(),
@@ -56,6 +93,22 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMixIn, CreatedModifiedMixIn, 
     # check project permissions here or in viewpoint
 
     def to_representation(self, instance):
+        """
+        Customizes the representation of a model instance for serialization.
+        Args:
+            instance (object): The model instance to be serialized.
+        Returns:
+            dict: A dictionary representation of the instance, with modifications
+            based on the context and user permissions.
+        Details:
+            - Extracts the `request` user from the serializer context.
+            - Modifies the representation to exclude global projects.
+            - Adds a `can_manage` field based on user permissions.
+            - Removes the `thumb_url` field if the request context is not available.
+            - If the representation contains `properties`, it adjusts the structure
+              to include the modified properties within a GeoJSON-like format.
+        """
+
         request_user = self.context['request'].user
         initial_rep = super(DeploymentFieldsMixIn,
                             self).to_representation(instance)
@@ -86,21 +139,71 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMixIn, CreatedModifiedMixIn, 
         exclude = ['last_image']
 
     def __init__(self, *args, **kwargs):
+        """
+        Initializes the DeploymentFieldsMixIn class.
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+        Attributes:
+            clear_project (bool): A flag indicating whether to clear the project. Defaults to False.
+            management_perm (str): The permission string for managing deployments.
+        """
+
         self.clear_project = False
         self.management_perm = 'data_models.change_deployment'
         super(DeploymentFieldsMixIn, self).__init__(*args, **kwargs)
 
     def create(self, *args, **kwargs):
+        """
+        Overrides the create method to handle the creation of an instance.
+        This method calls the parent class's create method to initialize the instance,
+        saves the instance to the database, and then returns the created instance.
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+        Returns:
+            instance: The created and saved instance.
+        """
+
         instance = super(DeploymentFieldsMixIn, self).create(*args, **kwargs)
         instance.save()
         return instance
 
     def update(self, *args, **kwargs):
+        """
+        Update the instance with the provided arguments and save the changes.
+        This method overrides the `update` method from the parent class to ensure
+        that the instance is saved after being updated.
+        Args:
+            *args: Variable length argument list passed to the parent class's `update` method.
+            **kwargs: Arbitrary keyword arguments passed to the parent class's `update` method.
+        Returns:
+            instance: The updated and saved instance.
+        """
+
         instance = super(DeploymentFieldsMixIn, self).update(*args, **kwargs)
         instance.save()
         return instance
 
     def validate(self, data):
+        """
+        Validates the input data for the serializer.
+        This method performs several checks to ensure the integrity and validity of the data being processed:
+        - Ensures that a `project` is set if `form_submission` is active and `project` is not provided.
+        - Validates the data using the parent class's `validate` method.
+        - Checks if a `device` or `device_ID` is attached when the request is not partial.
+        - Checks if a `site` or `site_ID` is attached when the request is not partial.
+        - Validates the compatibility between `device_type` and `device`.
+        - Ensures that the deployment start time is not after the deployment end time.
+        - Checks for overlapping deployments for the given `device`.
+        Args:
+            data (dict): The input data to validate.
+        Returns:
+            dict: The validated data.
+        Raises:
+            serializers.ValidationError: If any of the validation checks fail.
+        """
+
         if self.form_submission & (data.get('project') is None):
             data['project'] = []
 
@@ -138,7 +241,7 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMixIn, CreatedModifiedMixIn, 
             )
             if not result:
                 raise serializers.ValidationError(message)
-        print(data)
+
         result, message = validators.deployment_check_type(self.instance_get('device_type', data),
                                                            self.instance_get('device', data))
         if not result:
@@ -148,8 +251,6 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMixIn, CreatedModifiedMixIn, 
                                                                           self.instance_get('deployment_end', data))
         if not result:
             raise serializers.ValidationError(message)
-
-        print(data)
 
         result, message = validators.deployment_check_overlap(self.instance_get('deployment_start', data),
                                                               self.instance_get(
@@ -164,6 +265,16 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMixIn, CreatedModifiedMixIn, 
 
 
 class DeploymentSerializer(DeploymentFieldsMixIn, serializers.ModelSerializer):
+    """
+    Serializer for the Deployment model.
+    This serializer inherits from DeploymentFieldsMixIn and serializers.ModelSerializer.
+    It is used to serialize and deserialize Deployment model instances, excluding specific fields.
+    Attributes:
+        Meta:
+            model (Deployment): The model class to be serialized.
+            exclude (list): A list of fields to be excluded from serialization, 
+                            combining DeploymentFieldsMixIn.Meta.exclude and the 'point' field.
+    """
 
     class Meta:
         model = Deployment
@@ -171,12 +282,33 @@ class DeploymentSerializer(DeploymentFieldsMixIn, serializers.ModelSerializer):
 
 
 class DeploymentSerializer_GeoJSON(DeploymentFieldsMixIn, geoserializers.GeoFeatureModelSerializer):
+    """
+    Serializer for deployment data in GeoJSON format.
+    This serializer extends `GeoFeatureModelSerializer` to include deployment-specific fields
+    and functionality. It uses the `point` field as the geographic representation.
+    Attributes:
+        Meta.geo_field (str): Specifies the geographic field used for GeoJSON serialization.
+    """
+
     def __init__(self, *args, **kwargs):
         self.Meta.geo_field = "point"
         super(DeploymentSerializer_GeoJSON, self).__init__(*args, **kwargs)
 
 
 class ProjectSerializer(OwnerMixIn, ManagerMixIn, CreatedModifiedMixIn, serializers.ModelSerializer):
+    """
+    Serializer for the Project model, incorporating mixins for ownership, management, 
+    and tracking creation/modification timestamps.
+    Attributes:
+        is_active (serializers.BooleanField): A read-only field indicating whether the project is active.
+    Meta:
+        model (Project): The model associated with this serializer.
+        exclude (list): Specifies fields to exclude from serialization. Currently, no fields are excluded.
+    Methods:
+        __init__(*args, **kwargs): Initializes the serializer and sets the management permission 
+        required for modifying the project.
+    """
+
     is_active = serializers.BooleanField(
         read_only=True)
 
@@ -190,6 +322,25 @@ class ProjectSerializer(OwnerMixIn, ManagerMixIn, CreatedModifiedMixIn, serializ
 
 
 class DeviceModelSerializer(CreatedModifiedMixIn, OwnerMixIn, serializers.ModelSerializer):
+    """
+    Serializer for the DeviceModel model, providing serialization and deserialization
+    functionality for DeviceModel instances. This serializer includes additional mixins
+    for handling created/modified timestamps and ownership.
+    Attributes:
+        type (SlugRelatedField): A field that maps the 'type' attribute of the model to 
+            the 'name' field of the related DataType model. It is optional.
+        type_ID (PrimaryKeyRelatedField): A field that maps the 'type' attribute of the model 
+            to the primary key of the related DataType model. It is optional.
+    Meta:
+        model (DeviceModel): Specifies the model associated with this serializer.
+        exclude (list): Specifies fields to exclude from serialization. Currently, no fields are excluded.
+    Methods:
+        to_representation(instance):
+            Overrides the default representation method to include additional fields
+            related to the data handler. If a handler is found for the given type and name,
+            its full name and ID are added to the serialized representation. Otherwise,
+            these fields are set to None.
+    """
 
     type = serializers.SlugRelatedField(
         slug_field='name', queryset=DataType.objects.all(), required=False)
@@ -201,6 +352,19 @@ class DeviceModelSerializer(CreatedModifiedMixIn, OwnerMixIn, serializers.ModelS
         exclude = []
 
     def to_representation(self, instance):
+        """
+        Override the `to_representation` method to customize the serialized representation 
+        of the `DeviceModelSerializer` instance.
+        This method adds additional fields `data_handler` and `data_handler_id` to the 
+        serialized output based on the presence of a data handler for the given device type 
+        and name.
+        Args:
+            instance: The instance of the model being serialized.
+        Returns:
+            dict: A dictionary containing the serialized representation of the instance, 
+            including the additional `data_handler` and `data_handler_id` fields.
+        """
+
         initial_rep = super(DeviceModelSerializer,
                             self).to_representation(instance)
 
@@ -216,6 +380,32 @@ class DeviceModelSerializer(CreatedModifiedMixIn, OwnerMixIn, serializers.ModelS
 
 
 class DeviceSerializer(OwnerMixIn, ManagerMixIn, CreatedModifiedMixIn, CheckFormMixIn, serializers.ModelSerializer):
+    """
+    Serializer for the Device model, providing functionality for serialization and deserialization
+    of Device instances. This serializer includes custom validation, representation logic, and 
+    additional fields for handling related models and user permissions.
+    Attributes:
+        type (SlugRelatedField): A slug-related field for the 'type' attribute, linked to the DataType model.
+        type_ID (PrimaryKeyRelatedField): A primary key related field for the 'type' attribute, linked to the DataType model.
+        model (SlugRelatedField): A slug-related field for the 'model' attribute, linked to the DeviceModel model.
+        model_ID (PrimaryKeyRelatedField): A primary key related field for the 'model' attribute, linked to the DeviceModel model.
+        username (CharField): A field for the username, optional.
+        password (CharField): A write-only field for the password, optional.
+        is_active (BooleanField): A read-only field indicating whether the device is active.
+    Meta:
+        model (Device): Specifies the Device model as the target for serialization.
+        exclude (list): Excludes no fields from serialization.
+    Methods:
+        __init__(*args, **kwargs):
+            Initializes the serializer and sets the management permission required for certain operations.
+        to_representation(instance):
+            Customizes the representation of the serialized data, including conditional field removal 
+            based on user permissions and adding data handler information.
+        validate(data):
+            Validates the input data, ensuring required fields are provided and checks relationships 
+            between 'model' and 'model_ID'.
+    """
+
     type = serializers.SlugRelatedField(
         slug_field='name', queryset=DataType.objects.all(), required=False)
     type_ID = serializers.PrimaryKeyRelatedField(source="type", queryset=DataType.objects.all(),
@@ -239,6 +429,22 @@ class DeviceSerializer(OwnerMixIn, ManagerMixIn, CreatedModifiedMixIn, CheckForm
         super(DeviceSerializer, self).__init__(*args, **kwargs)
 
     def to_representation(self, instance):
+        """
+        Customize the representation of the serialized data for a Device instance.
+        This method modifies the default representation by removing sensitive fields
+        such as 'password' and conditionally removing other fields like 'username'
+        based on the user's permissions. Additionally, it adds information about the
+        data handler associated with the device type and model.
+        Args:
+            instance (Device): The instance of the Device model being serialized.
+        Returns:
+            dict: A dictionary representing the serialized data with modifications.
+              Includes the following keys:
+              - 'data_handler': Full name of the associated data handler or None.
+              - 'data_handler_id': ID of the associated data handler or None.
+              Sensitive fields are removed based on user permissions.
+        """
+
         initial_rep = super(DeviceSerializer, self).to_representation(instance)
         fields_to_pop = [
             "username"
@@ -267,6 +473,22 @@ class DeviceSerializer(OwnerMixIn, ManagerMixIn, CreatedModifiedMixIn, CheckForm
         return initial_rep
 
     def validate(self, data):
+        """
+        Validates the input data for the serializer.
+        This method first calls the parent class's `validate` method to perform
+        base validation. Then, it performs additional checks to ensure that a 
+        model has been attached either via the 'model' key or the 'model_ID' key 
+        in the data. If the serializer is not in partial mode and the required 
+        keys are not present, a validation error is raised.
+        Args:
+            data (dict): The input data to be validated.
+        Returns:
+            dict: The validated data.
+        Raises:
+            serializers.ValidationError: If the required keys ('model' or 'model_ID') 
+            are not present in the data when the serializer is not in partial mode.
+        """
+
         data = super().validate(data)
 
         if not self.partial:
@@ -285,6 +507,12 @@ class DeviceSerializer(OwnerMixIn, ManagerMixIn, CreatedModifiedMixIn, CheckForm
 
 
 class DataFileCheckSerializer(serializers.Serializer):
+    """
+        Serializer for use when checking if a file is already present in the system.
+        Attributes:
+            file_names(ListField(CharField)): List of filenames to check in the system.
+            original_names(ListField(CharField)): List of original file names to check in the system.
+    """
     file_names = serializers.ListField(
         child=serializers.CharField(), required=False
     )
@@ -294,6 +522,34 @@ class DataFileCheckSerializer(serializers.Serializer):
 
 
 class DataFileSerializer(CreatedModifiedMixIn, serializers.ModelSerializer):
+    """
+    Serializer for the DataFile model, providing serialization and deserialization
+    functionality for DataFile instances. This serializer includes custom validation
+    and representation logic.
+    Attributes:
+        deployment (SlugRelatedField): A field representing the deployment associated
+            with the data file, using the deployment_device_ID as the slug field.
+        deployment_ID (PrimaryKeyRelatedField): A field representing the deployment
+            associated with the data file, using the primary key.
+        file_type (StringRelatedField): A field representing the type of the file as a
+            string.
+        recording_dt (DateTimeField): A field representing the recording date and time
+            of the data file, with a default timezone set to UTC.
+    Methods:
+        to_representation(instance):
+            Customizes the serialized representation of the DataFile instance. Adds
+            additional fields such as 'favourite' and 'can_annotate' based on the
+            request context. Excludes certain fields depending on the presence of a
+            request context.
+        validate(data):
+            Validates the serialized data to ensure the recording date and deployment
+            are consistent with the defined rules. Raises a ValidationError if the
+            validation fails.
+    Meta:
+        model (DataFile): Specifies the model associated with this serializer.
+        exclude (list): A list of fields to exclude from the serialized representation.
+    """
+
     deployment = serializers.SlugRelatedField(
         slug_field='deployment_device_ID', queryset=Deployment.objects.all(), required=False)
     deployment_ID = serializers.PrimaryKeyRelatedField(source="deployment", queryset=Deployment.objects.all(),
@@ -332,6 +588,33 @@ class DataFileSerializer(CreatedModifiedMixIn, serializers.ModelSerializer):
 
 
 class DataFileUploadSerializer(serializers.Serializer):
+    """
+    Serializer for handling data file uploads with associated metadata.
+    Attributes:
+        device (CharField): Optional device name associated with the upload.
+        device_ID (IntegerField): Optional device ID associated with the upload.
+        deployment (CharField): Optional deployment name associated with the upload.
+        deployment_ID (IntegerField): Optional deployment ID associated with the upload.
+        files (ListField): Required list of files to be uploaded. Each file must not be empty.
+        file_names (ListField): Optional list of file names corresponding to the uploaded files.
+        extra_data (ListField): Optional list of JSON objects containing additional metadata.
+        recording_dt (ListField): Optional list of recording date-times for the uploaded files.
+        autoupdate (BooleanField): Flag indicating whether to auto-update the deployment. Defaults to False.
+        rename (BooleanField): Flag indicating whether to rename the uploaded files. Defaults to True.
+        check_filename (BooleanField): Flag indicating whether to validate filenames. Defaults to True.
+        data_types (ListField): Optional list of data types associated with the upload, linked to DataType objects.
+        is_active (BooleanField): Read-only field indicating whether the associated deployment is active.
+    Methods:
+        create(validated_data):
+            Returns the validated data without modification.
+        validate(data):
+            Validates the input data, ensuring that either a deployment or device is provided.
+            Checks if the specified deployment or device exists.
+            Validates the recording date-times if provided, ensuring they match the number of uploaded files.
+        update(validated_data):
+            Placeholder method for updating data. Not implemented.
+    """
+
     device = serializers.CharField(required=False)
     device_ID = serializers.IntegerField(required=False)
     deployment = serializers.CharField(required=False)
@@ -427,6 +710,18 @@ class DataTypeSerializer(serializers.ModelSerializer):
 
 
 class GenericJobSerializer(serializers.Serializer):
+    """
+    Serializer for displaying generic jobs.
+
+    Attributes:
+        id(IntegerField): Numeric ID of the generic job.
+        name(CharField): Name of the generic job.
+        task_name(CharField): Celery task name of the generic job.
+        data_type(CharField): Type of data the job expects, e.g. "datafile"
+        admin_only(BooleanField): True if only a superuser view/start this job.
+        max_items(IntegerField): Maximum number of items that can be processed by the job.
+        default_args(JSONField): Default arguments for the job, stored as a JSON object.
+    """
     id = serializers.IntegerField()
     name = serializers.CharField()
     task_name = serializers.CharField()
@@ -434,19 +729,3 @@ class GenericJobSerializer(serializers.Serializer):
     admin_only = serializers.BooleanField()
     max_items = serializers.IntegerField()
     default_args = serializers.JSONField()
-
-
-def get_image_recording_dt(uploaded_file):
-    si = uploaded_file.file
-    image = Image.open(si)
-    exif = image.getexif()
-    exif_tags = {ExifTags.TAGS[k]: v for k,
-                 v in exif.items() if k in ExifTags.TAGS}
-    recording_dt = exif_tags.get('DateTimeOriginal')
-    if recording_dt is None:
-        recording_dt = exif_tags.get('DateTime')
-    if recording_dt is None:
-        raise serializers.ValidationError(f"Unable to get recording_dt from image {uploaded_file.name}, "
-                                          f"consider supplying recording_dt manually")
-
-    return dt.strptime(recording_dt, '%Y:%m:%d %H:%M:%S')

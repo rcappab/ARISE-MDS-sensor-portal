@@ -1,4 +1,11 @@
-def data_file_in_deployment(recording_dt, deployment):
+from datetime import datetime
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
+
+if TYPE_CHECKING:
+    from .models import DataType, Deployment, Device, DeviceModel
+
+
+def data_file_in_deployment(recording_dt: datetime, deployment: "Deployment") -> tuple[bool, dict]:
     """
     Check if a date falls within a deployment's date range.
 
@@ -21,16 +28,16 @@ def data_file_in_deployment(recording_dt, deployment):
     return False, error_message
 
 
-def deployment_start_time_after_end_time(start_dt, end_dt):
+def deployment_start_time_after_end_time(start_dt: datetime, end_dt: Optional[datetime] = None) -> tuple[bool, dict]:
     """
     Check if end time is after start time
 
     Args:
         start_dt (datetime): Start time to check
-        end_dt (datetime): _description_
+        end_dt (datetime): End time to check
 
     Returns:
-            tuple: success (boolean), error message (dict where the key is the associated field name)
+            success (boolean), error message (dict where the key is the associated field name)
     """
     if (end_dt is None) or (end_dt > start_dt):
         return True, ""
@@ -39,7 +46,10 @@ def deployment_start_time_after_end_time(start_dt, end_dt):
     return False, error_message
 
 
-def deployment_check_overlap(start_dt, end_dt, device, deployment_pk):
+def deployment_check_overlap(start_dt: datetime,
+                             end_dt: datetime,
+                             device: "Device",
+                             deployment_pk: Optional[int] = None) -> Tuple[bool, Dict[str, Any]]:
     """
     Check if a new deployment of a device would overlap with existing deployments.
 
@@ -64,7 +74,7 @@ def deployment_check_overlap(start_dt, end_dt, device, deployment_pk):
     return False, error_message
 
 
-def deployment_check_type(device_type, device):
+def deployment_check_type(device_type: "DataType", device: "Device") -> Tuple[bool, Dict[str, str]]:
     """
     Check if a deployment matches it's device type.
 
@@ -82,7 +92,7 @@ def deployment_check_type(device_type, device):
     return False, error_message
 
 
-def device_check_type(device_type, device_model):
+def device_check_type(device_type: "DataType", device_model: "DeviceModel") -> Tuple[bool, Dict[str, str]]:
     """_summary_
 
     Check if a device matches it's device model type.

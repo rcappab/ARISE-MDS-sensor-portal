@@ -6,5 +6,6 @@ class DataModelsConfig(AppConfig):
     name = 'data_models'
 
     def ready(self):
+        # Make sure that signals and tasks are loaded
         import data_models.signals
         import data_models.tasks

@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from typing import List
 
 from bridgekeeper import perms
 from celery import shared_task
@@ -19,7 +20,13 @@ from .models import DataFile, Deployment, Device, Project
 @app.task(name="flag_humans")
 @register_job("Change human flag", "flag_humans", "datafile", True,
               default_args={"has_human": False})
-def flag_humans(datafile_pks, has_human: bool = False, **kwargs):
+def flag_humans(datafile_pks: List[int], has_human: bool = False, **kwargs):
+    """
+    Set the has_human flag on data files.
+    Args:
+        datafile_pks (List[int]): List of data file primary keys to update.
+        has_human (bool, optional): Value to set the flag to. Defaults to False.
+    """
     file_objs = DataFile.objects.filter(
         pk__in=datafile_pks)
     print(file_objs.count())

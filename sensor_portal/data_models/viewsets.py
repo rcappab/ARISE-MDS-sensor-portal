@@ -44,6 +44,32 @@ from .serializers import (DataFileCheckSerializer, DataFileSerializer,
 
 
 class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, CheckFormViewSetMixIn, OptionalPaginationViewSetMixIn):
+    """
+    A viewset for managing Deployment objects with various functionalities such as filtering, pagination, 
+    and custom actions. This viewset integrates multiple mixins to provide extended capabilities.
+    Attributes:
+        search_fields (list): Fields to enable search functionality.
+        ordering_fields (list): Fields to enable ordering functionality.
+        queryset (QuerySet): The base queryset for Deployment objects.
+        filterset_class (class): The filter class used for filtering the queryset.
+        filter_backends (list): List of filter backends used for filtering the queryset.
+    Actions:
+        ids_count (POST): Returns the count of files associated with the given deployment IDs.
+        queryset_count (GET): Returns the count of files in the filtered queryset.
+        start_job (POST): Starts a job with the given name and arguments for the filtered deployments.
+        metrics (GET): Retrieves metrics for a specific deployment.
+        project_deployments (GET): Retrieves deployments associated with a specific project.
+        device_deployments (GET): Retrieves deployments associated with a specific device.
+    Methods:
+        get_queryset(): Returns the queryset for deployments, optionally filtered by 'ctdp' parameter.
+        get_serializer_class(): Returns the appropriate serializer class based on request parameters.
+        check_attachment(serializer): Validates permissions for attaching deployments to projects and devices.
+    Notes:
+        - The viewset supports GeoJSON serialization and CTDP-specific filtering.
+        - Pagination is applied to the queryset when applicable.
+        - Custom permissions are enforced for certain actions.
+    """
+
     search_fields = ['deployment_device_ID',
                      'device__name', 'device__device_ID', 'extra_data']
     ordering_fields = ordering = [
@@ -168,6 +194,34 @@ class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, Check
 
 
 class ProjectViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
+    """
+    A viewset for managing Project objects with additional functionality for filtering, searching, 
+    and performing custom actions.
+    Attributes:
+        serializer_class (ProjectSerializer): Serializer class for Project objects.
+        queryset (QuerySet): Base queryset for retrieving Project objects, excluding the global project ID.
+        filterset_class (ProjectFilter): Filter class for filtering Project objects.
+        search_fields (list): Fields to enable search functionality.
+    Actions:
+        ids_count (POST):
+            Count the number of files associated with a list of project IDs provided in the request body.
+            Returns the file count.
+        queryset_count (GET):
+            Count the number of files in the filtered queryset.
+            Returns the file count.
+        start_job (POST):
+            Start a job with the specified job name and project IDs. If no IDs are provided, 
+            the job will be started for all objects in the filtered queryset.
+            Returns the job status and details.
+        species_list (GET):
+            Retrieve a distinct list of species names associated with the project's data files 
+            that the user has permission to view.
+            Returns the species list.
+        metrics (GET):
+            Retrieve metrics for the project's data files that the user has permission to view.
+            Returns a list of file metric dictionaries.
+    """
+
     serializer_class = ProjectSerializer
     queryset = Project.objects.all().distinct().exclude(
         name=settings.GLOBAL_PROJECT_ID)
@@ -227,6 +281,43 @@ class ProjectViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
 
 
 class DeviceViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
+    """
+    A viewset for managing Device objects with additional functionality for filtering, searching, 
+    and performing custom actions.
+    Attributes:
+        serializer_class (DeviceSerializer): The serializer class used for Device objects.
+        queryset (QuerySet): The base queryset for Device objects, ensuring distinct results.
+        filterset_class (DeviceFilter): The filter class used for filtering Device objects.
+        search_fields (list): Fields that can be searched, including 'device_ID', 'name', and 'model__name'.
+    Actions:
+        ids_count (POST):
+            Count the number of files associated with the provided Device IDs.
+            Args:
+                request (Request): The HTTP request containing a list of Device IDs in the body.
+            Returns:
+                Response: The count of files associated with the provided Device IDs.
+        queryset_count (GET):
+            Count the number of files in the filtered queryset.
+            Args:
+                request (Request): The HTTP request.
+            Returns:
+                Response: The count of files in the filtered queryset.
+        start_job (POST):
+            Start a job for the provided Device objects.
+            Args:
+                request (Request): The HTTP request containing job arguments and optional Device IDs.
+                job_name (str): The name of the job to start.
+            Returns:
+                Response: A response containing the job status and details.
+        metrics (GET):
+            Retrieve metrics for a specific Device object.
+            Args:
+                request (Request): The HTTP request.
+                pk (int): The primary key of the Device object.
+            Returns:
+                Response: A dictionary of file metrics for the Device object, or an empty dictionary if no data files are accessible.
+    """
+
     serializer_class = DeviceSerializer
     queryset = Device.objects.all().distinct()
     filterset_class = DeviceFilter
@@ -273,6 +364,48 @@ class DeviceViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
 
 
 class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixIn):
+    """
+    DataFileViewSet is a Django REST Framework viewset that provides various actions for managing and interacting 
+    with DataFile objects. It includes filtering, searching, pagination, and custom actions for specific use cases.
+    Attributes:
+        filterset_class (DataFileFilter): Specifies the filter class for filtering querysets.
+        search_fields (list): Defines the fields that can be searched.
+    Methods:
+        get_queryset():
+            Returns the queryset of DataFile objects, optionally filtered by 'ctdp' parameter.
+        check_existing(request, *args, **kwargs):
+            Custom action to check for existing data files based on 'original_names' or 'file_names' provided in the request.
+        ids_count(request, *args, **kwargs):
+            Custom action to count the number of DataFile objects based on provided IDs.
+        queryset_count(request, *args, **kwargs):
+            Custom action to count the number of DataFile objects in the filtered queryset.
+        start_job(request, job_name, *args, **kwargs):
+            Custom action to start a job with the specified name and associated DataFile objects.
+        observations(request, pk=None):
+            Custom action to retrieve observations associated with a specific DataFile object.
+        favourite_file(request, pk=None):
+            Custom action to toggle the favorite status of a DataFile object for the current user.
+        check_attachment(serializer):
+            Validates if the user has permission to add a DataFile to a deployment.
+        get_serializer_class():
+            Returns the appropriate serializer class based on the action and request parameters.
+        create(request, *args, **kwargs):
+            Handles the creation of new DataFile objects, including file uploads and validation.
+        deployment_datafiles(request, deployment_pk=None):
+            Custom action to retrieve DataFile objects associated with a specific deployment.
+        project_datafiles(request, project_pk=None):
+            Custom action to retrieve DataFile objects associated with a specific project.
+        device_datafiles(request, device_pk=None):
+            Custom action to retrieve DataFile objects associated with a specific device.
+        user_favourite_datafiles(request):
+            Custom action to retrieve DataFile objects favorited by the current user.
+        favourited_datafiles(request):
+            Custom action to retrieve DataFile objects that have been favorited by any user.
+    Notes:
+        - This viewset includes custom actions for specific use cases, such as filtering by deployment, project, or device.
+        - Pagination is applied to querysets where applicable.
+        - Permissions are checked for certain actions, such as adding a DataFile to a deployment.
+    """
 
     filterset_class = DataFileFilter
 
@@ -341,7 +474,7 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
 
     @action(detail=True, methods=['get'])
     def observations(self, request, pk=None):
-        data_file = self.get_object()
+        data_file = DataFile.objects.get(pk=pk)
 
         # Filter observations based on URL query parameters
         observation_qs = Observation.objects.filter(
@@ -554,6 +687,12 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
 
 
 class SiteViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSetMixIn):
+    """
+    SiteViewSet is a Django REST Framework viewset that provides read-only access to Site objects.
+
+    methods:
+        list: Returns a paginated list of all Site objects, cached for 2 hours.
+    """
     serializer_class = SiteSerializer
     queryset = Site.objects.all().distinct()
     search_fields = ['name', 'short_name']
@@ -565,6 +704,14 @@ class SiteViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSetMixIn)
 
 
 class DataTypeViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSetMixIn):
+    """
+    DataTypeViewSet is a Django REST Framework viewset that provides read-only access to DataType objects.
+
+    It supports searching and filtering of DataType objects based on their name.
+
+    Methods:
+        list: Returns a paginated list of all DataType objects, cached for 2 hours
+    """
     serializer_class = DataTypeSerializer
     queryset = DataType.objects.all().distinct()
     search_fields = ['name']
@@ -576,6 +723,13 @@ class DataTypeViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSetMi
 
 
 class DeviceModelViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSetMixIn):
+    """
+    DeviceModelViewSet is a Django REST Framework viewset that provides read-only access to Device
+
+    Methods:
+        list: Returns a paginated list of all DeviceModel objects, cached for 2 hours.
+
+    """
     serializer_class = DeviceModelSerializer
     queryset = DeviceModel.objects.all().distinct()
     search_fields = ['name']
@@ -587,6 +741,16 @@ class DeviceModelViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSe
 
 
 class GenericJobViewSet(viewsets.ViewSet):
+    """
+    GenericJobViewSet is a Django REST Framework viewset that provides read-only access to generic jobs.
+    It allows users to retrieve a list of available jobs and details about specific jobs.
+
+    Methods:
+        list: Returns a list of all available generic jobs, filtered by data type if specified.
+        retrieve: Returns details of a specific job by its index in the settings.GENERIC_JOBS list.
+
+    """
+
     # Required for the Browsable API renderer to have a nice form.
     serializer_class = GenericJobSerializer
     permission_classes = [IsAuthenticated]

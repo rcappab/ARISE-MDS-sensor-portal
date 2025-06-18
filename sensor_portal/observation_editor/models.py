@@ -48,7 +48,7 @@ class Taxon(BaseModel):
         max_length=100, unique=False, db_index=True)
     species_common_name = models.CharField(
         max_length=100, unique=False, blank=True, db_index=True)
-    taxon_code = models.CharField(max_length=100, blank=True)
+    taxon_code = models.CharField(max_length=100, blank=True, db_index=True)
 
     taxon_source = models.IntegerField(choices=source_choice, default=0)
     extra_data = models.JSONField(default=dict, blank=True)
@@ -162,7 +162,7 @@ class Observation(BaseModel):
     data_files = models.ManyToManyField(
         DataFile, related_name="observations", db_index=True)
     obs_dt = models.DateTimeField(null=True, blank=True)
-    source = models.CharField(max_length=100, default="human")
+    source = models.CharField(max_length=100, default="human", db_index=True)
     number = models.IntegerField(default=1)
     bounding_box = models.JSONField(default=dict, blank=True)
     confidence = models.FloatField(default=None, null=True, blank=True)
