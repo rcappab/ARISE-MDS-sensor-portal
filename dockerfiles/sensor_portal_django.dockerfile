@@ -14,9 +14,8 @@ COPY ./sensor_portal /usr/src/sensor_portal
 WORKDIR /usr/src/sensor_portal
 
 # install dependencies
-RUN apk add --update --no-cache binutils geos gdal postgresql-libs postgresql-client git curl
-RUN apk add --no-cache --virtual .build-deps gcc musl-dev postgresql-dev
-
+RUN apk add --update --no-cache binutils geos gdal postgresql-libs postgresql-client git curl libsndfile
+RUN apk add --no-cache --virtual .build-deps gcc musl-dev postgresql-dev 
 
 
 
@@ -26,3 +25,5 @@ ENV C_INCLUDE_PATH=/usr/include/gdal
 RUN pip install --upgrade pip 
 RUN pip install --no-cache-dir -r requirements.txt
 #RUN apk add --update --no-cache install -y ffmpeg
+
+

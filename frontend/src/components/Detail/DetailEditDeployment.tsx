@@ -288,7 +288,6 @@ const DetailEditDeployment = ({
 							valueKey="id"
 							labelKey="name"
 							creatable={true}
-							apiSearchKey={"name"}
 							handleChange={setSite_ID}
 							valid={errorDict["site_ID"] === ""}
 						/>

@@ -18,8 +18,13 @@ const DetailDisplayTable = ({
 	const convertDates = function (key, value) {
 		if (timeKeys.includes(key)) {
 			let currentTime = value;
-			let dateTime = new Date(currentTime);
-			return dtFormat.format(dateTime);
+			try {
+				let dateTime = new Date(currentTime);
+				return dtFormat.format(dateTime);
+			} catch (error) {
+				console.error("Error formatting date:", error);
+				return currentTime;
+			}
 		} else {
 			return value;
 		}

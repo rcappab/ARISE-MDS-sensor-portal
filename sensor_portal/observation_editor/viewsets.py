@@ -1,6 +1,7 @@
 from camtrap_dp_export.querysets import get_ctdp_obs_qs
 from camtrap_dp_export.serializers import ObservationSerializerCTDP
 from data_models.models import DataFile
+from drf_spectacular.utils import extend_schema
 from rest_framework import pagination, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
@@ -14,7 +15,9 @@ from .models import Observation, Taxon
 from .serializers import EvenShorterTaxonSerialier, ObservationSerializer
 
 
+@extend_schema(summary="Observations")
 class ObservationViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
+
     search_fields = ["taxon__species_name", "taxon__species_common_name"]
     ordering_fields = ["obs_dt", "created_on"]
     queryset = Observation.objects.all().prefetch_related("taxon")
@@ -53,6 +56,7 @@ class ObservationViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, Opti
                     raise PermissionDenied(
                         f"You don't have permission to add an observation to {data_file_object.file_name}")
 
+    @extend_schema(summary="Observations from datafile", description="Get observations from a specific datafile.")
     @action(detail=False, methods=['get'], url_path=r'datafile/(?P<datafile_pk>\w+)', url_name="datafile_observations")
     def datafile_observations(self, request, datafile_pk=None):
 
