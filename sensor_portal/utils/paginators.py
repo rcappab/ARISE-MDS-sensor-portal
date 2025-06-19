@@ -32,7 +32,7 @@ class LargeTablePaginator(Paginator):
 
         if not self.object_list.query.where:
             try:
-                print("Do approximiation")
+
                 with transaction.atomic(), connection.cursor() as cursor:
                     # Obtain estimated values (only valid with PostgreSQL)
                     cursor.execute(
@@ -45,7 +45,7 @@ class LargeTablePaginator(Paginator):
                 pass
             except Exception:
                 pass
-        print("Return big number")
+
         return 9999999999
 
 

@@ -1,9 +1,12 @@
 import importlib
+import logging
 import os
 from datetime import datetime
 from typing import Callable, Tuple
 
 from .tasks import *
+
+logger = logging.getLogger(__name__)
 
 
 class DataTypeHandler():
@@ -111,7 +114,7 @@ class DataTypeHandlerCollection():
         device_model = self.set_default_model(data_type, device_model)
         if device_model is None:
             return None
-        print(f"Got data handler {data_type} {device_model}")
+        logger.info(f"Got data handler {data_type} {device_model}")
         return self.data_type_handlers[data_type].get(device_model)
 
     def get_file_handler(self, data_type, device_model) -> Callable:
@@ -120,6 +123,6 @@ class DataTypeHandlerCollection():
 
         if device_model is None:
             return None
-        print(f"Got data handler {data_type} {device_model}")
+        logger.info(f"Got data handler {data_type} {device_model}")
 
         return self.data_type_handlers[data_type][device_model].handle_file

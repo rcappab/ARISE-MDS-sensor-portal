@@ -1,3 +1,5 @@
+import logging
+
 from data_models.models import Device
 from django.contrib.sites.models import Site
 from django.core.exceptions import ObjectDoesNotExist
@@ -9,6 +11,8 @@ from rest_framework.authtoken.models import Token
 from utils.email import send_email
 
 from .models import DeviceUser, User
+
+logger = logging.getLogger(__name__)
 
 
 @receiver(pre_save, sender=User)
@@ -69,7 +73,7 @@ def password_reset_token_created(sender, instance, reset_password_token, *args, 
     :param kwargs:
     :return:
     """
-    print("Password reset token created", sender)
+    logger.info("Password reset token created", sender)
     # send an e-mail to the user
     context = {
         'current_user': reset_password_token.user,

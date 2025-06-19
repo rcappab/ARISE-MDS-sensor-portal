@@ -1,4 +1,5 @@
 
+import logging
 import os
 from datetime import datetime
 from posixpath import join as posixjoin
@@ -13,6 +14,8 @@ from utils.ssh_client import SSH_client
 
 from .bagit_functions import bag_info_from_files
 from .models import Archive, TarFile
+
+logger = logging.getLogger(__name__)
 
 
 def create_tar_files(file_pks, archive_pk):
@@ -57,7 +60,7 @@ def get_tar_splits(file_objs):
     # Remove files whose TAR would not be large enough from the in progress tar
     too_small_file_objs = DataFile.objects.filter(pk__in=too_small_split_pks)
     n_removed_files = too_small_file_objs.update(tar_file=None)
-    print(f"{n_removed_files} in too small a grouping")
+    logger.info(f"{n_removed_files} in too small a grouping")
 
     file_splits_ok = [
         x for x in file_splits if x["total_size_gb"] >= settings.MIN_ARCHIVE_SIZE_GB]
@@ -104,7 +107,7 @@ def create_tar_file(file_objs, name_suffix=0):
     relative_metadata_dir_path = os.path.relpath(
         metadata_dir_path, settings.FILE_STORAGE_ROOT)
 
-    print(f"{tar_name}: generating bagit data")
+    logger.info(f"{tar_name}: generating bagit data")
     # Generate bagit metadata
     all_metadata_paths = bag_info_from_files(file_objs, metadata_dir_path)
 
@@ -129,10 +132,10 @@ def create_tar_file(file_objs, name_suffix=0):
     os.removedirs(metadata_dir_path)
 
     if not success:
-        print(f"{tar_name}: Error creating TAR")
-        print(output)
+        logger.info(f"{tar_name}: Error creating TAR")
+        logger.info(output)
         return False, tar_name, None
-    print(f"{tar_name}: succesfully created")
+    logger.info(f"{tar_name}: succesfully created")
     return True, tar_name, full_tar_path
 
 

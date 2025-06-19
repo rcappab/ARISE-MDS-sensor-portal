@@ -1,4 +1,5 @@
 
+import logging
 import os
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, List, Optional
@@ -30,6 +31,8 @@ from utils.querysets import ApproximateCountQuerySet
 from . import validators
 from .general_functions import check_dt
 from .job_handling_functions import get_job_from_name
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from user_management.models import User
@@ -301,7 +304,7 @@ class Device(BaseModel):
     def clean(self):
         result, message = validators.device_check_type(
             self.type, self.model)
-        print(result, message)
+        logger.info(result, message)
         if not result:
             raise ValidationError(message)
         super(Device, self).clean()
@@ -333,13 +336,13 @@ class Device(BaseModel):
               number of matching deployments and returns `None`.
         """
 
-        print(
+        logger.info(
             f"Attempt to find deployment for device {self.device_ID} for {dt}")
 
         if dt is None:
             return None
 
-        # print(dt)
+        # logger.info(dt)
         all_deploys = self.deployments.all()
 
         all_tz = all_deploys.values('time_zone', 'pk')
@@ -382,7 +385,8 @@ class Device(BaseModel):
         except (ObjectDoesNotExist, MultipleObjectsReturned):
             # Check for complete failure or ambiguity
             all_true_deployments = all_deploys.filter(in_deployment=True)
-            print(f"Error: found {all_true_deployments.count()} deployments")
+            logger.info(
+                f"Error: found {all_true_deployments.count()} deployments")
             return None
 
     def check_overlap(self, new_start: datetime, new_end: Optional[datetime], deployment_pk: Optional[int]) -> List[str]:
@@ -964,7 +968,7 @@ class DataFile(BaseModel):
         Returns:
             bool: True if the file was successfully cleaned, False otherwise.
         """
-        print(f"Clean {self.file_name} - Delete object: {delete_obj}")
+        logger.info(f"Clean {self.file_name} - Delete object: {delete_obj}")
 
         if (self.do_not_remove or self.deployment_last_image.exists()) and not delete_obj:
             return False
@@ -973,11 +977,11 @@ class DataFile(BaseModel):
             try:
                 os.remove(self.full_path())
                 os.removedirs(os.path.join(self.local_path, self.path))
-                print(f"Clean {self.file_name} - File removed")
+                logger.info(f"Clean {self.file_name} - File removed")
             except OSError:
-                print(f"Unable to delete {self.file_name}")
+                logger.info(f"Unable to delete {self.file_name}")
                 if delete_obj:
-                    print(f"Unable to delete {self.file_name}")
+                    logger.info(f"Unable to delete {self.file_name}")
                 if not force_delete:
                     return False
 
@@ -985,7 +989,7 @@ class DataFile(BaseModel):
             thumb_path = self.thumb_path()
             os.remove(thumb_path)
             os.removedirs(os.path.split(thumb_path)[0])
-            print(f"Clean {self.file_name} - Thumbnail removed")
+            logger.info(f"Clean {self.file_name} - Thumbnail removed")
         except TypeError:
             pass
         except OSError:
@@ -997,7 +1001,7 @@ class DataFile(BaseModel):
                 os.remove(extra_version_path)
                 os.removedirs(extra_version_path)
                 self.linked_files.pop(key)
-                print(f"Clean {self.file_name} - {key} removed")
+                logger.info(f"Clean {self.file_name} - {key} removed")
             except TypeError:
                 pass
             except OSError:

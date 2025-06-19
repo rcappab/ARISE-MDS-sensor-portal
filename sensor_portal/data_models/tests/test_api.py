@@ -1,5 +1,6 @@
 import hashlib
 import json
+import logging
 import math
 import os
 from copy import copy
@@ -16,6 +17,8 @@ from data_models.serializers import (DeploymentSerializer, DeviceSerializer,
 from utils.general import read_in_chunks
 from utils.test_functions import (api_check_delete, api_check_post,
                                   api_check_update)
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.mark.django_db
@@ -139,7 +142,7 @@ def test_create_device(api_client_with_credentials):
     api_url = '/api/device/'
     payload = serializer(instance=new_item).data
     payload["managers_ID"] = []
-    print(payload)
+    logger.info(payload)
     new_item.delete()
     api_check_post(api_client_with_credentials, api_url,
                    payload, check_key)
@@ -207,7 +210,7 @@ def test_CRUD_datafile(api_client_with_credentials):
         api_url, data=payload,  format='multipart')
     response_create_json = response_create.data
 
-    print(f"Response: {response_create_json}")
+    logger.info(f"Response: {response_create_json}")
 
     assert response_create.status_code == 201
 
@@ -227,7 +230,7 @@ def test_CRUD_datafile(api_client_with_credentials):
     # delete the object and clear the file
     response_delete = api_client_with_credentials.delete(
         object_url, format="json")
-    print(f"Response: {response_delete}")
+    logger.info(f"Response: {response_delete}")
     assert response_delete.status_code == 204
 
     assert not os.path.exists(file_path)
@@ -277,7 +280,7 @@ def test_CRUD_datafile_by_device(api_client_with_credentials):
         api_url, data=payload,  format='multipart')
     response_create_json = response_create.data
 
-    print(f"Response: {response_create_json}")
+    logger.info(f"Response: {response_create_json}")
 
     assert response_create.status_code == 201
 
@@ -295,14 +298,14 @@ def test_CRUD_datafile_by_device(api_client_with_credentials):
     update_payload = {"recording_dt": test_date_time_bad}
     response_update = api_client_with_credentials.patch(
         object_url, data=update_payload)
-    print(f"Response: {response_update.data}")
+    logger.info(f"Response: {response_update.data}")
 
     assert response_update.status_code == 400
 
     # delete the object and clear the file
     response_delete = api_client_with_credentials.delete(
         object_url, format="json")
-    print(f"Response: {response_delete.data}")
+    logger.info(f"Response: {response_delete.data}")
     assert response_delete.status_code == 204
 
     assert not os.path.exists(file_path)
@@ -369,7 +372,7 @@ def test_multipart_datafile(api_client_with_credentials):
             api_url, data=payload,  format='multipart', headers=headers)
         response_create_json = response_create.data
 
-        print(f"Response: {response_create_json}")
+        logger.info(f"Response: {response_create_json}")
         if final_chunk:
             assert response_create.status_code == 200
         elif idx == 0:
@@ -390,7 +393,7 @@ def test_multipart_datafile(api_client_with_credentials):
     # delete the object and clear the file
     response_delete = api_client_with_credentials.delete(
         object_url, format="json")
-    print(f"Response: {response_delete}")
+    logger.info(f"Response: {response_delete}")
     assert response_delete.status_code == 204
 
     assert not os.path.exists(file_path)

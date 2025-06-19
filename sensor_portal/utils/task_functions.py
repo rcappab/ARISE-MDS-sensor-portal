@@ -1,4 +1,8 @@
+import logging
+
 from sensor_portal.celery import app
+
+logger = logging.getLogger(__name__)
 
 
 class TooManyTasks(Exception):
@@ -21,6 +25,6 @@ def check_simultaneous_tasks(task, max_tasks):
         for running_task in running_tasks:
             if (task.name in running_task["name"] and running_task["id"] != task.request.id):
                 all_tasks.append(task)
-    print(f"{len(all_tasks)} running")
+    logger.info(f"{len(all_tasks)} running")
     if len(all_tasks)+1 > max_tasks:
         raise (TooManyTasks(task))

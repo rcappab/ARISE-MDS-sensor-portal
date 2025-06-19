@@ -10,7 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
+import datetime
 import json
+import logging
 import os
 from datetime import timedelta
 from glob import glob
@@ -18,6 +20,10 @@ from pathlib import Path
 
 from celery.schedules import crontab
 from data_handlers.base_data_handler_class import DataTypeHandlerCollection
+
+logger = logging.getLogger(__name__)
+
+logger.info(f"[{datetime.datetime.now()}] Reading settings")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -60,7 +66,7 @@ CSRF_COOKIE_DOMAIN = os.environ.get(
 
 
 if DEVMODE:
-    print("Running in dev mode")
+    logger.info(f"[{datetime.datetime.now()}] Running in dev mode")
     DEBUG = True
     CORS_ALLOW_ALL_ORIGINS = True
 else:
@@ -289,6 +295,35 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.redis.RedisCache',
         'LOCATION': os.environ.get("CELERY_BROKER", "redis://redis:6379/0")
     }
+}
+
+
+LOG_LEVEL = os.environ.get("LOG_LEVEL", logging.INFO)
+LOGGING = {
+    "version": 1,
+    # This will leave the default Django logging behavior in place
+    "disable_existing_loggers": False,
+    # Custom handler config that gets log messages and outputs them to console
+    'formatters': {
+        'timestamp': {
+            'format': '[{levelname} {asctime}] pid:{process:d} t:{thread:d} - {message}',
+            'style': '{',
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "level": LOG_LEVEL,
+            "formatter": "timestamp"
+        },
+    },
+    "loggers": {
+        # Send everything to console
+        "": {
+            "handlers": ["console"],
+            "level": LOG_LEVEL,
+        },
+    },
 }
 
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'

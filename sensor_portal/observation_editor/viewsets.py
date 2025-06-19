@@ -1,7 +1,11 @@
+import logging
+
 from camtrap_dp_export.querysets import get_ctdp_obs_qs
 from camtrap_dp_export.serializers import ObservationSerializerCTDP
 from data_models.models import DataFile
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (OpenApiParameter, extend_schema,
+                                   extend_schema_view)
 from rest_framework import pagination, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
@@ -14,8 +18,40 @@ from .GBIF_functions import GBIF_species_search
 from .models import Observation, Taxon
 from .serializers import EvenShorterTaxonSerialier, ObservationSerializer
 
+logger = logging.getLogger(__name__)
 
-@extend_schema(summary="Observations")
+obs_extra_parameters = [OpenApiParameter("target_taxon_level",
+                                         OpenApiTypes.INT,
+                                         OpenApiParameter.QUERY,
+                                         description='Set maximum taxonomic level to return .\
+                                         For example, setting to 2 will return observerations at the genus level and below.'),
+                        OpenApiParameter("ctdp",
+                                         OpenApiTypes.BOOL,
+                                         OpenApiParameter.QUERY,
+                                         description='Set True to return in camtrap DP format')]
+
+
+@extend_schema(summary="Observations",
+               description="Observations are annotations of datafiles, made by human or AI.",
+               tags=["Observations"],
+               methods=["get", "post", "patch", "delete"],
+               )
+@extend_schema_view(
+    list=extend_schema(summary='List observations',
+                       parameters=obs_extra_parameters),
+    retrieve=extend_schema(summary='Get a single observation'),
+    partial_update=extend_schema(summary='Update an observation'),
+    create=extend_schema(summary='Create an observation'),
+    destroy=extend_schema(summary='Delete an observation'),
+    datafile_observations=extend_schema(summary="Observations from datafile",
+                                        description="Get observations from a specific datafile.",
+                                        filters=True,
+                                        parameters=obs_extra_parameters),
+    deployment_observations=extend_schema(summary="Observations from deployment",
+                                          filters=True,
+                                          description="Get observations from a specific deployment.",
+                                          parameters=obs_extra_parameters),
+)
 class ObservationViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
 
     search_fields = ["taxon__species_name", "taxon__species_common_name"]
@@ -56,13 +92,12 @@ class ObservationViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, Opti
                     raise PermissionDenied(
                         f"You don't have permission to add an observation to {data_file_object.file_name}")
 
-    @extend_schema(summary="Observations from datafile", description="Get observations from a specific datafile.")
-    @action(detail=False, methods=['get'], url_path=r'datafile/(?P<datafile_pk>\w+)', url_name="datafile_observations")
-    def datafile_observations(self, request, datafile_pk=None):
+    @action(detail=False, methods=['get'], url_path=r'datafile/(?P<datafile_id>\w+)', url_name="datafile_observations")
+    def datafile_observations(self, request, datafile_id=None):
 
         # Filter observations based on URL query parameters
         observation_qs = Observation.objects.filter(
-            data_files__pk=datafile_pk).select_related('taxon', 'owner')
+            data_files__pk=datafile_id).select_related('taxon', 'owner')
         observation_qs = self.filter_queryset(observation_qs)
 
         if 'ctdp' in self.request.GET.keys():
@@ -82,12 +117,12 @@ class ObservationViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, Opti
             page, many=True, context={'request': request})
         return Response(observation_serializer.data, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['get'], url_path=r'deployment/(?P<deployment_pk>\w+)', url_name="deployment_observations")
-    def deployment_observations(self, request, deployment_pk=None):
+    @action(detail=False, methods=['get'], url_path=r'deployment/(?P<deployment_id>\w+)', url_name="deployment_observations")
+    def deployment_observations(self, request, deployment_id=None):
 
         # Filter observations based on URL query parameters
         observation_qs = Observation.objects.filter(
-            data_files__deployment=deployment_pk).select_related('taxon', 'owner')
+            data_files__deployment=deployment_id).select_related('taxon', 'owner')
         observation_qs = self.filter_queryset(observation_qs)
 
         if 'ctdp' in self.request.GET.keys():
@@ -106,6 +141,9 @@ class ObservationViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, Opti
         return Response(observation_serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    exclude=True
+)
 class TaxonAutocompleteViewset(viewsets.ReadOnlyModelViewSet):
     http_method_names = ['get']
     search_fields = ["species_name", "species_common_name"]
@@ -148,6 +186,6 @@ class TaxonAutocompleteViewset(viewsets.ReadOnlyModelViewSet):
                         new_gbif_results.append(new_gbif_result)
                     serializer_data += new_gbif_results
             except Exception as e:
-                print(e)
+                logger.error(e)
 
         return self.get_paginated_response(serializer_data)

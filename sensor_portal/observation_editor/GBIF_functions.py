@@ -1,9 +1,12 @@
+import logging
 import math
 import statistics
 
 import requests
 from django.core.exceptions import MultipleObjectsReturned
 from thefuzz import fuzz
+
+logger = logging.getLogger(__name__)
 
 
 def GBIF_result_match(search_string, gbif_result):
@@ -118,8 +121,8 @@ def GBIF_to_avibase(species_key):
                                  }
                                  )
     if gbif_response.status_code != 200:
-        print("GBIF to avibase failed:",
-              gbif_response.status_code, gbif_response.text)
+        logger.error("GBIF to avibase failed:",
+                     gbif_response.status_code, gbif_response.text)
         return None
     gbif_data = gbif_response.json()['results']
     if len(gbif_data) > 0:
