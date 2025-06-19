@@ -1,7 +1,10 @@
+import logging
 import traceback
 from typing import Callable, List, Tuple
 
 from data_models.models import DataFile
+
+logger = logging.getLogger(__name__)
 
 
 def post_upload_task_handler(file_pks: List[int],
@@ -21,7 +24,7 @@ Args:
         pk__in=file_pks).order_by("created_on")
     # save initial do_not_delete state of files
 
-    print(
+    logger.info(
         f"Running job {str(task_function)} on {data_file_objs.count()} files")
 
     do_not_remove_initial = list(data_file_objs.values_list(
@@ -41,8 +44,8 @@ Args:
 
         except Exception as e:
             # One file failing shouldn't lead to the whole job failing
-            print(repr(e))
-            print(traceback.format_exc())
+            logger.info(repr(e))
+            logger.info(traceback.format_exc())
 
         data_file.do_not_remove = file_do_not_remove
         updated_data_objs.append(data_file)
@@ -52,4 +55,4 @@ Args:
 
     # update objects
     update = DataFile.objects.bulk_update(updated_data_objs, modified_fields)
-    print(f"Running job {str(task_function)} updated {update} files")
+    logger.info(f"Running job {str(task_function)} updated {update} files")

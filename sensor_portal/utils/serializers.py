@@ -29,9 +29,9 @@ class InstanceGetMixIn():
 
 class CreatedModifiedMixIn(serializers.ModelSerializer):
     created_on = serializers.DateTimeField(
-        default_timezone=djtimezone.utc, read_only=True)
+        default_timezone=djtimezone.utc, read_only=True, required=False)
     modified_on = serializers.DateTimeField(
-        default_timezone=djtimezone.utc, read_only=True)
+        default_timezone=djtimezone.utc, read_only=True, required=False)
 
 
 class OwnerMixIn(serializers.ModelSerializer):

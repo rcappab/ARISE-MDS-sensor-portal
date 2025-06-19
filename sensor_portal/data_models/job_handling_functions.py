@@ -1,9 +1,12 @@
+import logging
 from typing import Any, Callable, Dict
 
 from django.conf import settings
 from rest_framework import status
 
 from sensor_portal.celery import app
+
+logger = logging.getLogger(__name__)
 
 
 def register_job(
@@ -40,7 +43,7 @@ def register_job(
             "max_items": max_items,
             "default_args": default_args,
         }
-        print(f"Registered generic task {task_name}")
+        logger.info(f"Registered generic task {task_name}")
         return func
 
     return register_job_decorator
@@ -67,7 +70,6 @@ def get_job_from_name(
     all_args = {f"{obj_type}_pks": obj_pks, **job_args}
     if user_pk is not None:
         all_args["user_pk"] = user_pk
-    print(job_args)
 
     new_task = app.signature(
         job_name, kwargs=all_args, immutable=True)

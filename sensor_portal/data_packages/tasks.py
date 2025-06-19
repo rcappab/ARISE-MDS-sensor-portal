@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from uuid import uuid4
 
@@ -14,13 +15,13 @@ from sensor_portal.celery import app
 
 from .models import DataPackage
 
+logger = logging.getLogger(__name__)
+
 
 @app.task(name="create_data_package")
 @register_job("Create data package", "create_data_package", "datafile", False, default_args={"metadata_type": "0",
                                                                                              "include_files": True})
 def start_make_data_package_task(datafile_pks, user_pk, metadata_type=0, include_files=True):
-
-    print(datafile_pks, user_pk)
 
     file_objs = DataFile.objects.filter(pk__in=datafile_pks)
     user = User.objects.get(pk=user_pk)

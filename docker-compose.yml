@@ -40,6 +40,7 @@ services:
     ports:
       - "8000"
     environment:
+      - PYTHONUNBUFFERED="TRUE"
       - GLOBAL_PROJECT_ID=${GLOBAL_PROJECT_ID}
       - POSTGRES_NAME=${POSTGRES_NAME}
       - POSTGRES_USER=${POSTGRES_USER}

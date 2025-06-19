@@ -1,5 +1,9 @@
+import logging
+
 from django.conf import settings
 from rest_framework.viewsets import ModelViewSet
+
+logger = logging.getLogger(__name__)
 
 
 class OptionalPaginationViewSetMixIn(ModelViewSet):
@@ -7,21 +11,21 @@ class OptionalPaginationViewSetMixIn(ModelViewSet):
     it to also return None if no 'page' query param is set, so long as the queryset is not too large"""
 
     def paginate_queryset(self, queryset):
-        print("Optional pagination")
+        logger.info("Optional pagination")
         if self.paginator \
                 and self.request.query_params.get(self.paginator.page_size_query_param, None) is None \
                 and self.request.query_params.get(self.paginator.page_query_param, None) is None:
             if queryset.approx_count() < settings.REST_FRAMEWORK['MAX_PAGE_SIZE']:
-                print("No pagination")
+                logger.info("No pagination")
                 return None
-        print("Paginate")
-        print(self.paginator)
+        logger.info("Paginate")
+        logger.info(self.paginator)
         return super().paginate_queryset(queryset)
 
 
 class AddOwnerViewSetMixIn(ModelViewSet):
     def perform_create(self, serializer):
-        print("Add owner")
+        logger.info("Add owner")
         serializer.save(owner=self.request.user)
         return super().perform_create(serializer)
 
@@ -46,12 +50,12 @@ class CheckAttachmentViewSetMixIn(ModelViewSet):
     """
 
     def perform_create(self, serializer):
-        print("check attachment")
+        logger.info("check attachment")
         self.check_attachment(serializer)
         return super().perform_create(serializer)
 
     def perform_update(self, serializer):
-        print("check attachment")
+        logger.info("check attachment")
         self.check_attachment(serializer)
         return super().perform_update(serializer)
 

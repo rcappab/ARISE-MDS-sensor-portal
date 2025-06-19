@@ -1,7 +1,11 @@
+import logging
+
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from user_management.models import User
+
+logger = logging.getLogger(__name__)
 
 
 def send_email_to_users(users: list[User], subject: str, body: str):
@@ -26,7 +30,7 @@ def send_email(to_email, subject, body):
     try:
         settings.EMAIL_HOST_USER
     except AttributeError:
-        print("No email sender configured")
+        logger.info("No email sender configured")
         return
 
     if not to_email:
@@ -44,9 +48,9 @@ def send_email(to_email, subject, body):
                                to=to_email)
         message.content_subtype = 'html'
         result = message.send()
-        print(
+        logger.info(
             f"Sending email to {', '.join(to_email)} with subject: {subject} - Status {result}")
     except Exception as e:
-        print(
+        logger.error(
             f"Sending email to {', '.join(to_email)} with subject: {subject} - Status 0")
-        print(e)
+        logger.error(e)

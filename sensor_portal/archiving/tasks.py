@@ -1,4 +1,5 @@
 
+import logging
 import os
 from posixpath import join as posixjoin
 
@@ -14,6 +15,8 @@ from sensor_portal.celery import app
 from .exceptions import TAROffline
 from .models import Archive
 from .tar_functions import check_tar_status, create_tar_files
+
+logger = logging.getLogger(__name__)
 
 
 @app.task()
@@ -135,29 +138,29 @@ def get_files_from_archived_tar_task(self, tar_file_pk, target_file_pks):
         f"dals -l {tar_path}")
 
     status_code, target_tar_status = check_tar_status(ssh_client, tar_path)
-    print(
+    logger.info(
         f"{tar_path}: Get TAR status {status_code}")
 
     if status_code == 1:
         tar_name = tar_file_obj.name
         tar_path = posixjoin(tar_file_obj.path, tar_name)
         status_code, target_tar_status = check_tar_status(ssh_client, tar_path)
-        print(
+        logger.info(
             f"{tar_path}: Get TAR status  {status_code}")
         if status_code == 1:
             raise Exception(f"{tar_path}: TAR file not present at this path")
 
-    print(
+    logger.info(
         f"{tar_path}: Get TAR status {status_code} {target_tar_status}")
 
     online_statuses = ['(REG)', '(DUL)', '(MIG)']
     if target_tar_status not in online_statuses:
         initial_offline = True
-        print(f"{tar_path}: Offline")
+        logger.info(f"{tar_path}: Offline")
         if target_tar_status != '(UNM)':
             status_code, stdout, stderr = ssh_client.send_ssh_command(
                 f"daget {tar_path}")
-            print(
+            logger.info(
                 f"{tar_path}: Get TAR from tape {status_code} {stdout}")
 
             status_code, target_tar_status = check_tar_status(
@@ -183,7 +186,7 @@ def get_files_from_archived_tar_task(self, tar_file_pk, target_file_pks):
     status_code, stdout, stderr = ssh_client.send_ssh_command(
         f"tar tvf {tar_path}", return_strings=False)
 
-    print(f"{tar_path}: List files in TAR")
+    logger.info(f"{tar_path}: List files in TAR")
 
     in_tar_file_paths = []
     in_tar_found_files = []
@@ -196,11 +199,12 @@ def get_files_from_archived_tar_task(self, tar_file_pk, target_file_pks):
             # If this file is one of our target file, save the in-tar path
             in_tar_file_paths.append(line_file_path)
             in_tar_found_files.append(found_file_paths[0])
-            print(f"{tar_path}: {len(in_tar_file_paths)}/{len(file_names)}")
+            logger.info(
+                f"{tar_path}: {len(in_tar_file_paths)}/{len(file_names)}")
 
         if len(in_tar_file_paths) == len(file_names):
             # If we have found all our target_files
-            print(f"{tar_path}: All files_found")
+            logger.info(f"{tar_path}: All files_found")
             break
 
     if len(in_tar_file_paths) == 0:
@@ -208,18 +212,19 @@ def get_files_from_archived_tar_task(self, tar_file_pk, target_file_pks):
     else:
         missing_files = [x for x in file_names if x not in in_tar_found_files]
         if len(missing_files) > 0:
-            print(f"{tar_path}: Files not found: {missing_files}")
+            logger.info(f"{tar_path}: Files not found: {missing_files}")
 
     chunked_in_tar_file_paths = [
         x for x in divide_chunks(in_tar_file_paths, 500)]
     for idx, in_tar_file_paths_set in enumerate(chunked_in_tar_file_paths):
-        print(f"{tar_path}: Extract file chunk {idx}/{len(chunked_in_tar_file_paths)}")
+        logger.info(
+            f"{tar_path}: Extract file chunk {idx}/{len(chunked_in_tar_file_paths)}")
         combined_in_tar_file_paths = (
             " ".join([f"'{x}'" for x in in_tar_file_paths_set]))
         status_code, stdout, stderr = ssh_client.send_ssh_command(
             f"tar -zxvf {tar_path} -C {temp_path} {combined_in_tar_file_paths}"
         )
-        print(
+        logger.info(
             f"{tar_path}: Extract file chunk {idx}/{len(chunked_in_tar_file_paths)} {status_code}")
 
     ssh_client.connect_to_scp()
@@ -247,11 +252,11 @@ def get_files_from_archived_tar_task(self, tar_file_pk, target_file_pks):
             file_objs_to_update.append(file_obj)
             all_pks.append(file_obj.pk)
         except Exception as e:
-            print(f"{tar_path}: Error retrieving file: {repr(e)}")
-    print(f"{tar_path}: Update database")
+            logger.info(f"{tar_path}: Error retrieving file: {repr(e)}")
+    logger.info(f"{tar_path}: Update database")
     DataFile.objects.bulk_update(file_objs_to_update, fields=[
                                  "local_path", "local_storage", "modified_on"])
-    print(f"{tar_path}: Clear temporary files")
+    logger.info(f"{tar_path}: Clear temporary files")
     status_code, stdout, stderr = ssh_client.send_ssh_command(
         f"rm -rf {temp_path}")
 

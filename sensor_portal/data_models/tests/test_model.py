@@ -1,22 +1,19 @@
 import datetime
+# Project
+import logging
 from datetime import timedelta
 
 import pytest
-from data_models.factories import (
-    DataFileFactory,
-    DataTypeFactory,
-    DeploymentFactory,
-    DeviceFactory,
-    DeviceModelFactory,
-    ProjectFactory,
-    SiteFactory,
-)
+from data_models.factories import (DataFileFactory, DataTypeFactory,
+                                   DeploymentFactory, DeviceFactory,
+                                   DeviceModelFactory, ProjectFactory,
+                                   SiteFactory)
 from django.conf import settings
 from django.contrib.gis.geos import Point
 from django.core.exceptions import ValidationError
 from django.utils import timezone as djtimezone
 
-# Project
+logger = logging.getLogger(__name__)
 
 
 @pytest.mark.django_db
@@ -165,11 +162,11 @@ def test_global_project():
     Test: Check if the global project is added to a deployment on creation and after editing.
     """
     new_deployment = DeploymentFactory(device_type=None, project=[])
-    print("Check if globabl project exists after creation")
+    logger.info("Check if globabl project exists after creation")
     assert new_deployment.project.all().exists() is True
     new_deployment.project.clear()
     new_deployment.save()
-    print("Check if globabl project exists after edit")
+    logger.info("Check if globabl project exists after edit")
     assert new_deployment.project.all().exists() is True
 
 
@@ -186,14 +183,14 @@ def test_combo_project():
     target_string_1 = (" ").join(
         [settings.GLOBAL_PROJECT_ID, new_project_1.project_ID])
 
-    print("Check if combo project is correct on creation")
+    logger.info("Check if combo project is correct on creation")
     assert new_deployment.combo_project == target_string_1
 
     new_deployment.project.add(new_project_2)
     target_string_2 = (" ").join(
         [settings.GLOBAL_PROJECT_ID, new_project_1.project_ID, new_project_2.project_ID])
 
-    print("Check if combo project is correct on edit")
+    logger.info("Check if combo project is correct on edit")
     assert new_deployment.combo_project == target_string_2
 
     new_deployment.project.clear()
@@ -201,7 +198,7 @@ def test_combo_project():
     target_string_3 = (" ").join(
         [settings.GLOBAL_PROJECT_ID, new_project_2.project_ID])
 
-    print("Check if combo project is correct after clear")
+    logger.info("Check if combo project is correct after clear")
     assert new_deployment.combo_project == target_string_3
 
 

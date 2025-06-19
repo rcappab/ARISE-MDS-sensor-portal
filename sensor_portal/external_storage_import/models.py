@@ -1,4 +1,5 @@
 import io
+import logging
 from datetime import datetime, timedelta
 from posixpath import join, splitext
 
@@ -9,6 +10,8 @@ from django.db import models
 from encrypted_model_fields.fields import EncryptedCharField
 from utils.models import BaseModel
 from utils.ssh_client import SSH_client
+
+logger = logging.getLogger(__name__)
 
 
 class DataStorageInput(BaseModel):
@@ -34,7 +37,7 @@ class DataStorageInput(BaseModel):
     def setup_users(self):
         connection_success, ssh_client = self.check_connection()
         if not connection_success:
-            print(f"{self.name} - unable to connect")
+            logger.info(f"{self.name} - unable to connect")
             return
 
         ssh_client.connect_to_ssh()
@@ -72,7 +75,7 @@ class DataStorageInput(BaseModel):
                 f"perl -e 'print crypt('{user_password}', 'password')'")
             encrypted_user_password = stdout[0]
 
-            print(f"{self.name} - add user {username}")
+            logger.info(f"{self.name} - add user {username}")
             # Add new user, add to ftpuser group
             status_code, stdout, stderr = ssh_client.send_ssh_command(
                 f"useradd -m -p {encrypted_user_password}-N -g {user_group_name} {username}", True)
@@ -99,7 +102,7 @@ class DataStorageInput(BaseModel):
 
         for user in required_users:
             username = user["username"]
-            print(f"{self.name} - check user {username} permissions")
+            logger.info(f"{self.name} - check user {username} permissions")
 
             # Check that service account is in user's group
             status_code, stdout, stderr = ssh_client.send_ssh_command(
@@ -146,14 +149,14 @@ class DataStorageInput(BaseModel):
             ssh_client = self.init_ssh_client()
             return True, ssh_client
         except Exception as e:
-            print(f"{self.name} - error")
-            print(repr(e))
+            logger.info(f"{self.name} - error")
+            logger.info(repr(e))
             return False, None
 
     def check_input(self, remove_bad=False):
         connection_success, ssh_client = self.check_connection()
         if not connection_success:
-            print(f"{self.name} - unable to connect")
+            logger.info(f"{self.name} - unable to connect")
             return
 
         ssh_client.connect_to_ftp()
@@ -161,13 +164,14 @@ class DataStorageInput(BaseModel):
         all_dirs_attributes = ssh_client.ftp_sftp.listdir_attr()
         file_names = [x.filename for x in all_dirs_attributes]
         for device in all_devices:
-            print(f"{self.name} - {device.device_ID} - checking storage")
+            logger.info(f"{self.name} - {device.device_ID} - checking storage")
             if device.username is None:
-                print(f"{self.name} - {device.device_ID} - configured incorrectly")
+                logger.info(
+                    f"{self.name} - {device.device_ID} - configured incorrectly")
                 continue
             # check for folder of this device
             if device.username not in file_names:
-                print(
+                logger.info(
                     f"{self.name} - {device.device_ID} - not found on external storage")
                 continue
 
@@ -177,7 +181,7 @@ class DataStorageInput(BaseModel):
             device_file_names = [
                 x.filename for x in device_dir_attribute if all([y != ''for y in splitext(x.filename)])]
             if len(device_file_names) == 0:
-                print(
+                logger.info(
                     f"{self.name} - {device.device_ID} - no files on external storage")
                 continue
 
@@ -193,20 +197,20 @@ class DataStorageInput(BaseModel):
             # import files
             downloaded_files, invalid_files, existing_files, status = create_file_objects(
                 files, device_object=device)
-            print(f"{self.name} - {device.device_ID} - {status}")
+            logger.info(f"{self.name} - {device.device_ID} - {status}")
 
             # delete files that are succesfully downloaded
             for file_obj in downloaded_files:
-                print(
+                logger.info(
                     f"{self.name} - {device.device_ID} - {file_obj.original_name} succesfully downloaded")
                 if not settings.DEVMODE:
                     ssh_client.ftp_sftp.remove(
                         join(device.username, file_obj.original_name))
-                    print(
+                    logger.info(
                         f"{self.name} - {device.device_ID} - {file_obj.original_name} removed")
 
             for problem_file in invalid_files:
-                print(
+                logger.info(
                     f"{self.name} - {device.device_ID} - {problem_file}")
                 if remove_bad:
                     mtime = ssh_client.ftp_sftp.stat(
@@ -215,7 +219,7 @@ class DataStorageInput(BaseModel):
                     if (datetime.now()-last_modified) <= timedelta(days=7):
                         ssh_client.ftp_sftp.remove(
                             join(device.username, file_obj.original_name))
-                        print(
+                        logger.info(
                             f"{self.name} - {device.device_ID} - {file_obj.original_name} removed")
 
         ssh_client.close_connection_to_ftp()

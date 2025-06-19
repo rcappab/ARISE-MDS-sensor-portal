@@ -1,3 +1,5 @@
+import logging
+
 from celery import chain, chord, group, shared_task, signature
 from celery.app import Celery
 from data_models.job_handling_functions import register_job
@@ -9,6 +11,9 @@ from django.utils import timezone
 from observation_editor.models import Observation, Taxon
 
 from sensor_portal.celery import app
+
+logger = logging.getLogger(__name__)
+
 
 # While we are using django_results as a backend, the ultralytics worker cannot access this to trigger the callback.
 # Therefore we set up an app using redis as a backend
@@ -31,7 +36,7 @@ def do_ultra_inference(datafile_pks, model_name, target_labels=None, chunksize=5
                    for x in ai_app.control.inspect().active_queues().values()]
 
     if target_queue_name not in queue_names:
-        print(f"No {target_queue_name} queue available")
+        logger.info(f"No {target_queue_name} queue available")
         return
 
     if type(datafile_pks) is not list:
@@ -47,7 +52,7 @@ def do_ultra_inference(datafile_pks, model_name, target_labels=None, chunksize=5
         datafile_pks = list(file_objs.values_list('pk', flat=True))
 
     if len(datafile_pks) == 0:
-        print("No files to analyse")
+        logger.info("No files to analyse")
         return
 
     file_pks_chunks = [datafile_pks[i:i + chunksize]
@@ -79,7 +84,7 @@ def do_ultra_inference(datafile_pks, model_name, target_labels=None, chunksize=5
                                                      target_labels,
                                                      chunksize,
                                                      chunksize2, True, False).set(queue="main_worker"))
-            print(task_chain)
+            logger.info(task_chain)
             task_chain.apply_async()
             return
 
@@ -158,7 +163,7 @@ def handle_ultra_results(all_results, target_labels=None):
         all_through_objs.append(new_through_obj)
     through_class.objects.bulk_create(
         all_through_objs, batch_size=500, ignore_conflicts=True)
-    print(f"Created {len(new_observations)} observations")
+    logger.info(f"Created {len(new_observations)} observations")
     # Update datafiles if human is present
     DataFile.objects.filter(pk__in=file_objs_human_pks).update(
         has_human=True, modified_on=timezone.now())
