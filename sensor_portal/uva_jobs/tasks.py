@@ -14,6 +14,27 @@ from sensor_portal.celery import app
 
 
 @app.task()
+def check_paths(root_folder):
+    print(f"Starting file walk in {root_folder}")
+    for dirpath, _, filenames in os.walk(root_folder):
+        print(dirpath)
+        for filename in filenames:
+            print(f"Found file: {filename}")
+            try:
+                data_file = DataFile.objects.get(
+                    file_name=os.path.splitext(filename)[0])
+                print(f"Matched DataFile: {data_file}")
+                if not data_file.local_storage:
+                    data_file.local_storage = False
+                    data_file.save()
+
+            except DataFile.DoesNotExist:
+                print(f"No matching DataFile found for: {filename}")
+                os.remove(os.path.join(dirpath, filename))
+                os.removedirs(dirpath)
+
+
+@app.task()
 def check_file_path(file_pks):
     print("Starting fix_file_storage task...")
     file_objs = DataFile.objects.filter(local_storage=True, pk__in=file_pks)
