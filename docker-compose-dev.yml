@@ -14,7 +14,7 @@ services:
         sensor_portal_frontend:
           condition: service_started
           restart: true
-      restart: unless-stopped
+      restart: always
       environment:
         - DEV=True
       volumes:
