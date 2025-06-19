@@ -155,6 +155,15 @@ services:
       retries: 100
       start_period: 80s    
     restart: always
+  tabmon_r_studio:
+    image: "rocker/rstudio"
+    ports:
+      - "8787"
+    volumes:
+      - /data/file_storage:/home/rstudio:z
+    environment:
+      - PASSWORD=${R_STUDIO_PASSWORD}
+    restart: always
 volumes:
   /data/file_storage:
   /data/sensor_portal_db:

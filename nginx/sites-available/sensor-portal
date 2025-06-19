@@ -6,6 +6,10 @@ upstream frontend_upstream
 {
 	server sensor_portal_frontend:3000;
 }
+upstream rstudio_upstream
+{
+	server tabmon_r_studio:8787;
+}
 
 
 
@@ -25,6 +29,25 @@ server
 
 	location /storage {
 		alias /file_storage;
+	}
+
+	location /rstudio {
+      # Needed only for a custom path prefix of /rstudio
+      rewrite ^/rstudio/(.*)$ /$1 break;
+
+      # Use http here when ssl-enabled=0 is set in rserver.conf
+      proxy_pass http://rstudio_upstream;
+
+      proxy_http_version 1.1;
+      proxy_set_header Upgrade $http_upgrade;
+	  proxy_set_header Connection "upgrade";
+	  proxy_set_header Host $http_host;
+      proxy_read_timeout 20d;
+
+      # Not needed if www-root-path is set in rserver.conf
+      proxy_set_header X-RStudio-Root-Path /rstudio;
+      
+	  port_in_redirect off;
 	}
 
 	location ~ ^/(api|admin)
