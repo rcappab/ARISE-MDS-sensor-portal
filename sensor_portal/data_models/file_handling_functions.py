@@ -1,4 +1,5 @@
 import itertools
+import logging
 import os
 from datetime import datetime as dt
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
@@ -15,6 +16,8 @@ from utils.general import convert_unit, get_md5
 from sensor_portal.celery import app
 
 from .general_functions import check_dt
+
+logger = logging.getLogger(__name__)
 
 # To avoid ciruclar imports
 if TYPE_CHECKING:
@@ -80,13 +83,13 @@ def create_file_objects(
         extra_data = [{}]
 
     if verbose:
-        print("Initial files:", files)
-        print("Device object:", device_object)
-        print("Deployment object:", deployment_object)
-        print("Recording datetime:", recording_dt)
-        print("Extra data:", extra_data)
-        print("Data types:", data_types)
-        print("Request user:", request_user)
+        logger.info("Initial files:", files)
+        logger.info("Device object:", device_object)
+        logger.info("Deployment object:", deployment_object)
+        logger.info("Recording datetime:", recording_dt)
+        logger.info("Extra data:", extra_data)
+        logger.info("Data types:", data_types)
+        logger.info("Request user:", request_user)
 
     # Get the current upload datetime
     upload_dt = djtimezone.now()
@@ -94,14 +97,14 @@ def create_file_objects(
     # Check for duplicate filenames or handle multipart uploads
     if check_filename or multipart:
         if verbose:
-            print("Checking filenames or handling multipart upload...")
+            logger.info("Checking filenames or handling multipart upload...")
 
         # Extract filenames from the provided file objects
         filenames = [x.name for x in files]
 
         if multipart:
             if verbose:
-                print("Handling multipart upload...")
+                logger.info("Handling multipart upload...")
 
             # Ensure only one file chunk is provided for multipart uploads
             if len(filenames) > 1:
@@ -128,7 +131,8 @@ def create_file_objects(
 
             if existing_multipart_files.exists():
                 if verbose:
-                    print("Found existing multipart object in the database.")
+                    logger.info(
+                        "Found existing multipart object in the database.")
 
                 # Retrieve the first matching multipart object
                 multipart_obj = existing_multipart_files.first()
@@ -143,7 +147,8 @@ def create_file_objects(
 
         else:
             if verbose:
-                print("Checking for duplicate filenames in the database...")
+                logger.info(
+                    "Checking for duplicate filenames in the database...")
 
             # Query the database for filenames that already exist
             db_filenames = list(
@@ -158,7 +163,7 @@ def create_file_objects(
             # If all files are duplicates, return early with a success status
             if len(files) == 0:
                 if verbose:
-                    print("All files are already in the database.")
+                    logger.info("All files are already in the database.")
                 return (uploaded_files, invalid_files, existing_files, status.HTTP_200_OK)
 
         # Filter recording datetime values based on non-duplicated files
@@ -178,7 +183,7 @@ def create_file_objects(
     # If no device_object is provided but a deployment_object exists, set the device_object from the deployment_object
     if device_object is None and deployment_object:
         if verbose:
-            print("Setting device_object from deployment_object...")
+            logger.info("Setting device_object from deployment_object...")
         device_object = deployment_object.device
 
     # Initialize handler_tasks to None
@@ -187,7 +192,7 @@ def create_file_objects(
     # If a device_object is available, process the files using the associated device model
     if device_object:
         if verbose:
-            print("Processing files with device_object...")
+            logger.info("Processing files with device_object...")
 
         # Retrieve the device model object and data handlers from settings
         device_model_object = device_object.model
@@ -200,7 +205,8 @@ def create_file_objects(
         # If a data handler is found, validate and process the files
         if data_handler is not None:
             if verbose:
-                print(f"Using data handler for {device_model_object.name}...")
+                logger.info(
+                    f"Using data handler for {device_model_object.name}...")
 
             # Validate the files using the data handler
             valid_files = data_handler.get_valid_files(files)
@@ -208,7 +214,7 @@ def create_file_objects(
             # If no valid files are found, return an error response
             if len(valid_files) == 0:
                 if verbose:
-                    print("No valid files found for the device model.")
+                    logger.info("No valid files found for the device model.")
                 invalid_files += [{x.name: {"message": f"Invalid file type for {device_model_object.name}", "status": 400}}
                                   for x in files]
                 return (uploaded_files, invalid_files, existing_files, status.HTTP_400_BAD_REQUEST)
@@ -254,7 +260,8 @@ def create_file_objects(
                 file = files[i]
 
                 if verbose:
-                    print(f"Handling file {file.name} with data handler...")
+                    logger.info(
+                        f"Handling file {file.name} with data handler...")
 
                 # Use the data handler to process the file and extract updated metadata
                 new_file_recording_dt, new_file_extra_data, new_file_data_type, new_file_task = \
@@ -280,7 +287,7 @@ def create_file_objects(
     else:
         # If no device_object is linked to the files, return an error response
         if verbose:
-            print("No linked device found for the files.")
+            logger.info("No linked device found for the files.")
         invalid_files += [{x.name: {"message": "No linked device", "status": 400}}
                           for x in files]
         return (uploaded_files, invalid_files, existing_files, status.HTTP_400_BAD_REQUEST)
@@ -296,12 +303,12 @@ def create_file_objects(
     # If a deployment object is provided, validate permissions and recording dates
     if deployment_object:
         if verbose:
-            print("Checking permissions for deployment_object...")
+            logger.info("Checking permissions for deployment_object...")
         if request_user:
             # Check if the user has permission to attach files to the deployment object
             if not request_user.has_perm('data_models.change_deployment', deployment_object):
                 if verbose:
-                    print(
+                    logger.info(
                         f"User does not have permission to attach files to {deployment_object.deployment_device_ID}.")
                 # Add these files to the invalid_files list with a permission error message
                 invalid_files += [
@@ -313,7 +320,7 @@ def create_file_objects(
                 return (uploaded_files, invalid_files, existing_files, status.HTTP_403_FORBIDDEN)
 
         if verbose:
-            print("Validating recording dates for deployment_object...")
+            logger.info("Validating recording dates for deployment_object...")
         # Validate the recording dates against the deployment object
         file_valid = deployment_object.check_dates(recording_dt)
         # Set deployment_objects to a list containing the deployment_object
@@ -322,7 +329,8 @@ def create_file_objects(
     # If no deployment object is provided, determine deployments from the device object and recording dates
     elif device_object:
         if verbose:
-            print("Determining deployments from device_object and recording dates...")
+            logger.info(
+                "Determining deployments from device_object and recording dates...")
         # Use the device object to find deployments based on recording dates
         deployment_objects = [device_object.deployment_from_date(
             x) for x in recording_dt]
@@ -333,7 +341,8 @@ def create_file_objects(
             x for x in deployment_objects if x is not None]
 
     if verbose:
-        print("Filtering invalid files based on deployment and recording dates...")
+        logger.info(
+            "Filtering invalid files based on deployment and recording dates...")
     # Add invalid files to the invalid_files list with appropriate error messages
     if deployment_object:
         invalid_files += [{x.name:
@@ -352,7 +361,7 @@ def create_file_objects(
     # If no valid files remain after filtering, return an error response
     if len(files) == 0:
         if verbose:
-            print("No valid files remain after filtering.")
+            logger.info("No valid files remain after filtering.")
         return (uploaded_files, invalid_files, existing_files, status.HTTP_400_BAD_REQUEST)
 
     # Filter recording datetime values based on valid files
@@ -383,14 +392,14 @@ def create_file_objects(
             file_deployment = deployment_objects[0]
 
         if verbose:
-            print(
+            logger.info(
                 f"Processing file: {filename} for deployment: {file_deployment.deployment_device_ID}")
 
         # Check if the user has permission to attach the file to the deployment
         if request_user:
             if not request_user.has_perm('data_models.change_deployment', file_deployment):
                 if verbose:
-                    print(
+                    logger.info(
                         f"User does not have permission to attach file {filename} to {file_deployment.deployment_device_ID}.")
                 invalid_files.append(
                     {filename: {"message": f"Not allowed to attach files to {file_deployment.deployment_device_ID}", "status": 403}})
@@ -409,7 +418,8 @@ def create_file_objects(
             file_handler_task = None
 
         if verbose:
-            print(f"Localizing recording date time for file: {filename}...")
+            logger.info(
+                f"Localizing recording date time for file: {filename}...")
         # Localize the recording datetime based on the deployment's timezone
         file_recording_dt = check_dt(
             file_recording_dt, file_deployment.time_zone)
@@ -432,7 +442,7 @@ def create_file_objects(
                     name=data_types[0])
 
         if verbose:
-            print(f"Setting local path for file: {filename}...")
+            logger.info(f"Setting local path for file: {filename}...")
         # Set the local path for the file based on the storage root
         file_local_path = os.path.join(settings.FILE_STORAGE_ROOT)
 
@@ -441,7 +451,7 @@ def create_file_objects(
 
             # Log the process of setting the path for the file
             if verbose:
-                print(f"Setting path for file: {filename}...")
+                logger.info(f"Setting path for file: {filename}...")
 
             # Construct the file path using the data type name, deployment device ID, and upload date
             file_path = os.path.join(file_data_type.name,
@@ -466,7 +476,7 @@ def create_file_objects(
 
             # Log the creation of the database object for the file
             if verbose:
-                print(f"Creating database object for: {filename}...")
+                logger.info(f"Creating database object for: {filename}...")
 
             # If the file is part of a multipart upload, mark it as incomplete in the extra data
             if multipart:
@@ -492,7 +502,7 @@ def create_file_objects(
             except ValidationError as e:
                 # Handle validation errors specific to the DataFile model
                 if verbose:
-                    print(
+                    logger.info(
                         f"Error creating database objects for: {filename}...")
                 # Add the file to the invalid_files list with a detailed error message
                 invalid_files.append(
@@ -512,12 +522,12 @@ def create_file_objects(
 
         try:
             if verbose:
-                print(f"Saving file to path: {file_fullpath}...")
+                logger.info(f"Saving file to path: {file_fullpath}...")
             # Try to save the file
             handle_uploaded_file(file, file_fullpath, multipart, verbose)
         except Exception as e:
             if verbose:
-                print(
+                logger.info(
                     f"Error handling uploaded file for: {filename} - {repr(e)}")
             invalid_files.append(
                 {filename: {"message": repr(e), "status": 400}})
@@ -530,7 +540,7 @@ def create_file_objects(
         if not multipart or (multipart and multipart_obj is None):
             # Set the file URL when first registered in the database
             if verbose:
-                print(f"Setting file URL for: {filename}...")
+                logger.info(f"Setting file URL for: {filename}...")
             new_datafile_obj.set_file_url()
             all_new_objects.append(new_datafile_obj)
 
@@ -542,18 +552,18 @@ def create_file_objects(
             if multipart:
                 # Perform MD5 checksum validation for multipart file uploads
                 if verbose:
-                    print(
+                    logger.info(
                         f"Performing MD5 checksum validation for multipart file: {multipart_obj.original_name}...")
                 # Calculate the server-side checksum of the uploaded file
                 server_checksum = get_md5(multipart_obj.full_path())
                 if verbose:
-                    print(
+                    logger.info(
                         f"Server checksum: {server_checksum}, Client checksum: {multipart_checksum}")
                 # Compare the server checksum with the client-provided checksum
                 if not multipart_checksum == server_checksum:
                     # If the checksums do not match, log the mismatch and add an error to invalid_files
                     if verbose:
-                        print(
+                        logger.info(
                             f"Checksum mismatch for multipart file: {multipart_obj.original_name}")
                     invalid_files += [{multipart_obj.original_name: {
                         "message": "Multipart file upload checksum mismatch", "status": 400}}]
@@ -562,7 +572,7 @@ def create_file_objects(
                 else:
                     # If the checksums match, log the success and update the multipart file metadata
                     if verbose:
-                        print(
+                        logger.info(
                             f"Checksum validation passed for multipart file: {multipart_obj.original_name}")
                     # Update the extra_data field with the validated checksum
                     multipart_extra_data = multipart_obj.extra_data
@@ -581,19 +591,21 @@ def create_file_objects(
         if append_tasks:
             # Fetch deployment tasks associated with the current file's deployment
             if verbose:
-                print(f"Fetching deployment tasks for file: {filename}...")
+                logger.info(
+                    f"Fetching deployment tasks for file: {filename}...")
             file_deployment_tasks = list(file_deployment.project.all().values_list(
                 'automated_tasks__pk', flat=True))  # Retrieve primary keys of automated tasks linked to the deployment
             file_deployment_tasks = [
                 x for x in file_deployment_tasks if x is not None]  # Filter out None values from the task list
             if verbose:
-                print(
+                logger.info(
                     f"Deployment tasks for file {filename}: {file_deployment_tasks}")
 
             # Append the handler task for the current file to the list of all handler tasks
             all_handler_tasks.append(file_handler_task)
             if verbose:
-                print(f"Handler task for file {filename}: {file_handler_task}")
+                logger.info(
+                    f"Handler task for file {filename}: {file_handler_task}")
 
             # Append the deployment tasks for the current file to the list of project task primary keys
             project_task_pks.append(file_deployment_tasks)
@@ -604,18 +616,18 @@ def create_file_objects(
         # If new objects are to be created
         if len(all_new_objects) > 0:
             if verbose:
-                print(
+                logger.info(
                     f"Bulk creating {len(all_new_objects)} new DataFile objects...")
             uploaded_files = DataFile.objects.bulk_create(all_new_objects)
             uploaded_files_pks = [x.pk for x in uploaded_files]
             if verbose:
-                print(
+                logger.info(
                     f"Created DataFile objects with primary keys: {uploaded_files_pks}")
             final_status = status.HTTP_201_CREATED
         # Otherwise if this part of a multipart upload
         elif multipart:
             if verbose:
-                print(
+                logger.info(
                     f"Using existing multipart object with primary key: {multipart_obj.pk}")
             uploaded_files = [multipart_obj]
             uploaded_files_pks = [multipart_obj.pk]
@@ -666,11 +678,11 @@ def create_file_objects(
 
     else:
         if verbose:
-            print("Determining final status based on invalid files...")
+            logger.info("Determining final status based on invalid files...")
         final_status = status.HTTP_400_BAD_REQUEST
         if all([[y[x].get('status') == 403 for x in y.keys()][0] for y in invalid_files]):
             if verbose:
-                print(
+                logger.info(
                     "All invalid files have a status of 403. Setting final status to HTTP_403_FORBIDDEN.")
             final_status = status.HTTP_403_FORBIDDEN
     return (uploaded_files, invalid_files, existing_files, final_status)
@@ -703,13 +715,13 @@ def handle_uploaded_file(
     os.makedirs(os.path.split(filepath)[0], exist_ok=True)
     if multipart and os.path.exists(filepath):
         if verbose:
-            print(f"Appending to {filepath}")
+            logger.info(f"Appending to {filepath}")
         with open(filepath, 'ab+') as destination:
             for chunk in file.chunks():
                 destination.write(chunk)
     else:
         if verbose:
-            print(f"Writing to {filepath}")
+            logger.info(f"Writing to {filepath}")
         with open(filepath, 'wb+') as destination:
             for chunk in file.chunks():
                 destination.write(chunk)

@@ -1,3 +1,4 @@
+import logging
 import os
 import traceback
 
@@ -8,6 +9,8 @@ from scp import SCPException
 
 from .models import Archive
 
+logger = logging.getLogger(__name__)
+
 
 def check_archive_projects(archive: Archive):
     from .tasks import check_archive_upload_task, create_tar_files_task
@@ -17,40 +20,41 @@ def check_archive_projects(archive: Archive):
         "deployments__combo_project", flat=True).distinct())
     all_tasks = []
     for project_combo in all_project_combos:
-        print(f"Check {project_combo} for archiving")
+        logger.info(f"Check {project_combo} for archiving")
         all_file_objs = DataFile.objects.filter(
             deployment__combo_project=project_combo, tar_file__isnull=True)
 
         if not all_file_objs.exists():
-            print(f"Check {project_combo} for archiving: No files")
+            logger.info(f"Check {project_combo} for archiving: No files")
             continue
 
         device_types = list(all_file_objs.values_list(
             "deployment__device__type", flat=True).distinct())
         for device_type in device_types:
-            print(f"Check {project_combo} for archiving: check {device_type}")
+            logger.info(
+                f"Check {project_combo} for archiving: check {device_type}")
             # Get datafiles for this project, sensor type
             file_objs = all_file_objs.filter(
                 deployment__device__type=device_type)
             if not file_objs.exists():
-                print(
+                logger.info(
                     f"Check {project_combo} for archiving: check {device_type}: No files")
                 continue
 
             # check files for archiving
             total_file_size = file_objs.file_size_unit("GB")
             if total_file_size > settings.MIN_ARCHIVE_SIZE_GB:
-                print(
+                logger.info(
                     f"Check {project_combo} for archiving: check {device_type}: Sufficient files")
                 file_pks = list(file_objs.values_list('pk', flat=True))
                 tar_task = create_tar_files_task.si(file_pks, archive.pk)
                 all_tasks.append(tar_task)
             else:
-                print(
+                logger.info(
                     f"Check {project_combo} for archiving: check {device_type}: Insufficient files")
 
     if len(all_tasks) > 0:
-        print("Submitting archiving jobs")
+        logger.info("Submitting archiving jobs")
         task_group = group(all_tasks)
         task_chord = chord(
             task_group, check_archive_upload_task.si(archive.pk))
@@ -70,7 +74,7 @@ def check_archive_upload(archive: Archive):
 
         if tar_obj.uploading or tar_obj.archived:
             continue
-        print(f"{tar_obj.name} uploading")
+        logger.info(f"{tar_obj.name} uploading")
         tar_obj.uploading = True
         tar_obj.save()
 
@@ -95,24 +99,24 @@ def check_archive_upload(archive: Archive):
                                   preserve_times=True)
             success = True
         except SCPException as e:
-            print("SCP error:")
-            print(repr(e))
+            logger.info("SCP error:")
+            logger.info(repr(e))
             traceback.print_exc()
 
         except Exception as e:
-            print(repr(e))
+            logger.info(repr(e))
             traceback.print_exc()
 
         tar_obj.uploading = False
         if success:
-            print(f"{tar_obj.name} uploading succesful")
+            logger.info(f"{tar_obj.name} uploading succesful")
             tar_obj.clean_tar()
             tar_obj.archived = True
             tar_obj.path = upload_path
             tar_obj.files.update(archived=True)
 
         else:
-            print(f"{tar_obj.name} uploading failed")
+            logger.info(f"{tar_obj.name} uploading failed")
         tar_obj.save()
 
         archive_ssh.close_connection()

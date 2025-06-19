@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 from typing import List
 
@@ -16,6 +17,8 @@ from sensor_portal.celery import app
 
 from .models import DataFile, Deployment, Device, Project
 
+logger = logging.getLogger(__name__)
+
 
 @app.task(name="flag_humans")
 @register_job("Change human flag", "flag_humans", "datafile", True,
@@ -29,7 +32,7 @@ def flag_humans(datafile_pks: List[int], has_human: bool = False, **kwargs):
     """
     file_objs = DataFile.objects.filter(
         pk__in=datafile_pks)
-    print(file_objs.count())
+    logger.info(file_objs.count())
     file_objs.update(has_human=has_human)
 
 
@@ -39,10 +42,10 @@ def clean_all_files():
     Remove files that are archived and have not been modified in the projects clean time.
     """
     projects_to_clean = Project.objects.filter(archive__isnull=False)
-    print(f"Found {projects_to_clean.count()} projects to clean.")
+    logger.info(f"Found {projects_to_clean.count()} projects to clean.")
     for project in projects_to_clean:
         clean_time = project.clean_time
-        print(
+        logger.info(
             f"Cleaning project: {project.name} with clean time: {clean_time} days.")
         files_to_clean = DataFile.objects.filter(
             local_storage=True,
@@ -55,14 +58,15 @@ def clean_all_files():
             timezone.now().date() - F('modified_on__date'), output_field=DurationField()))
         files_to_clean = files_to_clean.filter(
             file_age__gt=timedelta(days=clean_time))
-        print(
+        logger.info(
             f"Found {files_to_clean.count()} files to clean for project: {project.name}.")
         for file in files_to_clean:
             try:
-                print(f"Cleaning file: {file.name} (ID: {file.pk})")
+                logger.info(f"Cleaning file: {file.name} (ID: {file.pk})")
                 file.clean_file()
             except Exception as e:
-                print(f"Error cleaning file {file.name} (ID: {file.pk}): {e}")
+                logger.info(
+                    f"Error cleaning file {file.name} (ID: {file.pk}): {e}")
 
 
 @app.task()
@@ -91,7 +95,7 @@ def check_device_status():
     """
     Check if device has transmitted in the allotted time and email managers
     """
-    print("Checking device status...")
+    logger.info("Checking device status...")
 
     auto_devices = Device.objects.filter(
         deployments__is_active=True,
@@ -105,7 +109,7 @@ def check_device_status():
         last_file_time = device.deployments.filter(is_active=True).aggregate(
             Max('files__recording_dt')).get('files__recording_dt__max')
         if last_file_time is None:
-            print(f"Device {device.device_ID} has no files.")
+            logger.info(f"Device {device.device_ID} has no files.")
             bad_devices_pks.append(device.pk)
             bad_devices_values.append({
                 'device_ID': device.device_ID,
@@ -117,7 +121,7 @@ def check_device_status():
         file_age = timezone.now() - last_file_time
         # check if the file age is greater than the update time
         if file_age > timedelta(hours=device.update_time):
-            print(
+            logger.info(
                 f"Device {device.device_ID} has not transmitted in the allotted time: {file_age.total_seconds() / 3600} hours.")
             # add the device to the list of bad devices
             bad_devices_pks.append(device.pk)

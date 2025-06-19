@@ -1,4 +1,5 @@
 import datetime
+import logging
 import os
 from datetime import datetime
 
@@ -41,6 +42,8 @@ from .serializers import (DataFileCheckSerializer, DataFileSerializer,
                           DeviceModelSerializer, DeviceSerializer,
                           GenericJobSerializer, ProjectSerializer,
                           SiteSerializer)
+
+logger = logging.getLogger(__name__)
 
 
 class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, CheckFormViewSetMixIn, OptionalPaginationViewSetMixIn):
@@ -423,7 +426,10 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
 
     @action(detail=False, methods=['post'])
     def check_existing(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
+        logger.info("start")
+        queryset = perms['data_models.view_datafile'].filter(
+            request.user, self.get_queryset())
+
         serializer = DataFileCheckSerializer(data=request.data)
         if not serializer.is_valid():
             return Response({"detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
@@ -431,9 +437,10 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
         if (original_names := serializer.validated_data.get('original_names')):
             existing_names = queryset.filter(
                 original_name__in=original_names).values_list('original_name', flat=True)
-            print(existing_names)
+            existing_names = list(existing_names)
             missing_names = [
                 x for x in original_names if x not in existing_names]
+
         elif (file_names := serializer.validated_data.get('file_names')):
             existing_names = queryset.filter(
                 file_name__in=file_names).values_list('file_name', flat=True)
@@ -481,7 +488,7 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
             data_files=data_file)
 
         # Paginate the queryset
-        print(self.request)
+        logger.info(self.request)
         page = self.paginate_queryset(observation_qs)
         if page is not None:
             observation_serializer = ObservationSerializer(
@@ -546,7 +553,7 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
                 files, check_filename, recording_dt, extra_data, deployment_object, device_object,
                 data_types, self.request.user, multipart)
 
-        print(
+        logger.info(
             f"Uploaded files: {uploaded_files}, Invalid files: {invalid_files}, Existing files: {existing_files}, Status code: {status_code}")
 
         if len(uploaded_files) > 0:

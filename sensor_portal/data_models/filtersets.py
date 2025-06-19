@@ -39,7 +39,6 @@ class DataTypeFilter(GenericFilterMixIn):
             QuerySet: The filtered queryset.
         """
 
-        print(name)
         if (name == "file_type"):
             return queryset
         else:

@@ -1,7 +1,10 @@
+import logging
 import os
 from datetime import datetime as dt
 
 from PIL import ExifTags, Image, TiffImagePlugin, UnidentifiedImageError
+
+logger = logging.getLogger(__name__)
 
 
 def open_exif(uploaded_file):
@@ -13,10 +16,10 @@ def open_exif(uploaded_file):
 
         return image_exif
     except OSError:
-        print("Unable to open exif")
+        logger.error("Unable to open exif")
         return {}
     except UnidentifiedImageError:
-        print("Unable to open exif")
+        logger.error("Unable to open exif")
         return {}
 
 

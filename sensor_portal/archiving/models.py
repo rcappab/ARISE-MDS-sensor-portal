@@ -1,3 +1,4 @@
+import logging
 import os
 from posixpath import join as posixjoin
 
@@ -9,6 +10,8 @@ from django.utils import timezone as djtimezone
 from encrypted_model_fields.fields import EncryptedCharField
 from utils.models import BaseModel
 from utils.ssh_client import SSH_client
+
+logger = logging.getLogger(__name__)
 
 
 class Archive(BaseModel):
@@ -66,7 +69,7 @@ class TarFile(BaseModel):
                 os.removedirs(os.path.join(
                     settings.FILE_STORAGE_ROOT, self.path))
             except OSError as e:
-                print(repr(e))
+                logger.info(repr(e))
                 return False
 
             if not delete_obj:
@@ -74,7 +77,7 @@ class TarFile(BaseModel):
                 self.save()
         elif not self.local_storage and delete_obj:
             if not all(self.files.values_list("local_storage", flat=True)):
-                print(f"{self.name}: Some files contained in this TAR are no longer stored locally.\
+                logger.info(f"{self.name}: Some files contained in this TAR are no longer stored locally.\
                               The remote TAR cannot be deleted.")
                 return False
                 # deletes the attached file form data storage
@@ -91,12 +94,12 @@ class TarFile(BaseModel):
                 status_code, stdout, stderr = ssh_client.send_ssh_command(
                     f"rm {remote_path}")
             if status_code != 0:
-                print(
+                logger.info(
                     f"{self.name}: Cannot remove remote TAR. {stdout}")
                 return False
             else:
 
-                print(f"{self.name}: Remote TAR removed.")
+                logger.info(f"{self.name}: Remote TAR removed.")
                 status_code, stdout, stderr = ssh_client.send_ssh_command(
                     f"find {self.path} -type d -empty -delete")
                 return True

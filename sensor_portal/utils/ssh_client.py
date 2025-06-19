@@ -1,3 +1,4 @@
+import logging
 from posixpath import join, split, splitext
 
 import paramiko
@@ -5,6 +6,8 @@ import paramiko.ssh_exception
 from scp import SCPClient
 
 from .general import convert_unit
+
+logger = logging.getLogger(__name__)
 
 
 class SSH_client():
@@ -20,7 +23,7 @@ class SSH_client():
 
     def check_connection(self):
         while not self.ftp_t.is_active():
-            print("Try to reestablish connection")
+            logger.info("Try to reestablish connection")
             self.connect_to_ftp()
 
     def connect_to_ftp(self) -> bool:
@@ -33,20 +36,20 @@ class SSH_client():
             sftp_channel.settimeout(60*10)
             return True
         except Exception as e:
-            print(repr(e))
+            logger.info(repr(e))
             return False
 
     def close_connection_to_ftp(self):
         try:
             self.ftp_t.close()
-            print("FTP connection closed")
+            logger.info("FTP connection closed")
         except Exception as e:
-            print(repr(e))
+            logger.info(repr(e))
 
     def connect_to_ssh(self, port=None) -> bool:
         try:
             self.ssh_c.exec_command('ls')
-            print("SSH already connected")
+            logger.info("SSH already connected")
             return True
         except AttributeError:
             pass
@@ -65,16 +68,16 @@ class SSH_client():
                 password=self.password)
             return True
         except Exception as e:
-            print(repr(e))
-            print("Unable to start SSH connection")
+            logger.info(repr(e))
+            logger.info("Unable to start SSH connection")
             return False
 
     def close_connection(self):
         try:
             self.ssh_c.close()
         except Exception as e:
-            print(repr(e))
-            print("Unable to close SSH connection")
+            logger.info(repr(e))
+            logger.info("Unable to close SSH connection")
 
     def connect_to_scp(self) -> bool:
         self.connect_to_ssh()
@@ -83,16 +86,16 @@ class SSH_client():
             ), progress=lambda file_name, size, sent: self.scp_progress_function(file_name, size, sent))
             return True
         except Exception as e:
-            print(repr(e))
-            print("Unable to start SCP connection")
+            logger.info(repr(e))
+            logger.info("Unable to start SCP connection")
             return False
 
     def close_scp_connection(self):
         try:
             self.scp_c.close()
         except Exception as e:
-            print(repr(e))
-            print("Unable to close SCP connection")
+            logger.info(repr(e))
+            logger.info("Unable to close SCP connection")
 
     def scp_progress_function(self, file_name: str, size: int, sent: int):
 
@@ -101,7 +104,7 @@ class SSH_client():
 
         if sent_mb % 50 != 0:
             return
-        print(
+        logger.info(
             f"{file_name} progress: {sent_mb}/{size_mb} {float(sent)/float(size)*100}% \r")
 
     def send_ssh_command(self, command: str,
@@ -122,11 +125,11 @@ class SSH_client():
 
                 success = True
             except Exception as e:
-                print(repr(e))
+                logger.info(repr(e))
                 currtries += 1
                 self.connect_to_ssh()
             if debug:
-                print(command, "SUDO", sudo, "SUCCESS", success)
+                logger.info(command, "SUDO", sudo, "SUCCESS", success)
 
         if not success:
             raise paramiko.ssh_exception.SSHException
@@ -160,9 +163,9 @@ class SSH_client():
             dirs_.append(dir_)  # For a remote path like y/x.txt
         while len(dirs_):
             dir_ = dirs_.pop()
-            print(dir_)
+            logger.info(dir_)
             try:
                 self.ftp_sftp.stat(dir_)
             except FileNotFoundError:
-                print(f"making {dir_}",)
+                logger.info(f"making {dir_}",)
                 self.ftp_sftp.mkdir(dir_)

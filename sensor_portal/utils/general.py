@@ -1,5 +1,8 @@
 import hashlib
+import logging
 import subprocess
+
+logger = logging.getLogger(__name__)
 
 
 def convert_unit(size_in_bytes: int, unit: str) -> float:
@@ -33,13 +36,13 @@ def call_with_output(command: str | list[str], cwd: str = '/', verbose=False) ->
     Args:
         command (str | list[str]): Command to run, either a string or a list of strings (reccomended)
         cwd (str, optional): Working directory in which to run the command. Defaults to '/'.
-        verbose (bool, optional): Print command and output to console. Defaults to False.
+        verbose (bool, optional): logger.info( command and output to console. Defaults to False.
     Returns:
         tuple[bool, str]: success, shell output of command
     """
     success = False
     if verbose:
-        print(command)
+        logger.info(command)
     try:
         output = subprocess.check_output(
             command, stderr=subprocess.STDOUT, cwd=cwd).decode()
@@ -50,7 +53,7 @@ def call_with_output(command: str | list[str], cwd: str = '/', verbose=False) ->
         # check_call can raise other exceptions, such as FileNotFoundError
         output = str(e)
     if verbose:
-        print(output)
+        logger.info(output)
     return (success, output)
 
 

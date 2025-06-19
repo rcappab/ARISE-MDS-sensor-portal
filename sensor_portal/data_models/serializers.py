@@ -513,6 +513,7 @@ class DataFileCheckSerializer(serializers.Serializer):
             file_names(ListField(CharField)): List of filenames to check in the system.
             original_names(ListField(CharField)): List of original file names to check in the system.
     """
+
     file_names = serializers.ListField(
         child=serializers.CharField(), required=False
     )

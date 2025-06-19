@@ -1,3 +1,5 @@
+from drf_spectacular.utils import (OpenApiParameter, OpenApiTypes,
+                                   extend_schema, extend_schema_serializer)
 from rest_framework import serializers
 from utils.serializers import (CheckFormMixIn, CreatedModifiedMixIn,
                                OwnerMixIn, SlugRelatedGetOrCreateField)
@@ -45,8 +47,12 @@ class EvenShorterTaxonSerialier(serializers.ModelSerializer):
         return initial_rep
 
 
+@extend_schema_serializer(
+
+)
 class ObservationSerializer(OwnerMixIn, CreatedModifiedMixIn, serializers.ModelSerializer):
-    taxon_obj = ShortTaxonSerializer(source='taxon', read_only=True)
+    taxon_obj = ShortTaxonSerializer(
+        source='taxon', read_only=True, required=False)
     taxon = serializers.PrimaryKeyRelatedField(
         queryset=Taxon.objects.all(),
         required=False)
