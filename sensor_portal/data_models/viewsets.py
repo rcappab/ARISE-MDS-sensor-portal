@@ -426,7 +426,6 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
 
     @action(detail=False, methods=['post'])
     def check_existing(self, request, *args, **kwargs):
-        logger.info("start")
         queryset = perms['data_models.view_datafile'].filter(
             request.user, self.get_queryset())
 
