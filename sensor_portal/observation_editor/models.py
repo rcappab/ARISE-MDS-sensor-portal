@@ -50,17 +50,17 @@ class TaxonQuerySet(ApproximateCountQuerySet):
 class Taxon(BaseModel):
     species_name = models.CharField(
         max_length=100, unique=False, db_index=True,
-        help_text="Scientific name of the species, e.g. 'Aquila chrysaetos'")
+        help_text="Scientific name of the species, e.g. 'Aquila chrysaetos'.")
     species_common_name = models.CharField(
-        max_length=100, unique=False, blank=True, db_index=True, help_text="Common name of the species, e.g. 'Golden Eagle'")
+        max_length=100, unique=False, blank=True, db_index=True, help_text="Common name of the species, e.g. 'Golden Eagle'.")
     taxon_code = models.CharField(max_length=100, blank=True, db_index=True,
-                                  help_text="Taxon code from a taxonmic database, e.g. GBIF ID,\
-                                      or another common identifier such as 'vehicle'")
+                                  help_text="Taxon code from a taxonomic database, e.g. GBIF ID,\
+                                      or another common identifier such as 'vehicle'.")
 
     taxon_source = models.IntegerField(
-        choices=source_choice, default=0, help_text="Source of the taxon code. 0 = custom, 1 = GBIF")
+        choices=source_choice, default=0, help_text="Source of the taxon code. 0 = custom, 1 = GBIF.")
     extra_data = models.JSONField(
-        default=dict, blank=True, help_text="Extra data about the taxon, e.g. avibaseID, or other relevant information")
+        default=dict,  help_text="Extra data about the taxon, e.g. avibaseID, or other relevant information.")
     parents = models.ManyToManyField(
         "self", symmetrical=False, related_name="children", blank=True, help_text="Parent taxons of this taxon.")
     taxonomic_level = models.IntegerField(
@@ -165,7 +165,7 @@ class Observation(BaseModel):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, related_name="observations",
                               on_delete=models.SET_NULL, null=True, db_index=True,
                               help_text="User who created the observation.\
-                                  Null if created by AI")
+                                  Null if created by AI.")
     label = models.CharField(max_length=300, blank=True, editable=False)
     taxon = models.ForeignKey(
         Taxon, on_delete=models.PROTECT, related_name="observations", null=True, db_index=True, help_text="Taxon of the observed species.")
@@ -173,16 +173,17 @@ class Observation(BaseModel):
     data_files = models.ManyToManyField(
         DataFile, related_name="observations", db_index=True, help_text="Data files associated with the observation.")
     obs_dt = models.DateTimeField(
-        null=True, blank=True, help_text="Date and time of the observation.\
-            If not set, it will be set to the earliest recording datetime of the associated data files.")
+        null=True, blank=True, help_text="Date and time of the observation.")
     source = models.CharField(max_length=100, default="human", db_index=True,
                               help_text="Source of the observation, e.g. 'human' or an AI model name.")
     number = models.IntegerField(
-        default=1, help_text="Number of individuals in this observation, for use with whole image annotation etc.")
-    bounding_box = models.JSONField(default=dict, blank=True)
+        default=1, help_text="Number of individuals in this observation, for use with whole image annotation.")
+    bounding_box = models.JSONField(default=dict, help_text="Bounding box of this observation in the format\
+        {'x1':Left coordinate, 'y1':Bottom coordinate, 'x2': Right coordinate, 'y2': Left coordinate}.")
     confidence = models.FloatField(
-        default=None, null=True, blank=True, help_text="Confidence of the observation from AI model")
-    extra_data = models.JSONField(default=dict, blank=True)
+        default=None, null=True, blank=True, help_text="Confidence of the observation from AI model.")
+    extra_data = models.JSONField(
+        default=dict, blank=True, help_text="Extra data that the standard fields do not cover")
 
     sex = models.CharField(max_length=10, blank=True,
                            help_text="Sex of the observed species, if known.")

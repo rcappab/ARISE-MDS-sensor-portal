@@ -16,7 +16,8 @@ from utils.viewsets import (AddOwnerViewSetMixIn, CheckAttachmentViewSetMixIn,
 from .filtersets import ObservationFilter
 from .GBIF_functions import GBIF_species_search
 from .models import Observation, Taxon
-from .serializers import EvenShorterTaxonSerialier, ObservationSerializer
+from .serializers import (DummyObservationSerializer,
+                          EvenShorterTaxonSerialier, ObservationSerializer)
 
 logger = logging.getLogger(__name__)
 
@@ -35,22 +36,53 @@ obs_extra_parameters = [OpenApiParameter("target_taxon_level",
                description="Observations are annotations of datafiles, made by human or AI.",
                tags=["Observations"],
                methods=["get", "post", "patch", "delete"],
+               responses=DummyObservationSerializer,
+               request=DummyObservationSerializer,
                )
 @extend_schema_view(
     list=extend_schema(summary='List observations',
-                       parameters=obs_extra_parameters),
-    retrieve=extend_schema(summary='Get a single observation'),
-    partial_update=extend_schema(summary='Update an observation'),
+                       parameters=obs_extra_parameters,
+                       ),
+    retrieve=extend_schema(summary='Get a single observation',
+                           parameters=[
+                               OpenApiParameter(
+                                   "id",
+                                   OpenApiTypes.INT,
+                                   OpenApiParameter.PATH,
+                                   description="Database ID of observation to get.")]),
+    partial_update=extend_schema(summary='Update an observation',
+                                 parameters=[
+                                     OpenApiParameter(
+                                         "id",
+                                         OpenApiTypes.INT,
+                                         OpenApiParameter.PATH,
+                                         description="Database ID of observation to update.")]),
     create=extend_schema(summary='Create an observation'),
-    destroy=extend_schema(summary='Delete an observation'),
+    destroy=extend_schema(summary='Delete an observation',
+                          parameters=[
+                              OpenApiParameter(
+                                  "id",
+                                  OpenApiTypes.INT,
+                                  OpenApiParameter.PATH,
+                                  description="Database ID of observation to delete.")]),
     datafile_observations=extend_schema(summary="Observations from datafile",
                                         description="Get observations from a specific datafile.",
                                         filters=True,
-                                        parameters=obs_extra_parameters),
+                                        parameters=obs_extra_parameters + [
+                                            OpenApiParameter(
+                                                "datafile_id",
+                                                OpenApiTypes.INT,
+                                                OpenApiParameter.PATH,
+                                                description="Database ID of datafile from which to get observations.")]),
     deployment_observations=extend_schema(summary="Observations from deployment",
                                           filters=True,
                                           description="Get observations from a specific deployment.",
-                                          parameters=obs_extra_parameters),
+                                          parameters=obs_extra_parameters + [
+                                              OpenApiParameter(
+                                                  "deployment_id",
+                                                  OpenApiTypes.INT,
+                                                  OpenApiParameter.PATH,
+                                                  description="Database ID of deployment from which to get observations.")]),
 )
 class ObservationViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
 

@@ -1,6 +1,17 @@
 from django.utils import timezone as djtimezone
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from user_management.models import User
+
+
+@extend_schema_field({"type": ["object"],
+                      })
+class DummyJSONField(serializers.Field):
+    def to_representation(self, value):
+        return {}
+
+    def to_internal_value(self, data):
+        return {}
 
 
 class SlugRelatedGetOrCreateField(serializers.SlugRelatedField):

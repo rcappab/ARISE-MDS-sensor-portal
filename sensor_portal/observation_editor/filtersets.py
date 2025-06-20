@@ -5,6 +5,13 @@ from .models import Observation
 
 
 class ObservationFilter(GenericFilterMixIn, ExtraDataFilterMixIn):
+    field_help_dict = {"taxon__id": "Numeric database ID of the taxon.",
+                       "owner__id": "Numeric database ID of user who created this observation.",
+                       "data_files__deployment__id": "Numeric database ID of deployment to which\
+                           the datafiles of this observation are attached.",
+                       "data_files__id": "Numeric database ID of datafile of this observation.",
+                       "validation_of__id": "Numeric database ID of the observation of which this observation is a validation of."}
+
     class Meta:
         model = Observation
 
