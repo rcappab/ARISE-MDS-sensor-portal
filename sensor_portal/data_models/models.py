@@ -24,7 +24,7 @@ from encrypted_model_fields.fields import EncryptedCharField
 from external_storage_import.models import DataStorageInput
 from sizefield.models import FileSizeField
 from timezone_field import TimeZoneField
-from utils.general import convert_unit
+from utils.general import convert_unit, try_remove_file_clean_dirs
 from utils.models import BaseModel
 from utils.querysets import ApproximateCountQuerySet
 
@@ -116,19 +116,27 @@ class Project(BaseModel):
     """
 
     # Metadata
-    project_ID = models.CharField(max_length=20, unique=True, blank=True)
-    name = models.CharField(max_length=50)
+    project_ID = models.CharField(
+        max_length=20, unique=True, blank=True, help_text="Unique project identifier.")
+    name = models.CharField(max_length=50, help_text="Full project name.")
 
-    objectives = models.CharField(max_length=500, blank=True)
-    principal_investigator = models.CharField(max_length=50, blank=True)
-    principal_investigator_email = models.CharField(max_length=100, blank=True)
-    contact = models.CharField(max_length=50, blank=True)
-    contact_email = models.CharField(max_length=100, blank=True)
-    organisation = models.CharField(max_length=100, blank=True)
+    objectives = models.CharField(
+        max_length=500, blank=True, help_text="Project objectives description.")
+    principal_investigator = models.CharField(
+        max_length=50, blank=True, help_text="Full name of principal investigator.")
+    principal_investigator_email = models.CharField(
+        max_length=100, blank=True, help_text="Principal investigator email.")
+    contact = models.CharField(
+        max_length=50, blank=True, help_text="Name of primary contact.")
+    contact_email = models.CharField(
+        max_length=100, blank=True, help_text="Contact email.")
+    organisation = models.CharField(
+        max_length=100, blank=True, help_text="Organisation with which this project is associated.")
     data_storages = models.ManyToManyField(
-        DataStorageInput, related_name="linked_projects", blank=True)
+        DataStorageInput, related_name="linked_projects", blank=True, help_text="External data storages (such as FTP server) that are available to users associated with this project.")
     archive = models.ForeignKey(
-        Archive, related_name="linked_projects", null=True, blank=True, on_delete=models.SET_NULL)
+        Archive, related_name="linked_projects", null=True, blank=True, on_delete=models.SET_NULL,
+        help_text="Data archive that data associated with this project will be uploaded to.")
 
     automated_tasks = models.ManyToManyField(
         "ProjectJob", related_name="linked_projects", blank=True
@@ -149,15 +157,16 @@ class Project(BaseModel):
 
     # User ownership
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, related_name="owned_projects",
-                              on_delete=models.SET_NULL, null=True, db_index=True)
+                              on_delete=models.SET_NULL, null=True, db_index=True, help_text="Project owner.")
     managers = models.ManyToManyField(
-        settings.AUTH_USER_MODEL, blank=True, related_name="managed_projects", db_index=True)
+        settings.AUTH_USER_MODEL, blank=True, related_name="managed_projects", db_index=True, help_text="Project managers.")
     viewers = models.ManyToManyField(
-        settings.AUTH_USER_MODEL, blank=True, related_name="viewable_projects", db_index=True)
+        settings.AUTH_USER_MODEL, blank=True, related_name="viewable_projects", db_index=True, help_text="Project viewers.")
     annotators = models.ManyToManyField(
-        settings.AUTH_USER_MODEL, blank=True, related_name="annotatable_projects", db_index=True)
+        settings.AUTH_USER_MODEL, blank=True, related_name="annotatable_projects", db_index=True, help_text="Project annotators.")
 
-    clean_time = models.IntegerField(default=90)
+    clean_time = models.IntegerField(
+        default=90, help_text="How long after last modification should an archived file be removed from local storage?")
 
     def __str__(self):
         return self.project_ID
@@ -188,14 +197,16 @@ class DeviceModel(BaseModel):
         __str__(): Returns the string representation of the device model, which is its name.
     """
 
-    name = models.CharField(max_length=50, blank=True, unique=True)
-    manufacturer = models.CharField(max_length=50, blank=True)
+    name = models.CharField(max_length=50, blank=True, unique=True,
+                            help_text="Name of device model. This will be used to find a data handler if one is available.")
+    manufacturer = models.CharField(max_length=50, blank=True,
+                                    help_text="Device model manufacturer.")
     type = models.ForeignKey(DataType, models.PROTECT,
-                             related_name="device_models")
+                             related_name="device_models", help_text="Primary data type of device.")
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, related_name="owned_device_models",
-                              on_delete=models.SET_NULL, null=True)
-    colour = ColorField(blank=True)
-    symbol = IconField(blank=True)
+                              on_delete=models.SET_NULL, null=True, help_text="User who registered this device model with the system.")
+    colour = ColorField(blank=True, help_text="Override data type colour.")
+    symbol = IconField(blank=True, help_text="Override data type symbol.")
 
     def save(self, *args, **kwargs):
         """
@@ -255,34 +266,45 @@ class Device(BaseModel):
             Checks for overlapping deployments within the specified date range, excluding a given deployment.
     """
 
-    device_ID = models.CharField(max_length=20, unique=True)
-    name = models.CharField(max_length=50, blank=True)
+    device_ID = models.CharField(
+        max_length=20, unique=True, help_text="Unique identifier for device, such as a serial number.")
+    name = models.CharField(max_length=50, blank=True,
+                            help_text="Optional alternative name for device, potentially a more human readable name.")
     model = models.ForeignKey(
-        DeviceModel, models.PROTECT, related_name="registered_devices")
+        DeviceModel, models.PROTECT, related_name="registered_devices", help_text="Device model.")
 
     type = models.ForeignKey(DataType, models.PROTECT,
                              related_name="devices", null=True, db_index=True)
 
     # User ownership
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, related_name="owned_devices",
-                              on_delete=models.SET_NULL, null=True, db_index=True)
+                              on_delete=models.SET_NULL, null=True, db_index=True,
+                              help_text="Device owner.")
     managers = models.ManyToManyField(
-        settings.AUTH_USER_MODEL, blank=True, related_name="managed_devices", db_index=True)
+        settings.AUTH_USER_MODEL, blank=True, related_name="managed_devices", db_index=True,
+        help_text="Device managers.")
     viewers = models.ManyToManyField(
-        settings.AUTH_USER_MODEL, blank=True, related_name="viewable_devices", db_index=True)
+        settings.AUTH_USER_MODEL, blank=True, related_name="viewable_devices", db_index=True,
+        help_text="Device viewers.")
     annotators = models.ManyToManyField(
-        settings.AUTH_USER_MODEL, blank=True, related_name="annotatable_devices", db_index=True)
+        settings.AUTH_USER_MODEL, blank=True, related_name="annotatable_devices", db_index=True,
+        help_text="Device annotators.")
 
-    autoupdate = models.BooleanField(default=False)
-    update_time = models.IntegerField(default=48)
+    autoupdate = models.BooleanField(
+        default=False, help_text="Is the device expected to autoupdate?")
+    update_time = models.IntegerField(
+        default=48, help_text="How often is the device expected to send files? Send users an email after this many hours have elapsed.")
 
     username = models.CharField(
-        max_length=100, unique=True, null=True, blank=True, default=None)
-    password = EncryptedCharField(max_length=100, blank=True, null=True)
+        max_length=100, unique=True, null=True, blank=True, default=None, help_text="Device username to use with external storage, such as an FTP server.")
+    password = EncryptedCharField(max_length=100, blank=True, null=True,
+                                  help_text="Device password to use with external storage, such as an FTP server.")
     input_storage = models.ForeignKey(
-        DataStorageInput, null=True, blank=True, related_name="linked_devices", on_delete=models.SET_NULL)
+        DataStorageInput, null=True, blank=True, related_name="linked_devices", on_delete=models.SET_NULL,
+        help_text="External storage, such as an FTP server.")
 
-    extra_data = models.JSONField(default=dict, blank=True)
+    extra_data = models.JSONField(
+        default=dict, blank=True, help_text="Extra data that doesn't fit in existing fields.")
 
     def is_active(self):
         if self.id:
@@ -483,47 +505,57 @@ class Deployment(BaseModel):
     """
 
     deployment_device_ID = models.CharField(
-        max_length=110, blank=True, editable=False, unique=True)
-    deployment_ID = models.CharField(max_length=80)
+        max_length=110, blank=True, editable=False, unique=True,
+        help_text="Unique identifier combining 'deployment_ID', 'device_type' and 'device_n'.")
+    deployment_ID = models.CharField(
+        max_length=80, help_text="An identifier for a deployment.")
     device_type = models.ForeignKey(
-        DataType, models.PROTECT, related_name="deployments", null=True, db_index=True)
-    device_n = models.IntegerField(default=1)
+        DataType, models.PROTECT, related_name="deployments", null=True, db_index=True, help_text="Primary data type of deployment.")
+    device_n = models.IntegerField(default=1,
+                                   help_text="Numeric suffix of deployment, allowing for multiple deployments to share the same 'deployment_ID' and 'device_type'.")
 
-    deployment_start = models.DateTimeField(default=djtimezone.now)
-    deployment_end = models.DateTimeField(blank=True, null=True)
+    deployment_start = models.DateTimeField(default=djtimezone.now,
+                                            help_text="Start datetime of deployment.")
+    deployment_end = models.DateTimeField(
+        blank=True, null=True, help_text="End time of deployment. Can be NULL if deployment is ongoing.")
 
     device = models.ForeignKey(
-        Device, on_delete=models.PROTECT, related_name="deployments", db_index=True)
-    site = models.ForeignKey(Site, models.PROTECT, related_name="deployments")
+        Device, on_delete=models.PROTECT, related_name="deployments", db_index=True, help_text="Device of which this is a deployment.")
+    site = models.ForeignKey(Site, models.PROTECT, related_name="deployments",
+                             help_text="Site at which this deployment is placed.")
     project = models.ManyToManyField(
-        Project, related_name="deployments", blank=True, db_index=True)
+        Project, related_name="deployments", blank=True, db_index=True, help_text="Projects to which this deployment is attached.")
 
     latitude = models.DecimalField(
-        max_digits=8, decimal_places=6, blank=True, null=True)
+        max_digits=8, decimal_places=6, blank=True, null=True, help_text="Latitude at which this deployment is placed.")
     longitude = models.DecimalField(
-        max_digits=8, decimal_places=6, blank=True, null=True)
+        max_digits=8, decimal_places=6, blank=True, null=True, help_text="Longitude at which this deployment is placed.")
     point = gis_models.PointField(
         blank=True,
         null=True,
-        spatial_index=True
+        spatial_index=True,
+        help_text="Spatial point representing this deployment."
     )
 
-    extra_data = models.JSONField(default=dict, blank=True)
-    is_active = models.BooleanField(default=True)
+    extra_data = models.JSONField(
+        default=dict, blank=True, help_text="Extra data that does not fit in other fields.")
+    is_active = models.BooleanField(
+        default=True, help_text="Is the deployment currently active? Checked every hour.")
 
-    time_zone = TimeZoneField(use_pytz=True, default=settings.TIME_ZONE)
+    time_zone = TimeZoneField(use_pytz=True, default=settings.TIME_ZONE,
+                              help_text="Time zone to which files with time zone naive datetimes will be localised.")
 
     # User ownership
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, related_name="owned_deployments",
-                              on_delete=models.SET_NULL, null=True, db_index=True)
+                              on_delete=models.SET_NULL, null=True, db_index=True, help_text="Owner of deployment.")
 
     combo_project = models.CharField(
-        max_length=100, blank=True, null=True, editable=False)
+        max_length=100, blank=True, null=True, editable=False, help_text="String combining all projects.")
     last_image = models.ForeignKey("DataFile", blank=True, on_delete=models.SET_NULL, null=True, editable=False,
-                                   related_name="deployment_last_image")
+                                   related_name="deployment_last_image", help_text="Last image (if any) linked to this deployment.")
 
     thumb_url = models.CharField(
-        max_length=500, null=True, blank=True, editable=False)
+        max_length=500, null=True, blank=True, editable=False, help_text="Deployment thumbnail URL.")
 
     def get_absolute_url(self):
         return (f"/deployments/{self.pk}")
@@ -792,38 +824,52 @@ class DataFile(BaseModel):
     """
 
     deployment = models.ForeignKey(
-        Deployment, on_delete=models.CASCADE, related_name="files", db_index=True)
+        Deployment, on_delete=models.CASCADE, related_name="files", db_index=True, help_text="Deployment to which this datafile is linked.")
 
     file_type = models.ForeignKey(
-        DataType, models.PROTECT, related_name="files", null=True, default=None, db_index=True)
-    file_name = models.CharField(max_length=150, unique=True, db_index=True)
-    file_size = FileSizeField()
-    file_format = models.CharField(max_length=10)
+        DataType, models.PROTECT, related_name="files", null=True, default=None, db_index=True, help_text="Data type of file.")
+    file_name = models.CharField(
+        max_length=150, unique=True, db_index=True, help_text="File name.")
+    file_size = FileSizeField(help_text="Size of file in bytes.")
+    file_format = models.CharField(max_length=10, help_text="File extension.")
 
-    upload_dt = models.DateTimeField(default=djtimezone.now)
-    recording_dt = models.DateTimeField(null=True, db_index=True)
-    path = models.CharField(max_length=500)
-    local_path = models.CharField(max_length=500, blank=True)
+    upload_dt = models.DateTimeField(
+        default=djtimezone.now, help_text="Datetime at which the file was uploaded.")
+    recording_dt = models.DateTimeField(
+        null=True, db_index=True, help_text="Datetime at which the file was recored.")
+    path = models.CharField(max_length=500, help_text="Relative path.")
+    local_path = models.CharField(max_length=500, blank=True,
+                                  help_text="Absolute file location on local storage, from which path is relative.")
 
-    extra_data = models.JSONField(default=dict, blank=True)
-    linked_files = models.JSONField(default=dict, blank=True)
+    extra_data = models.JSONField(
+        default=dict, blank=True, help_text="Extra data that does not fit in existing columns.")
+    linked_files = models.JSONField(
+        default=dict, blank=True, help_text="Linked files, such as alternative representations of this file.")
 
-    thumb_url = models.CharField(max_length=500, null=True, blank=True)
+    thumb_url = models.CharField(
+        max_length=500, null=True, blank=True, help_text="Thumbnail URL.")
 
-    local_storage = models.BooleanField(default=True, db_index=True)
-    archived = models.BooleanField(default=False)
+    local_storage = models.BooleanField(
+        default=True, db_index=True, help_text="Is the file available on local storage?")
+    archived = models.BooleanField(
+        default=False, help_text="Has the file been archived?")
     tar_file = models.ForeignKey(
-        TarFile, on_delete=models.SET_NULL, blank=True, null=True, related_name="files")
+        TarFile, on_delete=models.SET_NULL, blank=True, null=True, related_name="files",
+        help_text="TAR file containing this file.")
     favourite_of = models.ManyToManyField(
-        settings.AUTH_USER_MODEL, blank=True, related_name="favourites")
+        settings.AUTH_USER_MODEL, blank=True, related_name="favourites", help_text="Users who have favourited this file.")
 
-    do_not_remove = models.BooleanField(default=False)
-    original_name = models.CharField(max_length=100, blank=True, null=True)
-    file_url = models.CharField(max_length=500, null=True, blank=True)
+    do_not_remove = models.BooleanField(
+        default=False, help_text="If True, this file will not be removed during cleaning.")
+    original_name = models.CharField(
+        max_length=100, blank=True, null=True, help_text="Original name of this file.")
+    file_url = models.CharField(
+        max_length=500, null=True, blank=True, help_text="URL of this file")
     tag = models.CharField(max_length=250, null=True,
-                           blank=True, db_index=True)
+                           blank=True, db_index=True, help_text="Additional identifying tag of this file.")
 
-    has_human = models.BooleanField(default=False, db_index=True)
+    has_human = models.BooleanField(
+        default=False, db_index=True, help_text="True if this image has been annotated with a human.")
 
     objects = DataFileQuerySet.as_manager()
 
@@ -970,44 +1016,48 @@ class DataFile(BaseModel):
         """
         logger.info(f"Clean {self.file_name} - Delete object: {delete_obj}")
 
-        if (self.do_not_remove or self.deployment_last_image.exists()) and not delete_obj:
+        if (self.archived or self.do_not_remove or
+            self.deployment_last_image.exists() or
+                self.favourite_of.exists()) and not delete_obj:
+            logger.info(f"Clean {self.file_name} - Failed - Protected file")
+
             return False
 
         if self.local_storage:
-            try:
-                os.remove(self.full_path())
-                os.removedirs(os.path.join(self.local_path, self.path))
-                logger.info(f"Clean {self.file_name} - File removed")
-            except OSError:
-                logger.info(f"Unable to delete {self.file_name}")
-                if delete_obj:
-                    logger.info(f"Unable to delete {self.file_name}")
-                if not force_delete:
-                    return False
+            logger.info(f"Clean {self.file_name} - Try to remove file")
+            success = try_remove_file_clean_dirs(self.full_path())
+            if not success and not force_delete:
+                logger.error(
+                    f"Clean {self.file_name} - Failed - Cannot delete local file")
+                return False
+            elif success:
+                logger.info(
+                    f"Clean {self.file_name} - Try to remove file - success")
 
-        try:
+            logger.info(f"Clean {self.file_name} - Try to remove thumbnail")
             thumb_path = self.thumb_path()
-            os.remove(thumb_path)
-            os.removedirs(os.path.split(thumb_path)[0])
-            logger.info(f"Clean {self.file_name} - Thumbnail removed")
-        except TypeError:
-            pass
-        except OSError:
-            pass
+            if thumb_path is not None and thumb_path != "":
+                success = try_remove_file_clean_dirs(thumb_path)
+            if success:
+                logger.info(
+                    f"Clean {self.file_name} - Try to remove thumbnail - success")
+            else:
+                logger.info(
+                    f"Clean {self.file_name} - Try to remove thumbnail - failed")
 
-        for key, value in self.linked_files.items():
-            try:
+            for key, value in self.linked_files.items():
                 extra_version_path = value["path"]
-                os.remove(extra_version_path)
-                os.removedirs(extra_version_path)
-                self.linked_files.pop(key)
-                logger.info(f"Clean {self.file_name} - {key} removed")
-            except TypeError:
-                pass
-            except OSError:
-                pass
+                logger.info(f"Clean {self.file_name} - Try to remove {key}")
+                success = try_remove_file_clean_dirs(extra_version_path)
+                if success:
+                    logger.info(
+                        f"Clean {self.file_name} - Try to remove {key} - success")
+                else:
+                    logger.info(
+                        f"Clean {self.file_name} - Try to remove {key} - failed")
 
         if not delete_obj:
+            logger.info(f"Clean {self.file_name} - Altering database")
             self.local_storage = False
             self.local_path = ""
             self.linked_files = {}
@@ -1071,9 +1121,11 @@ class ProjectJob(BaseModel):
                 A Celery job signature object configured with the job name, type, file primary keys, and arguments.
     """
 
-    job_name = models.CharField(max_length=50)
-    celery_job_name = models.CharField(max_length=50)
-    job_args = models.JSONField(default=dict)
+    job_name = models.CharField(max_length=50, help_text="Name of job")
+    celery_job_name = models.CharField(
+        max_length=50, help_text="Name of registered celery task.")
+    job_args = models.JSONField(
+        default=dict, help_text="Additional arguments.")
 
     def __str__(self):
         return self.job_name

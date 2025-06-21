@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
+from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -8,8 +9,11 @@ from rest_framework.response import Response
 from .serializers import DataHandlerSerializer
 
 
+@extend_schema(
+    exclude=True
+)
 class DataHandlerViewSet(viewsets.ViewSet):
-    # Required for the Browsable API renderer to have a nice form.
+
     serializer_class = DataHandlerSerializer
     permission_classes = [IsAuthenticated]
 

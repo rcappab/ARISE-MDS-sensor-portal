@@ -1,5 +1,6 @@
 import hashlib
 import logging
+import os
 import subprocess
 
 logger = logging.getLogger(__name__)
@@ -7,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 def convert_unit(size_in_bytes: int, unit: str) -> float:
     """
-    Convert the size from bytes to 
+    Convert the size from bytes to
     other units like KB, MB or GB
 
     Args:
@@ -85,3 +86,34 @@ def read_in_chunks(file_object, chunk_size):
         if not data:
             break
         yield data
+
+
+def try_to_remove_dirs(dir_path: str) -> bool:
+    try:
+        logger.info(f"{dir_path} - Clean dir")
+        os.removedirs(dir_path)
+        logger.info(f"{dir_path} - Clean dir - success")
+        return True
+    except OSError as e:
+        logger.error(e)
+        logger.info(
+            f"{dir_path} - Clean dir - failed")
+        return False
+
+
+def try_remove_file_clean_dirs(file_path: str) -> bool:
+    error = None
+    try:
+        logger.info(f"{file_path} - Delete")
+        os.remove(file_path)
+        logger.info(f"{file_path} - Delete - succesful")
+        try_to_remove_dirs(os.path.split(file_path)[0])
+        return True
+    except TypeError as e:
+        error = e
+    except OSError as e:
+        error = e
+
+    logger.error(error)
+    logger.info(f"{file_path} - Delete - failed")
+    return False

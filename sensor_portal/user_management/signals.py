@@ -8,7 +8,6 @@ from django.dispatch import receiver
 from django.template.loader import render_to_string
 from django_rest_passwordreset.signals import reset_password_token_created
 from rest_framework.authtoken.models import Token
-from utils.email import send_email
 
 from .models import DeviceUser, User
 

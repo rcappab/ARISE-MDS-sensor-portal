@@ -15,10 +15,13 @@ from django.utils import timezone as djtimezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from django.views.decorators.vary import vary_on_cookie, vary_on_headers
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (OpenApiParameter, extend_schema,
+                                   extend_schema_view, inline_serializer)
 from observation_editor.filtersets import ObservationFilter
 from observation_editor.models import Observation
 from observation_editor.serializers import ObservationSerializer
-from rest_framework import status, viewsets
+from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
@@ -45,7 +48,91 @@ from .serializers import (DataFileCheckSerializer, DataFileSerializer,
 
 logger = logging.getLogger(__name__)
 
+ctdp_parameter = OpenApiParameter("ctdp",
+                                  OpenApiTypes.BOOL,
+                                  OpenApiParameter.QUERY,
+                                  description='Set True to return in camtrap DP format')
+geoJSON_parameter = OpenApiParameter("geojson",
+                                     OpenApiTypes.BOOL,
+                                     OpenApiParameter.QUERY,
+                                     description='Set True to return in geoJSON format')
 
+inline_id_serializer = inline_serializer("InlineIDserializer",
+                                         {"ids":
+                                          serializers.ListField(child=serializers.IntegerField(), required=True)})
+inline_count_serializer = inline_serializer("InlineCountSerializer",
+                                            {"object_n":
+                                             serializers.ListField(child=serializers.IntegerField(), required=True)})
+
+
+@extend_schema(summary="Deployments",
+               description="Deployments of devices in the field, with certain settings.",
+               tags=["Deployments"],
+               methods=["get", "post", "put", "patch", "delete"],
+               )
+@extend_schema_view(
+    list=extend_schema(summary='List deployments.',
+                       parameters=[ctdp_parameter, geoJSON_parameter],
+                       ),
+    retrieve=extend_schema(summary='Get a single deployment',
+                           parameters=[
+                                   OpenApiParameter(
+                                       "id",
+                                       OpenApiTypes.INT,
+                                       OpenApiParameter.PATH,
+                                       description="Database ID of deployment to get.")]),
+    update=extend_schema(summary='Update an deployment',
+                         parameters=[
+                                 OpenApiParameter(
+                                     "id",
+                                     OpenApiTypes.INT,
+                                     OpenApiParameter.PATH,
+                                     description="Database ID of deplyment to update.")]),
+    partial_update=extend_schema(summary='Partially update a deployment',
+                                 parameters=[
+                                         OpenApiParameter(
+                                             "id",
+                                             OpenApiTypes.INT,
+                                             OpenApiParameter.PATH,
+                                             description="Database ID of deployment to update.")]),
+    create=extend_schema(summary='Create a deployment'),
+    destroy=extend_schema(summary='Delete a deployment',
+                          parameters=[
+                                  OpenApiParameter(
+                                      "id",
+                                      OpenApiTypes.INT,
+                                      OpenApiParameter.PATH,
+                                      description="Database ID of deployment to delete.")]),
+    project_deployments=extend_schema(summary="Deployments from project",
+                                      description="Get deployments from a specific project.",
+                                      filters=True,
+                                      parameters=[ctdp_parameter,
+                                                  geoJSON_parameter,
+                                                  OpenApiParameter(
+                                                      "project_id",
+                                                      OpenApiTypes.INT,
+                                                      OpenApiParameter.PATH,
+                                                      description="Database ID of project from which to get deployments.")]),
+    device_deployments=extend_schema(summary="Deployments from device",
+                                     description="Get deployments of a specific device.",
+                                     filters=True,
+                                     parameters=[ctdp_parameter,
+                                                 geoJSON_parameter,
+                                                 OpenApiParameter(
+                                                     "device_id",
+                                                     OpenApiTypes.INT,
+                                                     OpenApiParameter.PATH,
+                                                     description="Database ID of device from which to get deployments.")]),
+    metrics=extend_schema(summary="Metrics",
+                          description="Get metrics of specific object."),
+    ids_count=extend_schema(summary="Count selected IDs",
+                            request=inline_id_serializer,
+                            responses=inline_count_serializer),
+    queryset_count=extend_schema(summary="Count filtered deployments",
+                                 filters=True,
+                                 responses=inline_count_serializer)
+
+)
 class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, CheckFormViewSetMixIn, OptionalPaginationViewSetMixIn):
     """
     A viewset for managing Deployment objects with various functionalities such as filtering, pagination, 
@@ -57,8 +144,8 @@ class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, Check
         filterset_class (class): The filter class used for filtering the queryset.
         filter_backends (list): List of filter backends used for filtering the queryset.
     Actions:
-        ids_count (POST): Returns the count of files associated with the given deployment IDs.
-        queryset_count (GET): Returns the count of files in the filtered queryset.
+        ids_count (POST): Returns the count of deployments from a list of IDs.
+        queryset_count (GET): Returns the count of deployments in the filtered queryset.
         start_job (POST): Starts a job with the given name and arguments for the filtered deployments.
         metrics (GET): Retrieves metrics for a specific deployment.
         project_deployments (GET): Retrieves deployments associated with a specific project.
@@ -82,15 +169,43 @@ class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, Check
     filter_backends = viewsets.ModelViewSet.filter_backends + \
         [filters_gis.InBBoxFilter]
 
+    def get_queryset(self):
+        qs = Deployment.objects.all().distinct()
+        if 'ctdp' in self.request.GET.keys():
+            qs = get_ctdp_deployment_qs(qs)
+        return qs
+
+    def get_serializer_class(self):
+        if 'geojson' in self.request.GET.keys():
+            return DeploymentSerializer_GeoJSON
+        elif 'ctdp' in self.request.GET.keys():
+            return DeploymentSerializerCTDP
+        else:
+            return DeploymentSerializer
+
+    def check_attachment(self, serializer):
+        project_objects = serializer.validated_data.get('project')
+        if project_objects is not None:
+            for project_object in project_objects:
+                if (not self.request.user.has_perm('data_models.change_project', project_object)) and\
+                        (project_object.name != settings.GLOBAL_PROJECT_ID):
+                    raise PermissionDenied(
+                        f"You don't have permission to add a deployment to {project_object.project_ID}")
+        device_object = serializer.validated_data.get('device')
+        if device_object is not None:
+            if not self.request.user.has_perm('data_models.change_device', device_object):
+                raise PermissionDenied(
+                    f"You don't have permission to deploy {device_object.device_ID}")
+
     @action(detail=False, methods=['post'])
     def ids_count(self, request, *args, **kwargs):
         queryset = Deployment.objects.filter(pk__in=request.data.get("ids"))
-        return Response(queryset.file_count(), status=status.HTTP_200_OK)
+        return Response({"object_n": queryset.count()}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'])
     def queryset_count(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-        return Response(queryset.file_count(), status=status.HTTP_200_OK)
+        return Response({"object_n": queryset.count()}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'], url_path=r'start_job/(?P<job_name>\w+)')
     def start_job(self, request, job_name, *args, **kwargs):
@@ -110,20 +225,6 @@ class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, Check
 
         return Response({"detail": detail}, status=job_status)
 
-    def get_queryset(self):
-        qs = Deployment.objects.all().distinct()
-        if 'ctdp' in self.request.GET.keys():
-            qs = get_ctdp_deployment_qs(qs)
-        return qs
-
-    def get_serializer_class(self):
-        if 'geojson' in self.request.GET.keys():
-            return DeploymentSerializer_GeoJSON
-        elif 'ctdp' in self.request.GET.keys():
-            return DeploymentSerializerCTDP
-        else:
-            return DeploymentSerializer
-
     @action(detail=True, methods=['get'])
     def metrics(self, request, pk=None):
         deployment = self.get_object()
@@ -135,25 +236,11 @@ class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, Check
         file_metric_dicts = get_all_file_metric_dicts(data_files)
         return Response(file_metric_dicts, status=status.HTTP_200_OK)
 
-    def check_attachment(self, serializer):
-        project_objects = serializer.validated_data.get('project')
-        if project_objects is not None:
-            for project_object in project_objects:
-                if (not self.request.user.has_perm('data_models.change_project', project_object)) and\
-                        (project_object.name != settings.GLOBAL_PROJECT_ID):
-                    raise PermissionDenied(
-                        f"You don't have permission to add a deployment to {project_object.project_ID}")
-        device_object = serializer.validated_data.get('device')
-        if device_object is not None:
-            if not self.request.user.has_perm('data_models.change_device', device_object):
-                raise PermissionDenied(
-                    f"You don't have permission to deploy {device_object.device_ID}")
-
-    @action(detail=False, methods=['get'], url_path=r'project/(?P<project_pk>\w+)', url_name="project_deployments")
-    def project_deployments(self, request, project_pk=None):
-        # Filter deployments based on the project primary key (project_pk)
+    @action(detail=False, methods=['get'], url_path=r'project/(?P<project_id>\w+)', url_name="project_deployments")
+    def project_deployments(self, request, project_id=None):
+        # Filter deployments based on the project primary key (project_id)
         deployment_qs = Deployment.objects.filter(
-            project__pk=project_pk)
+            project__pk=project_id)
         deployment_qs = self.filter_queryset(deployment_qs)
 
         if 'ctdp' in request.GET.keys():
@@ -171,11 +258,11 @@ class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, Check
             deployment_qs, many=True, context={'request': request})
         return Response(deployment_serializer.data, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['get'], url_path=r'device/(?P<device_pk>\w+)', url_name="device_deployments")
-    def device_deployments(self, request, device_pk=None):
-        # Filter deployments based on the device primary key (device_pk)
+    @action(detail=False, methods=['get'], url_path=r'device/(?P<device_id>\w+)', url_name="device_deployments")
+    def device_deployments(self, request, device_id=None):
+        # Filter deployments based on the device primary key (device_id)
         deployment_qs = Deployment.objects.filter(
-            device__pk=device_pk)
+            device__pk=device_id)
 
         deployment_qs = self.filter_queryset(deployment_qs)
 
@@ -196,6 +283,11 @@ class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, Check
         return Response(deployment_serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(summary="Projects",
+               description="Projects to organise collections of deployments and scientific work.",
+               tags=["Projects"],
+               methods=["get", "post", "patch", "delete"],
+               )
 class ProjectViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
     """
     A viewset for managing Project objects with additional functionality for filtering, searching, 
@@ -283,6 +375,11 @@ class ProjectViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
         return Response(file_metric_dicts, status=status.HTTP_200_OK)
 
 
+@extend_schema(summary="Devices",
+               description="Database representation of sensors.",
+               tags=["Devices"],
+               methods=["get", "post", "patch", "delete"],
+               )
 class DeviceViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
     """
     A viewset for managing Device objects with additional functionality for filtering, searching, 
@@ -366,6 +463,11 @@ class DeviceViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
         return Response(file_metric_dicts, status=status.HTTP_200_OK)
 
 
+@extend_schema(summary="Datafiles",
+               description="Files recorded by sensors.",
+               tags=["DataFiles"],
+               methods=["get", "post", "patch", "delete"],
+               )
 class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixIn):
     """
     DataFileViewSet is a Django REST Framework viewset that provides various actions for managing and interacting 
@@ -396,9 +498,9 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
             Handles the creation of new DataFile objects, including file uploads and validation.
         deployment_datafiles(request, deployment_pk=None):
             Custom action to retrieve DataFile objects associated with a specific deployment.
-        project_datafiles(request, project_pk=None):
+        project_datafiles(request, project_id=None):
             Custom action to retrieve DataFile objects associated with a specific project.
-        device_datafiles(request, device_pk=None):
+        device_datafiles(request, device_id=None):
             Custom action to retrieve DataFile objects associated with a specific device.
         user_favourite_datafiles(request):
             Custom action to retrieve DataFile objects favorited by the current user.
@@ -586,11 +688,11 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
             data_file_qs, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['get'], url_path=r'project/(?P<project_pk>\w+)', url_name="project_datafiles")
-    def project_datafiles(self, request, project_pk=None):
-        # Filter data files based on the project primary key (project_pk) through deployments
+    @action(detail=False, methods=['get'], url_path=r'project/(?P<project_id>\w+)', url_name="project_datafiles")
+    def project_datafiles(self, request, project_id=None):
+        # Filter data files based on the project primary key (project_id) through deployments
         data_file_qs = DataFile.objects.filter(
-            deployment__project__pk=project_pk)
+            deployment__project__pk=project_id)
 
         # Apply filters from URL query parameters
         data_file_qs = self.filter_queryset(data_file_qs)
@@ -610,11 +712,11 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
             data_file_qs, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['get'], url_path=r'device/(?P<device_pk>\w+)', url_name="device_datafiles")
-    def device_datafiles(self, request, device_pk=None):
-        # Filter data files based on the device primary key (device_pk) through deployments
+    @action(detail=False, methods=['get'], url_path=r'device/(?P<device_id>\w+)', url_name="device_datafiles")
+    def device_datafiles(self, request, device_id=None):
+        # Filter data files based on the device primary key (device_id) through deployments
         data_file_qs = DataFile.objects.filter(
-            deployment__device__pk=device_pk)
+            deployment__device__pk=device_id)
 
         # Apply filters from URL query parameters
         data_file_qs = self.filter_queryset(data_file_qs)
@@ -692,6 +794,11 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@extend_schema(summary="Site",
+               description="Locations where devices are deployed.",
+               tags=["Sites"],
+               methods=["get", "post", "patch", "delete"],
+               )
 class SiteViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSetMixIn):
     """
     SiteViewSet is a Django REST Framework viewset that provides read-only access to Site objects.
@@ -709,6 +816,11 @@ class SiteViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSetMixIn)
         return super().list(request)
 
 
+@extend_schema(summary="Data type",
+               description="Type of devices or of datafiles.",
+               tags=["Data type"],
+               methods=["get", "post", "patch", "delete"],
+               )
 class DataTypeViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSetMixIn):
     """
     DataTypeViewSet is a Django REST Framework viewset that provides read-only access to DataType objects.
@@ -728,6 +840,11 @@ class DataTypeViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSetMi
         return super().list(request)
 
 
+@extend_schema(summary="Device Model",
+               description="Models of sensors, which determine how data is handled.",
+               tags=["Device models"],
+               methods=["get", "post", "patch", "delete"],
+               )
 class DeviceModelViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSetMixIn):
     """
     DeviceModelViewSet is a Django REST Framework viewset that provides read-only access to Device
@@ -746,6 +863,11 @@ class DeviceModelViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSe
         return super().list(request)
 
 
+@extend_schema(summary="Jobs",
+               description="Generic jobs that can be run on objects.",
+               tags=["Jobs"],
+               methods=["get"],
+               )
 class GenericJobViewSet(viewsets.ViewSet):
     """
     GenericJobViewSet is a Django REST Framework viewset that provides read-only access to generic jobs.
