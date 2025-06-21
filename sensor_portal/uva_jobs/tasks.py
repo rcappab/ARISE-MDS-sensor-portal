@@ -1,3 +1,4 @@
+import logging
 import os
 from glob import glob
 
@@ -9,48 +10,56 @@ from django.db.models import F, Q, Value
 from django.db.models.functions import Concat
 from observation_editor.models import Observation
 from user_management.models import User
+from utils.general import try_remove_file_clean_dirs
 
 from sensor_portal.celery import app
+
+logger = logging.getLogger(__name__)
 
 
 @app.task()
 def check_paths(root_folder):
-    print(f"Starting file walk in {root_folder}")
+
+    if not os.path.exists(root_folder):
+        logger.error(f"{root_folder} not found")
+        return
+
+    logger.info(f"Starting file walk in {root_folder}")
     for dirpath, _, filenames in os.walk(root_folder):
-        print(dirpath)
+        logger.info(dirpath)
         for filename in filenames:
-            print(f"Found file: {filename}")
+            logger.info(f"Found file: {filename}")
             try:
                 data_file = DataFile.objects.get(
-                    file_name=os.path.splitext(filename)[0])
-                print(f"Matched DataFile: {data_file}")
-                if not data_file.local_storage:
-                    data_file.local_storage = False
-                    data_file.save()
+                    local_storage=True, file_name=os.path.splitext(filename)[0])
 
+                logger.info(
+                    f"Matched DataFile {data_file.file_name} - {filename}")
             except DataFile.DoesNotExist:
-                print(f"No matching DataFile found for: {filename}")
-                os.remove(os.path.join(dirpath, filename))
-                os.removedirs(dirpath)
+                logger.error(
+                    f"No matching local DataFile found for: {filename}")
+                try_remove_file_clean_dirs(os.path.join(dirpath, filename))
+            except Exception:
+                pass
 
 
 @app.task()
 def check_file_path(file_pks):
-    print("Starting fix_file_storage task...")
+    logger.info("Starting fix_file_storage task...")
     file_objs = DataFile.objects.filter(local_storage=True, pk__in=file_pks)
 
     batch_size = 2000
     total_obs = file_objs.count()
-    print(f"Total files to process: {total_obs}")
+    logger.info(f"Total files to process: {total_obs}")
     for start in range(0, total_obs, batch_size):
-        print(
+        logger.info(
             f"Processing batch {start // batch_size + 1} of {((total_obs - 1) // batch_size) + 1}")
         objs_to_update = []
         batch = file_objs[start:start + batch_size]
         for file_obj in batch.iterator():
             file_exists = os.path.exists(file_obj.full_path())
             if not file_exists:
-                print(f"Updating file ID {file_obj.id}")
+                logger.info(f"Updating file ID {file_obj.id}")
                 # Use glob to recursively search for the file
                 search_path = os.path.join(
                     settings.FILE_STORAGE_ROOT, '**', (file_obj.file_name+file_obj.file_format))
@@ -68,39 +77,39 @@ def check_file_path(file_pks):
                     file_obj.set_file_url()
                     objs_to_update.append(file_obj)
 
-        print("Update objects")
+        logger.info("Update objects")
         DataFile.objects.bulk_update(
             objs_to_update, ["local_path", "path", "file_url", "local_storage"], 500)
 
-    print("Completed fix_file_storage task.")
+    logger.info("Completed fix_file_storage task.")
 
 
 @app.task()
 def fix_file_storage():
-    print("Starting fix_file_storage task...")
+    logger.info("Starting fix_file_storage task...")
     file_objs = DataFile.objects.filter(local_storage=True).exclude(
         local_path=settings.FILE_STORAGE_ROOT)
 
     batch_size = 2000
     total_obs = file_objs.count()
-    print(f"Total files to process: {total_obs}")
+    logger.info(f"Total files to process: {total_obs}")
     for start in range(0, total_obs, batch_size):
-        print(
+        logger.info(
             f"Processing batch {start // batch_size + 1} of {((total_obs - 1) // batch_size) + 1}")
         objs_to_update = []
         batch = file_objs[start:start + batch_size]
         for file_obj in batch.iterator():
-            print(f"Updating file ID {file_obj.id}")
+            logger.info(f"Updating file ID {file_obj.id}")
             first_part = file_obj.local_path.replace('/media/exportdir/', '')
             file_obj.local_path = settings.FILE_STORAGE_ROOT
             file_obj.path = os.path.join(first_part, file_obj.path)
             file_obj.set_file_url()
             objs_to_update.append(file_obj)
-        print("Update objects")
+        logger.info("Update objects")
         DataFile.objects.bulk_update(
             objs_to_update, ["local_path", "path", "file_url"], 500)
 
-    print("Completed fix_file_storage task.")
+    logger.info("Completed fix_file_storage task.")
 
 
 @app.task()
@@ -138,7 +147,7 @@ def fix_obs():
     batch_size = 2000
     total_obs = obs_to_modify.count()
     for start in range(0, total_obs, batch_size):
-        print(
+        logger.info(
             f"Processing batch {start // batch_size + 1} of {((total_obs - 1) // batch_size) + 1}")
 
         objs_to_update = []
@@ -153,20 +162,22 @@ def fix_obs():
                 (confidence := extra_data.get("Confidence")) is not None or \
                 (confidence := extra_data.get("accuracy")) is not None or \
                     (confidence := extra_data.get("probability")) is not None:
-                print(f"Updating confidence for observation ID {obs.id}")
+                logger.info(f"Updating confidence for observation ID {obs.id}")
                 obs.confidence = confidence
                 [extra_data.pop(x) for x in [y for y in [
                     "probability", "confidence", "Confidence", "accuracy"] if y in extra_data.keys()]]
                 change = True
 
             if (bbox := extra_data.get("bbox")) is not None:
-                print(f"Updating bounding box for observation ID {obs.id}")
+                logger.info(
+                    f"Updating bounding box for observation ID {obs.id}")
                 obs.bounding_box = bbox
                 extra_data.pop("bbox")
                 change = True
 
             if (validation := extra_data.get("confirmationOf")) is not None:
-                print(f"Updating validation_of for observation ID {obs.id}")
+                logger.info(
+                    f"Updating validation_of for observation ID {obs.id}")
                 try:
                     other_obs = Observation.objects.all().get(pk=validation)
                     new_validation = validation_through_table(
@@ -176,11 +187,11 @@ def fix_obs():
                     change = True
                     new_through = True
                 except Exception as e:
-                    print(e)
+                    logger.info(e)
                     pass
 
             if (annotated_by := extra_data.get("classifiedBy")) is not None:
-                print(f"Updating owner for observation ID {obs.id}")
+                logger.info(f"Updating owner for observation ID {obs.id}")
                 try:
                     user_matches = users.filter(full_name=annotated_by)
                     if user_matches.exists():
@@ -188,7 +199,7 @@ def fix_obs():
                         extra_data.pop("classifiedBy")
                         change = True
                 except Exception as e:
-                    print(e)
+                    logger.info(e)
                     pass
 
             if change:
