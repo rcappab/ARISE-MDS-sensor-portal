@@ -8,10 +8,9 @@ from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.utils import timezone as djtimezone
 from encrypted_model_fields.fields import EncryptedCharField
+from utils.general import try_remove_file_clean_dirs
 from utils.models import BaseModel
 from utils.ssh_client import SSH_client
-
-from sensor_portal.utils.general import try_remove_file_clean_dirs
 
 logger = logging.getLogger(__name__)
 
