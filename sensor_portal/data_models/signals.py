@@ -19,7 +19,7 @@ def post_save_deploy(sender, instance: Deployment, created, **kwargs):
     global_project, added = Project.objects.get_or_create(
         project_ID=settings.GLOBAL_PROJECT_ID)
 
-    if global_project.pk not in instance.project.all().values_list('pk', flat=True):
+    if global_project not in instance.project.all():
         instance.project.add(global_project)
 
 
