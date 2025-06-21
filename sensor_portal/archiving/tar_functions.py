@@ -9,7 +9,7 @@ from data_models.metadata_functions import metadata_json_from_files
 from data_models.models import DataFile
 from django.conf import settings
 from django.db.models import QuerySet
-from utils.general import call_with_output
+from utils.general import call_with_output, try_remove_file_clean_dirs
 from utils.ssh_client import SSH_client
 
 from .bagit_functions import bag_info_from_files
@@ -128,8 +128,7 @@ def create_tar_file(file_objs, name_suffix=0):
     success, output = call_with_output(tar_command, settings.FILE_STORAGE_ROOT)
 
     # regardless of status, we remove the metadata files
-    [os.remove(x) for x in all_metadata_paths]
-    os.removedirs(metadata_dir_path)
+    [try_remove_file_clean_dirs(x) for x in all_metadata_paths]
 
     if not success:
         logger.info(f"{tar_name}: Error creating TAR")
