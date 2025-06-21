@@ -8,6 +8,7 @@ from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.utils import timezone as djtimezone
 from encrypted_model_fields.fields import EncryptedCharField
+from utils.general import try_remove_file_clean_dirs
 from utils.models import BaseModel
 from utils.ssh_client import SSH_client
 
@@ -57,31 +58,43 @@ class TarFile(BaseModel):
     def __str__(self):
         return self.name
 
-    def clean_tar(self, delete_obj=False) -> bool:
-
+    def clean_tar(self, delete_obj: bool = False, force_delete=False) -> bool:
+        logger.info(
+            f"Clean TAR file {self.name} - Delete object: {delete_obj}")
         if self.local_storage:
             tar_name = self.name
             if ".tar.gz" not in tar_name:
                 tar_name = tar_name+".tar.gz"
-            try:
-                os.remove(os.path.join(
-                    settings.FILE_STORAGE_ROOT, self.path, tar_name))
-                os.removedirs(os.path.join(
-                    settings.FILE_STORAGE_ROOT, self.path))
-            except OSError as e:
-                logger.info(repr(e))
+            tar_path = os.path.join(
+                settings.FILE_STORAGE_ROOT, self.path, tar_name)
+            logger.info(
+                f"Clean TAR file {self.name} - try to delete local TAR")
+
+            success = try_remove_file_clean_dirs(tar_path)
+
+            if not success and not force_delete:
+                logger.error(
+                    f"Clean TAR file {self.name} - failed - could not delete local TAR")
                 return False
+            elif success:
+                logger.info(
+                    f"Clean TAR file {self.name} - try to delete local TAR - success")
 
             if not delete_obj:
+                logger.info(
+                    f"Clean TAR file {self.name} - Alter database object")
                 self.local_storage = False
                 self.save()
-        elif not self.local_storage and delete_obj:
+
+            return True
+
+        elif not self.local_storage and delete_obj and force_delete:
             if not all(self.files.values_list("local_storage", flat=True)):
-                logger.info(f"{self.name}: Some files contained in this TAR are no longer stored locally.\
+                logger.error(f"{self.name}: Some files contained in this TAR are no longer stored locally.\
                               The remote TAR cannot be deleted.")
                 return False
                 # deletes the attached file form data storage
-            self.files.update(archived=False)
+            self.files.all().update(archived=False)
             ssh_client = self.archive.init_ssh_client()
             ssh_connect_success = ssh_client.connect_to_ssh()
             if not ssh_connect_success:
@@ -97,12 +110,15 @@ class TarFile(BaseModel):
                 logger.info(
                     f"{self.name}: Cannot remove remote TAR. {stdout}")
                 return False
+
             else:
 
                 logger.info(f"{self.name}: Remote TAR removed.")
                 status_code, stdout, stderr = ssh_client.send_ssh_command(
                     f"find {self.path} -type d -empty -delete")
                 return True
+        else:
+            return False
 
 
 @receiver(pre_delete, sender=TarFile)

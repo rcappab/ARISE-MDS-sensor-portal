@@ -20,13 +20,15 @@ class User(AbstractUser):
             'Unselect this instead of deleting accounts.'
         ),
     )
-    organisation = models.CharField(max_length=100, blank=True)
-    bio = models.CharField(max_length=200, blank=True)
+    organisation = models.CharField(
+        max_length=100, blank=True, help_text="User organisation.")
+    bio = models.CharField(max_length=200, blank=True,
+                           help_text="User self description.")
 
 
 class DeviceUser(User):
     device = models.OneToOneField(
-        Device, related_name="device_user", on_delete=models.CASCADE, null=True)
+        Device, related_name="device_user", on_delete=models.CASCADE, null=True, help_text="Device linked to this device user.")
     organisation = None
     bio = None
 

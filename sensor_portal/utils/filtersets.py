@@ -31,13 +31,17 @@ class GenericFilterMixIn(django_filters.FilterSet):
         filter = super(GenericFilterMixIn, cls).filter_for_field(
             f, name, lookup_expr)
 
-        if f.help_text == "":
-            f.help_text = cls.field_help_dict.get(name, "")
+        help_text = f.help_text
+
+        if help_text == "":
+
+            help_text = cls.field_help_dict.get(
+                name, name.replace("__", " ").replace('_', ' ')+".")
 
         new_help_text = cls.lookup_expr_dict.get(
             lookup_expr, lookup_expr.replace("__", " ").replace('_', ' '))
 
-        filter.extra['help_text'] = f.help_text+". " + new_help_text
+        filter.extra['help_text'] = help_text + " " + new_help_text
 
         return filter
 

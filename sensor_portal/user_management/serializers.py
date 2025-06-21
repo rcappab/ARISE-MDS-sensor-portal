@@ -57,51 +57,38 @@ class UserSerializer(serializers.ModelSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
 
     owned_projects = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field='project_ID')
+        many=True, read_only=True, slug_field='project_ID', help_text="Project ID of projects owned by the user.")
     owned_projects_ID = serializers.PrimaryKeyRelatedField(
-        many=True, read_only=True, source='owned_projects')
+        many=True, read_only=True, source='owned_projects', help_text="Database ID of projects owned by the user.")
     managed_projects = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field='project_ID')
+        many=True, read_only=True, slug_field='project_ID', help_text="Project ID of projects managed by the user.")
     managed_projects_ID = serializers.PrimaryKeyRelatedField(
-        many=True, read_only=True, source='managed_projects')
+        many=True, read_only=True, source='managed_projects', help_text="Database ID of projects managed by the user.")
     annotatable_projects = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field='project_ID')
+        many=True, read_only=True, slug_field='project_ID', help_text="Project ID of projects annotatable by the user.")
     annotatable_projects_ID = serializers.PrimaryKeyRelatedField(
-        many=True, read_only=True, source='annotatable_projects')
+        many=True, read_only=True, source='annotatable_projects', help_text="Database ID of projects annotatable by the user.")
     viewable_projects = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field='project_ID')
+        many=True, read_only=True, slug_field='project_ID', help_text="Project ID of projects viewable by the user.")
     viewable_projects_ID = serializers.PrimaryKeyRelatedField(
-        many=True, read_only=True, source='viewable_projects')
+        many=True, read_only=True, source='viewable_projects', help_text="Database ID of projects viewable by the user.")
 
     owned_devices = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field='device_ID')
+        many=True, read_only=True, slug_field='device_ID', help_text="Device ID of devices owned by the user.")
     owned_devices_ID = serializers.PrimaryKeyRelatedField(
-        many=True, read_only=True, source='owned_devices')
+        many=True, read_only=True, source='owned_devices', help_text="Database ID of devices owned by the user.")
     managed_devices = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field='device_ID')
+        many=True, read_only=True, slug_field='device_ID', help_text="Device ID of devices managed by the user.")
     managed_devices_ID = serializers.PrimaryKeyRelatedField(
-        many=True, read_only=True, source='managed_devices')
+        many=True, read_only=True, source='managed_devices', help_text="Database ID of devices managed by the user.")
     annotatable_devices = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field='device_ID')
+        many=True, read_only=True, slug_field='device_ID', help_text="Device ID of devices annotatable by the user.")
     annotatable_devices_ID = serializers.PrimaryKeyRelatedField(
-        many=True, read_only=True, source='annotatable_devices')
+        many=True, read_only=True, source='annotatable_devices', help_text="Database ID of devices annotatable by the user.")
     viewable_devices = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field='device_ID')
+        many=True, read_only=True, slug_field='device_ID', help_text="Device ID of devices viewable by the user.")
     viewable_devices_ID = serializers.PrimaryKeyRelatedField(
-        many=True, read_only=True, source='viewable_devices')
-
-    owned_deployments = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field='deployment_device_ID')
-    owned_deployments_ID = serializers.PrimaryKeyRelatedField(
-        many=True, read_only=True, source='owned_deployments')
-    annotatable_deployments = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field='deployment_device_ID')
-    annotatable_deployments_ID = serializers.PrimaryKeyRelatedField(
-        many=True, read_only=True, source='annotatable_deployments')
-    viewable_deployments = serializers.SlugRelatedField(
-        many=True, read_only=True, slug_field='deployment_device_ID')
-    viewable_deployments_ID = serializers.PrimaryKeyRelatedField(
-        many=True, read_only=True, source='viewable_deployments')
+        many=True, read_only=True, source='viewable_devices', help_text="Database ID of devices viewable by the user.")
 
     class Meta:
         model = User
@@ -116,9 +103,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
                   'managed_devices', 'managed_devices_ID',
                   'annotatable_devices', 'annotatable_devices_ID',
                   'viewable_devices', 'viewable_devices_ID',
-                  'owned_deployments', 'owned_deployments_ID',
-                  'annotatable_deployments', 'annotatable_deployments_ID',
-                  'viewable_deployments', 'viewable_deployments_ID'
                   )
 
 
