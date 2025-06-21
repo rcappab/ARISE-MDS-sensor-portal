@@ -41,8 +41,9 @@ def post_save_file(sender, instance: DataFile, created, **kwargs):
     """
     Post save signal for DataFile model to update the deployment's thumbnail URL.
     """
-    instance.deployment.set_thumb_url()
-    instance.deployment.save()
+    if instance.deployment.thumb_url is not None and instance.deployment.thumb_url != "":
+        instance.deployment.set_thumb_url()
+        instance.deployment.save()
 
 
 @receiver(pre_delete, sender=DataFile)
@@ -63,5 +64,6 @@ def post_remove_file(sender, instance: DataFile, **kwargs):
     """
     Post delete signal for DataFile model to update the deployment's thumbnail URL after a file is deleted.
     """
-    instance.deployment.set_thumb_url()
-    instance.deployment.save()
+    if instance.deployment.thumb_url is not None and instance.deployment.thumb_url != "":
+        instance.deployment.set_thumb_url()
+        instance.deployment.save()
