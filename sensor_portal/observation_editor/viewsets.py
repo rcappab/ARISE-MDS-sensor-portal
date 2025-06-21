@@ -35,7 +35,7 @@ obs_extra_parameters = [OpenApiParameter("target_taxon_level",
 @extend_schema(summary="Observations",
                description="Observations are annotations of datafiles, made by human or AI.",
                tags=["Observations"],
-               methods=["get", "post", "patch", "delete"],
+               methods=["get", "post", "put", "patch", "delete"],
                responses=DummyObservationSerializer,
                request=DummyObservationSerializer,
                )
@@ -50,13 +50,20 @@ obs_extra_parameters = [OpenApiParameter("target_taxon_level",
                                    OpenApiTypes.INT,
                                    OpenApiParameter.PATH,
                                    description="Database ID of observation to get.")]),
-    partial_update=extend_schema(summary='Update an observation',
+    partial_update=extend_schema(summary='Partially update an observation',
                                  parameters=[
                                      OpenApiParameter(
                                          "id",
                                          OpenApiTypes.INT,
                                          OpenApiParameter.PATH,
                                          description="Database ID of observation to update.")]),
+    update=extend_schema(summary='Update an observation',
+                         parameters=[
+                             OpenApiParameter(
+                                 "id",
+                                 OpenApiTypes.INT,
+                                 OpenApiParameter.PATH,
+                                 description="Database ID of observation to update.")]),
     create=extend_schema(summary='Create an observation'),
     destroy=extend_schema(summary='Delete an observation',
                           parameters=[

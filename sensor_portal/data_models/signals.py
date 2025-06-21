@@ -54,7 +54,8 @@ def pre_remove_file(sender, instance: DataFile, **kwargs):
     # deletes the attached file from data storage
     success = instance.clean_file(True)
     if not success:
-        raise (Exception(f'Unable to delete file {instance.file_name}'))
+        raise (
+            Exception(f'Unable to delete datafile object {instance.file_name}'))
 
 
 @receiver(post_delete, sender=DataFile)

@@ -5,6 +5,7 @@ from django.conf import settings
 from django.db import models
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
+from utils.general import try_remove_file_clean_dirs
 from utils.models import BaseModel
 
 from .create_zip_functions import create_zip
@@ -68,13 +69,16 @@ class DataPackage(BaseModel):
 
     def clean_data_package(self):
         if self.status == 3:
-            try:
-                package_path = os.path.join(
-                    settings.FILE_STORAGE_ROOT, settings.PACKAGE_PATH)
-                os.remove(os.path.join(package_path, self.name+"zip"))
-                os.removedirs(package_path)
-            except OSError:
-                pass
+            package_path = os.path.join(
+                settings.FILE_STORAGE_ROOT, settings.PACKAGE_PATH)
+
+            try_remove_file_clean_dirs(
+                os.path.join(package_path, self.name+"zip"))
+            return True
+        elif self.status == 4:
+            return True
+        else:
+            return False
 
 
 @receiver(pre_delete, sender=DataPackage)

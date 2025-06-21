@@ -34,7 +34,7 @@ class Fix2(OpenApiViewExtension):
 
 
 class Fix3(OpenApiViewExtension):
-    target_class = 'django_rest_passwordreset.views.reset_password_request_token'
+    target_class = 'django_rest_passwordreset.views.reset_password_validate_token'
 
     def view_replacement(self):
 
