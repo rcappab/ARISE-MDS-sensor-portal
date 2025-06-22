@@ -62,11 +62,11 @@ def clean_all_files():
             f"Found {files_to_clean.count()} files to clean for project: {project.name}.")
         for file in files_to_clean:
             try:
-                logger.info(f"Cleaning file: {file.name} (ID: {file.pk})")
+                logger.info(f"Cleaning file: {file.file_name} (ID: {file.pk})")
                 file.clean_file()
             except Exception as e:
                 logger.info(
-                    f"Error cleaning file {file.name} (ID: {file.pk}): {e}")
+                    f"Error cleaning file {file.file_name} (ID: {file.pk}): {e}")
 
 
 @app.task()
