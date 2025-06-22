@@ -28,6 +28,10 @@ def check_paths(root_folder):
     for dirpath, _, filenames in os.walk(root_folder):
         logger.info(dirpath)
         for filename in filenames:
+            filename = filename.replace("_THUMB", "")
+            filename = filename.replace("_ANIM", "")
+            filename = filename.replace("_CONCAT", "")
+
             logger.info(f"Found file: {filename}")
             try:
                 data_file = DataFile.objects.get(
