@@ -187,12 +187,15 @@ class DataStorageInput(BaseModel):
 
             files = []
             for filename in device_file_names:
-                with ssh_client.ftp_sftp.open(join(device.username, filename), bufsize=32768) as f:
-                    f.set_pipelined
-                    f.prefetch()
-                    f_bytes = io.BytesIO(f.read())
-                    file_object = File(f_bytes, name=filename)
-                    files.append(file_object)
+                try:
+                    with ssh_client.ftp_sftp.open(join(device.username, filename), bufsize=32768) as f:
+                        f.set_pipelined
+                        f.prefetch()
+                        f_bytes = io.BytesIO(f.read())
+                        file_object = File(f_bytes, name=filename)
+                        files.append(file_object)
+                except Exception as e:
+                    logger.error(e)
 
             # import files
             downloaded_files, invalid_files, existing_files, status = create_file_objects(
