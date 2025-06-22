@@ -1014,11 +1014,18 @@ class DataFile(BaseModel):
         Returns:
             bool: True if the file was successfully cleaned, False otherwise.
         """
-        logger.info(f"Clean {self.file_name} - Delete object: {delete_obj}")
+        logger.info(
+            f"Clean {self.file_name} - Delete object: {delete_obj} - Force delete:{force_delete}")
 
-        if (self.archived or self.do_not_remove or
+        if (delete_obj and self.archived) and not force_delete:
+            logger.info(
+                f"Clean {self.file_name} - Full delete failed - Archived file")
+
+            return False
+
+        if (self.do_not_remove or
             self.deployment_last_image.exists() or
-                self.favourite_of.exists()) and not delete_obj:
+                self.favourite_of.exists()) and (not delete_obj or force_delete):
             logger.info(f"Clean {self.file_name} - Failed - Protected file")
 
             return False
@@ -1035,15 +1042,16 @@ class DataFile(BaseModel):
                     f"Clean {self.file_name} - Try to remove file - success")
 
             logger.info(f"Clean {self.file_name} - Try to remove thumbnail")
-            thumb_path = self.thumb_path()
-            if thumb_path is not None and thumb_path != "":
+
+            if self.thumb_url is not None and self.thumb_url != "":
+                thumb_path = self.thumb_path()
                 success = try_remove_file_clean_dirs(thumb_path)
-            if success:
-                logger.info(
-                    f"Clean {self.file_name} - Try to remove thumbnail - success")
-            else:
-                logger.info(
-                    f"Clean {self.file_name} - Try to remove thumbnail - failed")
+                if success:
+                    logger.info(
+                        f"Clean {self.file_name} - Try to remove thumbnail - success")
+                else:
+                    logger.info(
+                        f"Clean {self.file_name} - Try to remove thumbnail - failed")
 
             for key, value in self.linked_files.items():
                 extra_version_path = value["path"]
