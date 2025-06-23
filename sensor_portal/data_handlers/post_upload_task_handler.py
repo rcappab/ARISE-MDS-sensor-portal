@@ -44,8 +44,8 @@ Args:
 
         except Exception as e:
             # One file failing shouldn't lead to the whole job failing
-            logger.info(repr(e))
-            logger.info(traceback.format_exc())
+            logger.error(repr(e))
+            logger.error(traceback.format_exc())
 
         data_file.do_not_remove = file_do_not_remove
         updated_data_objs.append(data_file)
