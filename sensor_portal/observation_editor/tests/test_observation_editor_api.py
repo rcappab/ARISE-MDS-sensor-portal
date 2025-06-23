@@ -15,6 +15,7 @@ def test_create_obs(api_client_with_credentials):
     user = api_client_with_credentials.handler._force_user
     new_data_file = DataFileFactory()
     new_data_file.deployment.owner = user
+    new_data_file.deployment.save()
     new_data_file.save()
     check_key = 'species_name'
     payload = {"data_files": [new_data_file.pk],

@@ -3,12 +3,15 @@ from bridgekeeper.rules import (is_active, is_authenticated, is_staff,
                                 is_superuser)
 from utils.rules import IsOwner
 
-from .rules import (CanAnnotateDeviceContainingDataFile,
+from .rules import (CanAnnotateDataFileDeployment,
+                    CanAnnotateDeviceContainingDataFile,
                     CanAnnotateProjectContainingDataFile,
-                    CanManageDeployedDevice, CanManageDeviceContainingDataFile,
+                    CanManageDataFileDeployment, CanManageDeployedDevice,
+                    CanManageDeviceContainingDataFile,
                     CanManageProjectContainingDataFile,
                     CanManageProjectContainingDeployment,
-                    CanViewDeployedDevice, CanViewDeviceContainingDataFile,
+                    CanViewDataFileDeployment, CanViewDeployedDevice,
+                    CanViewDeviceContainingDataFile,
                     CanViewProjectContainingDataFile,
                     CanViewProjectContainingDeployment,
                     CanViewProjectContainingDevice, DataFileHasNoHuman,
@@ -20,19 +23,15 @@ perms['data_models.add_project'] = is_authenticated & is_active
 
 # Permissions for changing a project: User must be authenticated, active, and either a superuser, project owner, or manager
 perms['data_models.change_project'] = is_authenticated & (is_superuser
-                                                          | IsOwner()
                                                           | IsManager()) & is_active
 
 # Permissions for deleting a project: User must be authenticated, active, and either a staff member or project owner
 perms['data_models.delete_project'] = is_authenticated & (
-    is_staff | IsOwner()) & is_active
+    is_superuser | IsOwner()) & is_active
 
 # Permissions for viewing a project: User must be authenticated, active, and either a superuser, project owner, manager, annotator, or viewer
 perms['data_models.view_project'] = is_authenticated & (is_superuser
-                                                        | IsOwner()
-                                                        | IsManager()  # project owner OR project manager
-                                                        | IsAnnotator()
-                                                        | IsViewer()  # OR in project group
+                                                        | IsViewer()
                                                         ) & is_active
 
 # DEVICE
@@ -41,7 +40,6 @@ perms['data_models.add_device'] = is_authenticated & is_active
 
 # Permissions for changing a device: User must be authenticated, active, and either a superuser, device owner, or manager
 perms['data_models.change_device'] = is_authenticated & (is_superuser
-                                                         | IsOwner()
                                                          | IsManager()) & is_active
 
 # Permissions for deleting a device: User must be authenticated, active, and either a superuser or device owner
@@ -50,9 +48,6 @@ perms['data_models.delete_device'] = is_authenticated & (is_superuser
 
 # Permissions for viewing a device: User must be authenticated, active, and either a superuser, device owner, manager, annotator, viewer, or have access to the project containing the device
 perms['data_models.view_device'] = is_authenticated & (is_superuser
-                                                       | IsOwner()
-                                                       | IsManager()
-                                                       | IsAnnotator()
                                                        | IsViewer()
                                                        | CanViewProjectContainingDevice()
                                                        ) & is_active
@@ -63,25 +58,17 @@ perms['data_models.add_deployment'] = is_authenticated & is_active
 
 # Permissions for changing a deployment: User must be authenticated, active, and either a superuser, deployment owner, or have management permissions for the deployed device or project containing the deployment
 perms['data_models.change_deployment'] = is_authenticated & (is_superuser
-                                                             | IsOwner()
-                                                             | CanManageDeployedDevice()
-                                                             | CanManageProjectContainingDeployment()
+                                                             | IsManager()
                                                              ) & is_active
 
 # Permissions for deleting a deployment: User must be authenticated, active, and either a superuser, deployment owner, or have management permissions for the project or deployed device
 perms['data_models.delete_deployment'] = is_authenticated & (is_superuser
-                                                             | IsOwner()
-                                                             | CanManageProjectContainingDeployment()
-                                                             | CanManageDeployedDevice()
+                                                             | IsManager()
                                                              ) & is_active
 
 # Permissions for viewing a deployment: User must be authenticated, active, and either a superuser, deployment owner, or have view or management permissions for the project or deployed device
 perms['data_models.view_deployment'] = is_authenticated & (is_superuser
-                                                           | IsOwner()
-                                                           | CanManageProjectContainingDeployment()
-                                                           | CanViewProjectContainingDeployment()
-                                                           | CanManageDeployedDevice()
-                                                           | CanViewDeployedDevice()
+                                                           | IsViewer()
                                                            ) & is_active
 
 # DATAFILES
@@ -90,30 +77,21 @@ perms['data_models.add_datafile'] = is_authenticated & is_active
 
 # Permissions for changing a datafile: User must be authenticated, active, and either a superuser or have management permissions for the project or device containing the datafile
 perms['data_models.change_datafile'] = is_authenticated & (is_superuser
-                                                           | CanManageProjectContainingDataFile()
-                                                           | CanManageDeviceContainingDataFile()) & is_active
+                                                           | CanManageDataFileDeployment()) & is_active
 
 # Permissions for deleting a datafile: User must be authenticated, active, and either a superuser or have management permissions for the project or device containing the datafile
 perms['data_models.delete_datafile'] = is_authenticated & (is_superuser
-                                                           | CanManageProjectContainingDataFile()
-                                                           | CanManageDeviceContainingDataFile()) & is_active
+                                                           | CanManageDataFileDeployment()) & is_active
 
 # Permissions for viewing a datafile: User must be authenticated, active, and either a superuser, have management permissions, or specific annotation/view permissions for the project or device containing the datafile
-perms['data_models.view_datafile'] = is_authenticated & (is_superuser |
-                                                         ((CanManageProjectContainingDataFile()
-                                                           | CanManageDeviceContainingDataFile())
-                                                          | (CanAnnotateProjectContainingDataFile()
-                                                              | CanViewProjectContainingDataFile()
-                                                              | CanAnnotateDeviceContainingDataFile()
-                                                              | CanViewDeviceContainingDataFile()
-                                                             ) & DataFileHasNoHuman())) & is_active
+perms['data_models.view_datafile'] = is_authenticated & \
+    (is_superuser
+     | CanManageDataFileDeployment()
+     | (CanViewDataFileDeployment() & DataFileHasNoHuman())) & is_active
 
 # Permissions for annotating a datafile: User must be authenticated, active, and either a superuser or have annotation/management permissions for the project or device containing the datafile
 perms['data_models.annotate_datafile'] = is_authenticated & (is_superuser
-                                                             | CanManageProjectContainingDataFile()
-                                                             | CanAnnotateProjectContainingDataFile()
-                                                             | CanManageDeviceContainingDataFile()
-                                                             | CanAnnotateDeviceContainingDataFile()
+                                                             | CanAnnotateDataFileDeployment()
                                                              ) & is_active
 
 # SITE
