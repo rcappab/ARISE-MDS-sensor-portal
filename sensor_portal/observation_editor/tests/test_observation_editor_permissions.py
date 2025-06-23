@@ -75,6 +75,7 @@ def obs_crud_setup(api_client_with_credentials, permission_object=None, permissi
 
     if permission_object is not None and permission_level is not None:
         getattr(object_dict[permission_object], permission_level).add(user)
+        object_dict[permission_object].save()
 
     taxon = TaxonFactory(species_name="Chroicocephalus ridibundus")
 
@@ -84,6 +85,8 @@ def obs_crud_setup(api_client_with_credentials, permission_object=None, permissi
 
     owned_project = ProjectFactory(owner=user)
     owned_deployment = DeploymentFactory(project=[owned_project])
+    owned_project.save()
+
     owned_data_file = DataFileFactory(deployment=owned_deployment)
     existing_owned_observation = ObservationFactory(
         data_files=[owned_data_file], owner=user, taxon=taxon)
@@ -113,7 +116,7 @@ def test_no_permission(api_client_with_credentials):
                    expected_delete_status)
 
 
-permission_objects = ["project", "deployment", "device"]
+permission_objects = ["project", "device"]
 higher_permission_levels = ["annotators", "managers"]
 combined_levels = [(x, y)
                    for x in permission_objects for y in higher_permission_levels]

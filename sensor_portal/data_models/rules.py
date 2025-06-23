@@ -351,6 +351,45 @@ class CanViewDeployedDevice(R):
         return final_query(accumulated_q)
 
 
+class CanManageDataFileDeployment(R):
+    def check(self, user, instance=None):
+
+        return user in instance.deployment.managers.all()
+
+    def query(self, user):
+        # can view/manage/own a deployment within project
+        # view
+        accumulated_q = Q(deployment__managers=user)
+
+        return final_query(accumulated_q)
+
+
+class CanAnnotateDataFileDeployment(R):
+    def check(self, user, instance=None):
+        print(instance.deployment.annotators.all())
+        return user in instance.deployment.annotators.all()
+
+    def query(self, user):
+        # can view/manage/own a deployment within project
+        # view
+        accumulated_q = Q(deployment__annotators=user)
+
+        return final_query(accumulated_q)
+
+
+class CanViewDataFileDeployment(R):
+    def check(self, user, instance=None):
+
+        return user in instance.deployment.viewers.all()
+
+    def query(self, user):
+        # can view/manage/own a deployment within project
+        # view
+        accumulated_q = Q(deployment__viewers=user)
+
+        return final_query(accumulated_q)
+
+
 class CanManageProjectContainingDataFile(R):
     """
     Rule class to determine if a user can manage a project containing a specific data file.

@@ -19,7 +19,7 @@ from .models import (DataFile, DataType, Deployment, Device, DeviceModel,
                      Project, Site)
 
 
-class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMixIn, CreatedModifiedMixIn, CheckFormMixIn,
+class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMixIn, ManagerMixIn, CreatedModifiedMixIn, CheckFormMixIn,
                             serializers.ModelSerializer):
     """
     A mixin serializer for handling deployment-related fields and operations.
@@ -109,7 +109,6 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMixIn, CreatedModifiedMixIn, 
               to include the modified properties within a GeoJSON-like format.
         """
 
-        request_user = self.context['request'].user
         initial_rep = super(DeploymentFieldsMixIn,
                             self).to_representation(instance)
         if initial_rep.get('properties') is not None:
@@ -123,8 +122,6 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMixIn, CreatedModifiedMixIn, 
 
         initial_rep["project"], initial_rep["project_ID"] = zip(
             *projects_no_global) if projects_no_global else ([], [])
-        initial_rep["user_is_manager"] = perms['data_models.change_deployment'].check(
-            request_user, instance)
 
         if not self.context.get('request'):
             initial_rep.pop('thumb_url')
