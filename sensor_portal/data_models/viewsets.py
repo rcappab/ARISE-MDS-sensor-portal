@@ -818,8 +818,6 @@ class SiteViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSetMixIn)
     queryset = Site.objects.all().distinct()
     search_fields = ['name', 'short_name']
 
-    @method_decorator(cache_page(60 * 60 * 2))
-    @method_decorator(vary_on_cookie)
     def list(self, request):
         return super().list(request)
 
