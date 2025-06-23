@@ -76,13 +76,14 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMixIn, ManagerMixIn, CreatedM
                                                     queryset=Project.objects.all().exclude(name=settings.GLOBAL_PROJECT_ID),
                                                     required=False,
                                                     allow_null=True)
-    site = SlugRelatedGetOrCreateField(slug_field='short_name',
+    site = SlugRelatedGetOrCreateField(slug_field='name',
                                        queryset=Site.objects.all(),
                                        required=False, allow_null=True)
     site_ID = serializers.PrimaryKeyRelatedField(source="site", queryset=Site.objects.all(),
                                                  required=False, allow_null=True)
 
-    time_zone = TimeZoneSerializerField(use_pytz=True)
+    time_zone = TimeZoneSerializerField(
+        use_pytz=True, default=settings.TIME_ZONE)
 
     # always return in UTC regardless of server setting
     deployment_start = serializers.DateTimeField(
