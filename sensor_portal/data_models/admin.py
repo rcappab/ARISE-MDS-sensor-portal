@@ -97,7 +97,7 @@ class DeployAdmin(AddOwnerAdmin):
         super(AddOwnerAdmin, self).save_related(
             request, form, formsets, change)
         global_project, exists = Project.objects.get_or_create(
-            name=settings.GLOBAL_PROJECT_ID)
+            project_ID=settings.GLOBAL_PROJECT_ID)
         if global_project not in form.instance.project.all():
             form.instance.project.add(global_project)
 
