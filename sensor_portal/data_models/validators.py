@@ -105,7 +105,8 @@ def device_check_type(device_type: "DataType", device_model: "DeviceModel") -> T
             success (boolean), error message (dict where the key is the associated field name)
     """
     if device_type is None or device_model.type == device_type:
-        return True, ""
+        return True, "EMPTY STRING"
     error_message = {
         'model': f"{device_model.name} is not a {device_type.name} device"}
+
     return False, error_message

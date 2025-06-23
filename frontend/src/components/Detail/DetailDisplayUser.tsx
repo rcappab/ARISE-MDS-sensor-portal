@@ -19,6 +19,7 @@ const DataList = ({
 	basePath,
 	className = "col m-2 small overflow-y-auto w-lg-25",
 }: DataListProps) => {
+	console.log(title);
 	return (
 		<div
 			className={className}
@@ -82,6 +83,9 @@ const DetailDisplayUser = ({ id, authTokens, user }: UserProfileProps) => {
 					<dl className="row mb-3">
 						<dt className="col-sm-3">Username:</dt>
 						<dd className="col-sm-9">{data.username}</dd>
+
+						<dt className="col-sm-3">User ID:</dt>
+						<dd className="col-sm-9">{data.id}</dd>
 
 						<dt className="col-sm-3">First Name:</dt>
 						<dd className="col-sm-9">{data.first_name}</dd>
@@ -172,6 +176,24 @@ const DetailDisplayUser = ({ id, authTokens, user }: UserProfileProps) => {
 								title="Owned Deployments"
 								data={data.owned_deployments}
 								ids={data.owned_deployments_ID}
+								basePath="/deployments"
+							/>
+							<DataList
+								title="Managable Deployments"
+								data={data.managed_deployments}
+								ids={data.managed_deployments_ID}
+								basePath="/deployments"
+							/>
+							<DataList
+								title="Annotatable Deployments"
+								data={data.annotatable_deployments}
+								ids={data.annotatable_deployments_ID}
+								basePath="/deployments"
+							/>
+							<DataList
+								title="Viewable Deployments"
+								data={data.viewable_deployments}
+								ids={data.viewable_deployments_ID}
 								basePath="/deployments"
 							/>
 						</div>

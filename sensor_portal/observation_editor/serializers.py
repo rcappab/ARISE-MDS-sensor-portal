@@ -124,7 +124,7 @@ class DummyObservationSerializer(OwnerMixIn, CreatedModifiedMixIn, serializers.M
         exclude = []
 
 
-class ObservationSerializer(OwnerMixIn, CreatedModifiedMixIn, serializers.ModelSerializer):
+class ObservationSerializer(OwnerMixIn, CreatedModifiedMixIn, CheckFormMixIn, serializers.ModelSerializer):
     taxon_obj = ShortTaxonSerializer(
         source='taxon', read_only=True, required=False)
     taxon = serializers.PrimaryKeyRelatedField(

@@ -90,6 +90,23 @@ class UserProfileSerializer(serializers.ModelSerializer):
     viewable_devices_ID = serializers.PrimaryKeyRelatedField(
         many=True, read_only=True, source='viewable_devices', help_text="Database ID of devices viewable by the user.")
 
+    owned_deployments = serializers.SlugRelatedField(
+        many=True, read_only=True, slug_field='deployment_device_ID', help_text="Deployment device ID of deployments owned by the user.")
+    owned_deployments_ID = serializers.PrimaryKeyRelatedField(
+        many=True, read_only=True, source='owned_deployments', help_text="Database ID of deployments owned by the user.")
+    managed_deployments = serializers.SlugRelatedField(
+        many=True, read_only=True, slug_field='deployment_device_ID', help_text="Deployment device ID of manageable managed by the user.")
+    managed_deployments_ID = serializers.PrimaryKeyRelatedField(
+        many=True, read_only=True, source='managed_deployments', help_text="Database ID of deployments manageable by the user.")
+    annotatable_deployments = serializers.SlugRelatedField(
+        many=True, read_only=True, slug_field='deployment_device_ID', help_text="Deployment device ID of deployments annotatable by the user.")
+    annotatable_deployments_ID = serializers.PrimaryKeyRelatedField(
+        many=True, read_only=True, source='annotatable_deployments', help_text="Database ID of deployments annotatable by the user.")
+    viewable_deployments = serializers.SlugRelatedField(
+        many=True, read_only=True, slug_field='deployment_device_ID', help_text="Deployment device ID of deployments viewable by the user.")
+    viewable_deployments_ID = serializers.PrimaryKeyRelatedField(
+        many=True, read_only=True, source='viewable_deployments', help_text="Database ID of deployments viewable by the user.")
+
     class Meta:
         model = User
         fields = ('id', 'username', 'email',
@@ -103,6 +120,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
                   'managed_devices', 'managed_devices_ID',
                   'annotatable_devices', 'annotatable_devices_ID',
                   'viewable_devices', 'viewable_devices_ID',
+                  'owned_deployments', 'owned_deployments_ID',
+                  'managed_deployments', 'managed_deployments_ID',
+                  'annotatable_deployments', 'annotatable_deployments_ID',
+                  'viewable_deployments', 'viewable_deployments_ID'
                   )
 
 

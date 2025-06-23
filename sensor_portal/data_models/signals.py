@@ -1,11 +1,28 @@
+import logging
+
 from django.conf import settings
 from django.db.models.signals import (m2m_changed, post_delete, post_save,
                                       pre_delete)
 from django.dispatch import receiver
+from user_management.models import User
+from utils.perm_functions import cascade_permissions
 
-from .models import DataFile, Deployment, Project
+from .models import DataFile, Deployment, Device, Project
 
 # Deployment signals
+logger = logging.getLogger(__name__)
+
+
+@receiver(post_save, sender=Project)
+@receiver(post_save, sender=Device)
+def post_save_permission_cascade(sender, instance: Device | Project, created, **kwargs):
+    logger.info(f"Post {sender} save")
+    cascade_permissions(instance)
+    for deployment in instance.deployments.all():
+        try:
+            deployment.save()
+        except Exception as e:
+            logger.error(e)
 
 
 @receiver(post_save, sender=Deployment)
@@ -13,6 +30,7 @@ def post_save_deploy(sender, instance: Deployment, created, **kwargs):
     """
     Post save signal for Deployment model to ensure that the global project
     is always associated with the deployment instance.
+    Also cascade the permissions
 
     """
 
@@ -24,7 +42,7 @@ def post_save_deploy(sender, instance: Deployment, created, **kwargs):
 
 
 @receiver(m2m_changed, sender=Deployment.project.through)
-def update_project(sender, instance, action, reverse, *args, **kwargs):
+def update_combo_project(sender, instance, action, reverse, *args, **kwargs):
     """
     Signal to update the deployment's project when the many-to-many
     relationship changes. This ensures that the combination project field is updated.
@@ -34,7 +52,19 @@ def update_project(sender, instance, action, reverse, *args, **kwargs):
         instance.save()
 
 
+# @receiver(m2m_changed, sender=Project.managers.through)
+# @receiver(m2m_changed, sender=Project.annotators.through)
+# @receiver(m2m_changed, sender=Project.viewers.through)
+# def update_project_permissions(sender, instance, action, reverse, *args, **kwargs):
+#     print(sender, instance, action)
+#     if (action == 'post_add' or action == 'post_remove') and not reverse:
+#         cascade_permissions(instance)
+#         for deployment in sender.deployments.all():
+#             deployment.save()
+
+
 # DataFile signals
+
 
 @receiver(post_save, sender=DataFile)
 def post_save_file(sender, instance: DataFile, created, **kwargs):

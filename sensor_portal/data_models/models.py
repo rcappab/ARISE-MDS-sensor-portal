@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, List, Optional
 from archiving.models import Archive, TarFile
 from colorfield.fields import ColorField
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.gis.db import models as gis_models
 from django.contrib.gis.geos import Point
 from django.contrib.postgres.indexes import GinIndex, OpClass
@@ -33,6 +34,7 @@ from .general_functions import check_dt
 from .job_handling_functions import get_job_from_name
 
 logger = logging.getLogger(__name__)
+
 
 if TYPE_CHECKING:
     from user_management.models import User
@@ -326,7 +328,7 @@ class Device(BaseModel):
     def clean(self):
         result, message = validators.device_check_type(
             self.type, self.model)
-        logger.info(result, message)
+
         if not result:
             raise ValidationError(message)
         super(Device, self).clean()
@@ -549,6 +551,16 @@ class Deployment(BaseModel):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, related_name="owned_deployments",
                               on_delete=models.SET_NULL, null=True, db_index=True, help_text="Owner of deployment.")
 
+    managers = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="managed_deployments",  db_index=True,
+        help_text="Managers of deployment.")
+    viewers = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="viewable_deployments", db_index=True,
+        help_text="Annotators of deployment.")
+    annotators = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, blank=True, related_name="annotatable_deployments", db_index=True,
+        help_text="Viewers of deployment.")
+
     combo_project = models.CharField(
         max_length=100, blank=True, null=True, editable=False, help_text="String combining all projects.")
     last_image = models.ForeignKey("DataFile", blank=True, on_delete=models.SET_NULL, null=True, editable=False,
@@ -634,6 +646,30 @@ class Deployment(BaseModel):
             self.combo_project = self.get_combo_project()
 
         super().save(*args, **kwargs)
+        self.get_permissions()
+
+    def get_permissions(self):
+        # Get permissions from device and project
+
+        logger.info(
+            f"Set deployment {self} permissions from device and projects")
+        all_managers = self.device.managers.all().\
+            union(get_user_model().objects.filter(pk__in=self.project.all().values_list(
+                'managers__pk', flat=True)))
+        self.managers.set(all_managers)
+        all_annotators = self.device.annotators.all().\
+            union(get_user_model().objects.filter(pk__in=self.project.all().values_list(
+                'annotators__pk', flat=True)))
+        self.annotators.set(all_annotators)
+        all_viewers = self.device.viewers.all().\
+            union(get_user_model().objects.filter(pk__in=self.project.all().values_list(
+                'viewers__pk', flat=True)))
+        self.viewers.set(all_viewers)
+
+        if self.owner:
+            self.managers.add(self.owner)
+            self.annotators.add(self.owner)
+            self.viewers.add(self.owner)
 
     def get_combo_project(self):
         """
