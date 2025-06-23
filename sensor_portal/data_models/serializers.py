@@ -90,7 +90,10 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMixIn, ManagerMixIn, CreatedM
     deployment_end = serializers.DateTimeField(
         default_timezone=djtimezone.utc, required=False, allow_null=True)
 
-    # check project permissions here or in viewpoint
+    model_ID = serializers.SerializerMethodField()
+
+    def get_model_ID(self, obj):
+        return obj.device.model.pk
 
     def to_representation(self, instance):
         """

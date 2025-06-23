@@ -536,6 +536,12 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
         if not serializer.is_valid():
             return Response({"detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
+        filter_params = request.data or request.GET
+        if filter_params:
+            queryfilter = self.filterset_class(
+                filter_params, queryset=queryset)
+            queryset = queryfilter.qs
+
         if (original_names := serializer.validated_data.get('original_names')):
             existing_names = queryset.filter(
                 original_name__in=original_names).values_list('original_name', flat=True)
@@ -549,7 +555,8 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
             missing_names = [
                 x for x in original_names if x not in existing_names]
         else:
-            return Response({"detail": "Either 'original_names' or 'file_names' must be provided."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Either 'original_names' or 'file_names' must be provided."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         return Response(missing_names, status=status.HTTP_200_OK)
 
