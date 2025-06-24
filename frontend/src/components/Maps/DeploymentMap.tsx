@@ -68,8 +68,8 @@ const DeploymentMarker = (deployment) => {
 						<strong>{deployment.deployment_device_ID}</strong>
 						{deployment.thumb_url !== null && deployment.thumb_url !== "" ? (
 							<img
-								src={"/" + deployment.thumb_URL}
-								alt={deployment.thumb_URL}
+								src={"/" + deployment.thumb_url}
+								alt={deployment.thumb_url}
 							/>
 						) : null}
 						<ul>
