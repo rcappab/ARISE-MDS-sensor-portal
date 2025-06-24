@@ -17,7 +17,7 @@ const RegistrationPage = () => {
 		}
 
 		try {
-			const captchaToken = await executeRecaptcha("login");
+			const captchaToken = await executeRecaptcha("register");
 			return captchaToken;
 		} catch (error) {
 			console.error("ReCaptcha verification failed:", error);
