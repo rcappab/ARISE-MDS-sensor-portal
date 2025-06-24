@@ -321,7 +321,7 @@ class ProjectViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
     queryset = Project.objects.all().distinct().exclude(
         name=settings.GLOBAL_PROJECT_ID)
     filterset_class = ProjectFilter
-    search_fields = ['project_ID', 'name', 'organization']
+    search_fields = ['project_ID', 'name', 'organisation']
 
     @action(detail=False, methods=['post'])
     def ids_count(self, request, *args, **kwargs):
