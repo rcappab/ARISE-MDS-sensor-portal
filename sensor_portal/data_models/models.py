@@ -207,27 +207,10 @@ class DeviceModel(BaseModel):
                              related_name="device_models", help_text="Primary data type of device.")
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, related_name="owned_device_models",
                               on_delete=models.SET_NULL, null=True, help_text="User who registered this device model with the system.")
-    colour = ColorField(blank=True, help_text="Override data type colour.")
-    symbol = IconField(blank=True, help_text="Override data type symbol.")
-
-    def save(self, *args, **kwargs):
-        """
-        Overrides the save method to ensure default values for `colour` and `symbol` 
-        are set based on the associated `type` if they are empty.
-        If `colour` is an empty string, it is set to the `colour` attribute of `type`.
-        If `symbol` is an empty string, it is set to the `symbol` attribute of `type`.
-        Args:
-            *args: Variable length argument list passed to the parent save method.
-            **kwargs: Arbitrary keyword arguments passed to the parent save method.
-        Returns:
-            The result of the parent class's save method.
-        """
-
-        if self.colour == "":
-            self.colour = self.type.colour
-        if self.symbol == "":
-            self.symbol = self.type.symbol
-        return super().save(*args, **kwargs)
+    colour = ColorField(
+        blank=True, help_text="Override data type colour. Leave blank to use the default from this data type.")
+    symbol = IconField(
+        blank=True, help_text="Override data type symbol. Leave blank to use the default from this data type.")
 
     def __str__(self):
         return self.name

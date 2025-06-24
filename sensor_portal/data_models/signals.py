@@ -7,16 +7,15 @@ from django.dispatch import receiver
 from user_management.models import User
 from utils.perm_functions import cascade_permissions
 
-from .models import DataFile, Deployment, Device, Project
+from .models import DataFile, DataType, Deployment, Device, Project
 
-# Deployment signals
 logger = logging.getLogger(__name__)
 
 
 @receiver(post_save, sender=Project)
 @receiver(post_save, sender=Device)
 def post_save_permission_cascade(sender, instance: Device | Project, created, **kwargs):
-    logger.info(f"Post {sender} save")
+
     cascade_permissions(instance)
     for deployment in instance.deployments.all():
         try:
