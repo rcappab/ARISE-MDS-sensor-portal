@@ -63,20 +63,6 @@ interface Props {
 const DetailDisplayFile = ({ fileData }: Props) => {
 	const { authTokens, user } = useContext(AuthContext);
 	const { obsEditMode, setObsEditMode } = useContext(ObsEditModeContext);
-
-	const isImage = [".jpg", ".jpeg", ".png"].includes(
-		fileData["file_format"].toLowerCase()
-	);
-	const isAudio = [".mp3", ".wav"].includes(
-		fileData["file_format"].toLowerCase()
-	);
-	const isLocal = fileData["file_url"];
-	const hasLinkedFiles =
-		fileData["linked_files"] !== undefined &&
-		Object.keys(fileData["linked_files"]).length > 0;
-	const fileURL = "/" + fileData["file_url"];
-	const canAnnotate = fileData["can_annotate"];
-
 	const [bboxEditMode, setBboxEditMode] = useState({
 		edit: false,
 		index: -1,
@@ -156,6 +142,23 @@ const DetailDisplayFile = ({ fileData }: Props) => {
 	const handleRowHover = useCallback((index) => {
 		setHoverIndex(index);
 	}, []);
+
+	if (!fileData.hasOwnProperty("file_format")) {
+		return <Loading />;
+	}
+
+	const isImage = [".jpg", ".jpeg", ".png"].includes(
+		fileData["file_format"].toLowerCase()
+	);
+	const isAudio = [".mp3", ".wav"].includes(
+		fileData["file_format"].toLowerCase()
+	);
+	const isLocal = fileData["file_url"];
+	const hasLinkedFiles =
+		fileData["linked_files"] !== undefined &&
+		Object.keys(fileData["linked_files"]).length > 0;
+	const fileURL = "/" + fileData["file_url"];
+	const canAnnotate = fileData["can_annotate"];
 
 	const getObsTable = () => {
 		if (isLoading || isPending || isRefetching) {
