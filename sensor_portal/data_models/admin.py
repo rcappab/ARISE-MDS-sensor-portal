@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib import admin
 from utils.admin import AddOwnerAdmin, GenericAdmin
 from utils.paginators import LargeTablePaginator
+from utils.perm_functions import cascade_permissions
 
 from .forms import DeviceForm
 from .models import (DataFile, DataType, Deployment, Device, DeviceModel,
@@ -27,6 +28,7 @@ class DeviceAdmin(AddOwnerAdmin):
     list_display = ['device_ID', 'type']
     search_fields = ['device_ID']
     list_filter = ['type']
+    filter_horizontal = ['managers', 'annotators', 'viewers']
 
     #  admin form hack to make sure device user is assigned to managers
     def save_related(self, request, form, formsets, change):
@@ -46,8 +48,11 @@ class DeviceAdmin(AddOwnerAdmin):
 
         super(AddOwnerAdmin, self).save_related(
             request, form, formsets, change)
+
         if form.instance.device_user:
             form.instance.device_user.save()
+
+        cascade_permissions(form.instance)
 
 
 @admin.register(DeviceModel)
@@ -61,6 +66,26 @@ class DeviceModelAdmin(AddOwnerAdmin):
 class ProjectAdmin(AddOwnerAdmin):
     list_display = ['project_ID', 'name']
     search_fields = ['project_ID', 'name']
+    filter_horizontal = ['managers', 'annotators', 'viewers']
+
+    def save_related(self, request, form, formsets, change):
+        """
+        Overrides the save_related method to perform additional actions 
+        after saving related objects. 
+        Args:
+            request (HttpRequest): The current HTTP request object.
+            form (ModelForm): The form instance being processed.
+            formsets (list): A list of formsets related to the form instance.
+            change (bool): A flag indicating whether the object is being changed 
+            (True) or added (False).
+        Returns:
+            None
+        """
+
+        super(AddOwnerAdmin, self).save_related(
+            request, form, formsets, change)
+
+        cascade_permissions(form.instance)
 
 
 @admin.register(Deployment)
@@ -71,8 +96,11 @@ class DeployAdmin(AddOwnerAdmin):
     list_filter = ['is_active', 'device_type']
     readonly_fields = GenericAdmin.readonly_fields + \
         AddOwnerAdmin.readonly_fields + ['deployment_device_ID',
-                                         'combo_project', 'device_type', 'is_active', 'thumb_url']
+                                         'combo_project', 'device_type', 'is_active', 'thumb_url',
+                                         'managers', 'annotators', 'viewers']
     autocomplete_fields = ('device', 'project')
+
+    filter_horizontal = ['managers', 'annotators', 'viewers']
 
     #  admin form hack to make sure global project is added
     def save_related(self, request, form, formsets, change):

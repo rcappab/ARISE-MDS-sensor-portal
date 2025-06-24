@@ -20,3 +20,4 @@ class ObservationAdmin(AddOwnerAdmin):
     search_fields = ["label", "source"]
     raw_id_fields = ["data_files", "taxon", "validation_of"]
     list_display = ["label", "source", "owner", "created_on"]
+    list_filter = ['source']

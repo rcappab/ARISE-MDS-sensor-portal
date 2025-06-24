@@ -27,7 +27,7 @@ const ResetLocation = ({ handleChangeLatLong = () => {} }: Props) => {
 			type="button"
 			ref={ref}
 			onClick={resetLocation}
-			className="btn reset-location-button btn-danger btn-lg"
+			className="btn btn-danger btn-lg"
 		>
 			Reset location
 		</button>

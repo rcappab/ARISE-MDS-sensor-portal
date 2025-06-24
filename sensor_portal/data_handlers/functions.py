@@ -48,7 +48,7 @@ def get_image_recording_dt(image_exif):
     return dt.strptime(recording_dt, '%Y:%m:%d %H:%M:%S')
 
 
-def generate_thumbnail(data_file, max_width=100, max_height=100):
+def generate_thumbnail(data_file, max_width=250, max_height=250):
     file_path = data_file.full_path()
     thumb_path = os.path.join(os.path.split(
         file_path)[0], data_file.file_name+"_THUMB.jpg")

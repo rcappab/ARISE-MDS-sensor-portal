@@ -34,11 +34,15 @@ const FormMap = ({
 					formLatLong={latitude ? { lat: latitude, lng: longitude } : null}
 					handleChangeLatLong={handleChangeLatLong}
 				/>
-				<ResetLocation
-					handleChangeLatLong={() => {
-						handleChangeLatLong(null);
-					}}
-				/>
+				<div className="leaflet-bottom leaflet-left">
+					<div className="leaflet-control">
+						<ResetLocation
+							handleChangeLatLong={() => {
+								handleChangeLatLong(null);
+							}}
+						/>
+					</div>
+				</div>
 			</MapContainer>
 		</div>
 	);

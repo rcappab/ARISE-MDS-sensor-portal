@@ -91,11 +91,6 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMixIn, ManagerMixIn, CreatedM
     deployment_end = serializers.DateTimeField(
         default_timezone=djtimezone.utc, required=False, allow_null=True)
 
-    model_ID = serializers.SerializerMethodField()
-
-    def get_model_ID(self, obj):
-        return obj.device.model.pk
-
     def to_representation(self, instance):
         """
         Customizes the representation of a model instance for serialization.
@@ -115,11 +110,24 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMixIn, ManagerMixIn, CreatedM
 
         initial_rep = super(DeploymentFieldsMixIn,
                             self).to_representation(instance)
+
         if initial_rep.get('properties') is not None:
             geojson_rep = initial_rep
             initial_rep = initial_rep.get('properties')
         else:
             geojson_rep = None
+
+        device_model = instance.device.model
+        device_type = instance.device_type
+        if device_model.colour != "":
+            initial_rep["colour"] = device_model.colour
+        else:
+            initial_rep["colour"] = device_type.colour
+
+        if device_model.symbol != "":
+            initial_rep["symbol"] = device_model.symbol
+        else:
+            initial_rep["symbol"] = device_type.symbol
 
         projects_no_global = [(x, y) for x, y in zip(
             initial_rep["project"], initial_rep["project_ID"]) if x != settings.GLOBAL_PROJECT_ID]
