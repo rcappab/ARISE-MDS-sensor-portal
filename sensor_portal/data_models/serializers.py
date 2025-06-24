@@ -577,7 +577,7 @@ class DataFileSerializer(CreatedModifiedMixIn, serializers.ModelSerializer):
     class Meta:
         model = DataFile
         exclude = ["do_not_remove", "local_path", "favourite_of",
-                   "tar_file", "archived", "local_storage"]
+                   "tar_file"]
 
     def validate(self, data):
         data = super().validate(data)
