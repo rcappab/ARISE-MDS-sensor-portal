@@ -21,9 +21,9 @@ class DataTypeFilter(GenericFilterMixIn):
     """
 
     file_type = django_filters.BooleanFilter(
-        method='is_file_type', label="file_type")
+        method='is_file_type', label="file_type", help_text="Return only data types attached to devices.")
     device_type = django_filters.BooleanFilter(
-        method='is_file_type', label="device_type")
+        method='is_file_type', label="device_type", help_text="Return only data types attached to files.")
 
     def is_file_type(self, queryset, name, value):
         """

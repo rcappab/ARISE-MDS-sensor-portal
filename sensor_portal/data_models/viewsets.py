@@ -15,7 +15,7 @@ from drf_spectacular.utils import (OpenApiParameter, extend_schema,
                                    extend_schema_view)
 from observation_editor.models import Observation
 from observation_editor.serializers import ObservationSerializer
-from rest_framework import serializers, status, viewsets
+from rest_framework import parsers, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
@@ -47,7 +47,8 @@ from .serializers_fake import (DummyDataFileSerializer,
                                inline_id_serializer,
                                inline_id_serializer_optional,
                                inline_job_start_serializer,
-                               inline_metric_serialiser)
+                               inline_metric_serialiser,
+                               inline_upload_response_serializer)
 
 logger = logging.getLogger(__name__)
 
@@ -570,6 +571,7 @@ class DeviceViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
                )
 @extend_schema_view(
     list=extend_schema(summary='List datafiles.',
+                       parameters=[ctdp_parameter],
                        ),
     retrieve=extend_schema(summary='Get a single datafile',
                            parameters=[
@@ -586,7 +588,9 @@ class DeviceViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
                                              OpenApiParameter.PATH,
                                              description="Database ID of datafile to update.")]),
     create=extend_schema(summary='Upload datafiles',
-                         request=DummyDataFileUploadSerializer),
+                         request=DummyDataFileUploadSerializer,
+                         responses=inline_upload_response_serializer,
+                         description="Upload multiple datafiles or part of a lrger datafile"),
     destroy=extend_schema(summary='Delete a datafile',
                           parameters=[
                                   OpenApiParameter(
@@ -613,7 +617,51 @@ class DeviceViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
                                  request=DataFileCheckSerializer,
                                  responses=serializers.ListSerializer(
                                      child=serializers.CharField(default="myfile.jpg"), many=False),
-                                 )
+                                 ),
+    project_datafiles=extend_schema(summary="Datafiles from project",
+                                    description="Get datafiles from a specific project.",
+                                    filters=True,
+                                    parameters=[
+                                                ctdp_parameter,
+                                                OpenApiParameter(
+                                                    "project_id",
+                                                    OpenApiTypes.INT,
+                                                    OpenApiParameter.PATH,
+                                                    description="Database ID of project from which to get datafiles.")]),
+    deployment_datafiles=extend_schema(summary="Datafiles from deployment",
+                                       description="Get datafiles from a specific deployment.",
+                                       filters=True,
+                                       parameters=[
+                                           ctdp_parameter,
+                                           OpenApiParameter(
+                                               "project_id",
+                                               OpenApiTypes.INT,
+                                               OpenApiParameter.PATH,
+                                               description="Database ID of deployment from which to get datafiles.")]),
+    device_datafiles=extend_schema(summary="Datafiles from device",
+                                   description="Get datafiles from a specific device.",
+                                   filters=True,
+                                   parameters=[
+                                       ctdp_parameter,
+                                       OpenApiParameter(
+                                           "project_id",
+                                           OpenApiTypes.INT,
+                                           OpenApiParameter.PATH,
+                                           description="Database ID of device from which to get datafiles.")]),
+    user_favourite_datafiles=extend_schema(summary="User favourite datafiles",
+                                           description="Get datafiles favourited by the current user.",
+                                           filters=True,
+                                           parameters=[
+                                               ctdp_parameter,
+                                           ]),
+    favourited_datafiles=extend_schema(summary="Favourited datafiles",
+                                       description="Get datafiles favourited by users.",
+                                       filters=True,
+                                       parameters=[
+                                           ctdp_parameter,
+                                       ]),
+    favourite_file=extend_schema(exclude=True),
+    observations=extend_schema(exclude=True)
 )
 class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixIn):
     """
@@ -665,6 +713,15 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
                      'file_name',
                      'observations__taxon__species_name',
                      'observations__taxon__species_common_name']
+
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return DataFileUploadSerializer
+        else:
+            if 'ctdp' in self.request.GET.keys():
+                return DataFileSerializerCTDP
+            else:
+                return DataFileSerializer
 
     def get_queryset(self):
         qs = DataFile.objects.prefetch_related("deployment",
@@ -775,15 +832,6 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
         if not self.request.user.has_perm('data_models.change_deployment', deployment_object):
             raise PermissionDenied(f"You don't have permission to add a datafile"
                                    f" to {deployment_object.deployment_device_ID}")
-
-    def get_serializer_class(self):
-        if self.action == 'create':
-            return DataFileUploadSerializer
-        else:
-            if 'ctdp' in self.request.GET.keys():
-                return DataFileSerializerCTDP
-            else:
-                return DataFileSerializer
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -952,8 +1000,35 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
 @extend_schema(summary="Site",
                description="Locations where devices are deployed.",
                tags=["Sites"],
-               methods=["get", "post", "patch", "delete"],
+               methods=["get", "put", "post", "patch", "delete"],
                )
+@extend_schema_view(
+    list=extend_schema(summary='List sites.',
+                       ),
+    retrieve=extend_schema(summary='Get a single site',
+                           parameters=[
+                                   OpenApiParameter(
+                                       "id",
+                                       OpenApiTypes.INT,
+                                       OpenApiParameter.PATH,
+                                       description="Database ID of site to get.")]),
+    partial_update=extend_schema(summary='Partially update a site',
+                                 parameters=[
+                                         OpenApiParameter(
+                                             "id",
+                                             OpenApiTypes.INT,
+                                             OpenApiParameter.PATH,
+                                             description="Database ID of site to update.")]),
+    create=extend_schema(summary='Create site',
+                         description="Add a site"),
+    destroy=extend_schema(summary='Delete a site',
+                          parameters=[
+                                  OpenApiParameter(
+                                      "id",
+                                      OpenApiTypes.INT,
+                                      OpenApiParameter.PATH,
+                                      description="Database ID of site to delete.")]),
+)
 class SiteViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSetMixIn):
     """
     SiteViewSet is a Django REST Framework viewset that provides read-only access to Site objects.
@@ -972,8 +1047,36 @@ class SiteViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSetMixIn)
 @extend_schema(summary="Data type",
                description="Type of devices or of datafiles.",
                tags=["Data type"],
-               methods=["get", "post", "patch", "delete"],
+               methods=["get", "put", "post", "patch", "delete"],
                )
+@extend_schema_view(
+    list=extend_schema(summary='List data types.',
+
+                       ),
+    retrieve=extend_schema(summary='Get a data type',
+                           parameters=[
+                                   OpenApiParameter(
+                                       "id",
+                                       OpenApiTypes.INT,
+                                       OpenApiParameter.PATH,
+                                       description="Database ID of data type to get.")]),
+    partial_update=extend_schema(summary='Partially update a data type',
+                                 parameters=[
+                                         OpenApiParameter(
+                                             "id",
+                                             OpenApiTypes.INT,
+                                             OpenApiParameter.PATH,
+                                             description="Database ID of data type to update.")]),
+    create=extend_schema(summary='Create data type',
+                         description="Add a data type"),
+    destroy=extend_schema(summary='Delete a data type',
+                          parameters=[
+                                  OpenApiParameter(
+                                      "id",
+                                      OpenApiTypes.INT,
+                                      OpenApiParameter.PATH,
+                                      description="Database ID of data type to delete.")]),
+)
 class DataTypeViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSetMixIn):
     """
     DataTypeViewSet is a Django REST Framework viewset that provides read-only access to DataType objects.
@@ -996,8 +1099,36 @@ class DataTypeViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSetMi
 @extend_schema(summary="Device Model",
                description="Models of sensors, which determine how data is handled.",
                tags=["Device models"],
-               methods=["get", "post", "patch", "delete"],
+               methods=["get", "put", "post", "patch", "delete"],
                )
+@extend_schema_view(
+    list=extend_schema(summary='List device models.',
+
+                       ),
+    retrieve=extend_schema(summary='Get a device model',
+                           parameters=[
+                                   OpenApiParameter(
+                                       "id",
+                                       OpenApiTypes.INT,
+                                       OpenApiParameter.PATH,
+                                       description="Database ID of device model to get.")]),
+    partial_update=extend_schema(summary='Partially update a device model',
+                                 parameters=[
+                                         OpenApiParameter(
+                                             "id",
+                                             OpenApiTypes.INT,
+                                             OpenApiParameter.PATH,
+                                             description="Database ID of device model to update.")]),
+    create=extend_schema(summary='Create device model',
+                         description="Add a device model"),
+    destroy=extend_schema(summary='Delete a device model',
+                          parameters=[
+                                  OpenApiParameter(
+                                      "id",
+                                      OpenApiTypes.INT,
+                                      OpenApiParameter.PATH,
+                                      description="Database ID of device model to delete.")]),
+)
 class DeviceModelViewSet(viewsets.ReadOnlyModelViewSet, OptionalPaginationViewSetMixIn):
     """
     DeviceModelViewSet is a Django REST Framework viewset that provides read-only access to Device

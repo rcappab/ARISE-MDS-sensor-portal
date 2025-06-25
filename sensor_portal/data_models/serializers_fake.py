@@ -100,8 +100,25 @@ class DummyDataFileSerializer(DataFileSerializer):
                           )
 class DummyDataFileUploadSerializer(DataFileUploadSerializer):
 
-    extra_data = serializers.ListField(child=DummyJSONField(
-        required=False, help_text="Extra taxon data that the standard fields do not cover."))
+    files = serializers.ListField(child=serializers.FileField())
 
-    files = None
+    extra_data = serializers.ListField(required=False,
+                                       child=DummyJSONField(),
+                                       help_text="Extra taxon data that the standard fields do not cover.")
+
     file_names = None
+
+
+inline_upload_response_serializer = inline_serializer(
+    "UploadResponseSerializer",
+    {"uploaded_files": serializers.ListField(child=DummyDataFileSerializer()),
+     "invalid_files": inline_serializer("InvalidSerializer",
+                                        {"originalfilename2":
+                                         inline_serializer("InvalidFileSerializer",
+                                                           {"message": serializers.CharField(default="File upload failed for this reason."),
+                                                            "status": serializers.IntegerField(default=400)})}),
+     "existing_files": inline_serializer("ExistingSerializer",
+                                         {"originalfilename3":
+                                          inline_serializer("ExistingFileSerializer",
+                                                            {"message": serializers.CharField(default="Already in database."),
+                                                             "status": serializers.IntegerField(default=200)})}), })
