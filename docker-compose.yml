@@ -161,7 +161,7 @@ services:
     ports:
       - "8787"
     volumes:
-      - /data/file_storage:/root/rstudio:z
+      - /data/file_storage:/root:z
     environment:
       - PASSWORD=${R_STUDIO_PASSWORD}
     restart: always
