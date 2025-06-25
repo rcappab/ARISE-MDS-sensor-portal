@@ -61,6 +61,10 @@ class TarFile(BaseModel):
     def clean_tar(self, delete_obj: bool = False, force_delete=False) -> bool:
         logger.info(
             f"Clean TAR file {self.name} - Delete object: {delete_obj}")
+        if not self.local_storage and not self.archived and not self.uploading:
+            logger.info(
+                f"Clean TAR file {self.name} - object exists only in database")
+            return True
         if self.local_storage:
             tar_name = self.name
             if ".tar.gz" not in tar_name:

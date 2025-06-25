@@ -72,6 +72,13 @@ class DeploymentFilter(GenericFilterMixIn, ExtraDataFilterMixIn):
     of Deployment objects is required, such as in APIs or data querying interfaces.
     """
 
+    field_help_dict = {"device__id": "Numeric database ID of a deployed device.",
+                       "owner__id": "Numeric database ID of user who created a deployment.",
+                       "id": "Numeric database ID of deployment.",
+                       "site__id": "Numeric database ID of site where the deployment is located.",
+                       "data_type__id": "Numeric database ID of primary data type of deployment."
+                       }
+
     class Meta:
         model = Deployment
         fields = GenericFilterMixIn.get_fields().copy()

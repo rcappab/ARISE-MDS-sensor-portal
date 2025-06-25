@@ -135,9 +135,6 @@ class DeploymentFieldsMixIn(InstanceGetMixIn, OwnerMixIn, ManagerMixIn, CreatedM
         initial_rep["project"], initial_rep["project_ID"] = zip(
             *projects_no_global) if projects_no_global else ([], [])
 
-        if not self.context.get('request'):
-            initial_rep.pop('thumb_url')
-
         if geojson_rep is not None:
             geojson_rep['properties'] = initial_rep
 
@@ -577,9 +574,7 @@ class DataFileSerializer(CreatedModifiedMixIn, serializers.ModelSerializer):
             initial_rep.pop('path')
             initial_rep["can_annotate"] = perms['data_models.annotate_datafile'].check(
                 request_user, instance)
-        else:
-            to_exclude = ["file_url", "thumb_url"]
-            [initial_rep.pop(x) for x in to_exclude]
+
         return initial_rep
 
     class Meta:

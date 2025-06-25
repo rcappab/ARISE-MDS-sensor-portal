@@ -39,6 +39,7 @@ from .models import (DataFile, DataType, Deployment, Device, DeviceModel,
                      Project, Site)
 from .permissions import perms
 from .plotting_functions import get_all_file_metric_dicts
+from .serialiazer_fake import DummyDeploymentSerializer
 from .serializers import (DataFileCheckSerializer, DataFileSerializer,
                           DataFileUploadSerializer, DataTypeSerializer,
                           DeploymentSerializer, DeploymentSerializer_GeoJSON,
@@ -57,18 +58,38 @@ geoJSON_parameter = OpenApiParameter("geojson",
                                      OpenApiParameter.QUERY,
                                      description='Set True to return in geoJSON format')
 
-inline_id_serializer = inline_serializer("InlineIDserializer",
+inline_id_serializer = inline_serializer("IDserializer",
                                          {"ids":
                                           serializers.ListField(child=serializers.IntegerField(), required=True)})
+inline_id_serializer_optional = inline_serializer("IDserializer",
+                                                  {"ids":
+                                                   serializers.ListField(child=serializers.IntegerField(), required=False)})
 inline_count_serializer = inline_serializer("InlineCountSerializer",
                                             {"object_n":
                                              serializers.ListField(child=serializers.IntegerField(), required=True)})
+inline_metric_serialiser = inline_serializer(
+    "MetricSerializer",
+    {"metric_name":
+     inline_serializer("NestedMetricSerializer",
+                       {"name": serializers.CharField(default="metric_name"),
+                        "x_label": serializers.CharField(default="Date"),
+                        "y_label": serializers.CharField(default="Metric"),
+                        "x_values": serializers.ListField(child=serializers.IntegerField()),
+                        "y_values": serializers.ListField(child=serializers.IntegerField()),
+                        "plot_type": serializers.ListField(child=serializers.CharField(), default=["bar", "scatter"])
+                        })
+     })
+
+inline_job_start_serializer = inline_serializer("StartJobSerializer",
+                                                {"detail": serializers.CharField(default="Job started")})
 
 
 @extend_schema(summary="Deployments",
                description="Deployments of devices in the field, with certain settings.",
                tags=["Deployments"],
                methods=["get", "post", "put", "patch", "delete"],
+               responses=DummyDeploymentSerializer,
+               request=DummyDeploymentSerializer,
                )
 @extend_schema_view(
     list=extend_schema(summary='List deployments.',
@@ -124,13 +145,19 @@ inline_count_serializer = inline_serializer("InlineCountSerializer",
                                                      OpenApiParameter.PATH,
                                                      description="Database ID of device from which to get deployments.")]),
     metrics=extend_schema(summary="Metrics",
-                          description="Get metrics of specific object."),
+                          description="Get metrics of specific object.",
+                          responses=inline_metric_serialiser
+                          ),
     ids_count=extend_schema(summary="Count selected IDs",
                             request=inline_id_serializer,
                             responses=inline_count_serializer),
     queryset_count=extend_schema(summary="Count filtered deployments",
                                  filters=True,
-                                 responses=inline_count_serializer)
+                                 responses=inline_count_serializer),
+    start_job=extend_schema(summary="Start a job from these objects",
+                            filters=True,
+                            request=inline_id_serializer_optional,
+                            responses=inline_job_start_serializer)
 
 )
 class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, CheckFormViewSetMixIn, OptionalPaginationViewSetMixIn):

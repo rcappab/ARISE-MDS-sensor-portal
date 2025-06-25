@@ -218,11 +218,13 @@ export const DeploymentMapContainer = () => {
 			return acc;
 		}, {});
 
-		if (deploymentData) {
+		if (deploymentData && deploymentData.pages !== undefined) {
 			deploymentData.pages.forEach((group) => {
-				group.results.forEach((deployment) => {
-					sortedDeploymentData[deployment.device_type].push(deployment);
-				});
+				if (group.results !== undefined) {
+					group.results.forEach((deployment) => {
+						sortedDeploymentData[deployment.device_type].push(deployment);
+					});
+				}
 			});
 		}
 	}
