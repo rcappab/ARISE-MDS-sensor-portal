@@ -51,6 +51,11 @@ const DetailModal = ({
 
 	if (detailNum !== null && detailNum >= 0) {
 		selectedData = data.results[detailNum];
+
+		if (selectedData["user_is_manager"] === undefined) {
+			closeDetail();
+		}
+
 		maxPage = Math.ceil(data.count / Number(searchParams.get("page_size")));
 		maxData = data.results.length;
 		canEdit = selectedData["user_is_manager"];

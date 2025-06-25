@@ -53,8 +53,9 @@ class Site(BaseModel):
                                to the first 10 characters of `name` if `short_name` is blank.
     """
 
-    name = models.CharField(max_length=50)
-    short_name = models.CharField(max_length=10, blank=True)
+    name = models.CharField(max_length=50, help_text="Site name.")
+    short_name = models.CharField(
+        max_length=10, blank=True, help_text="Site short name.")
 
     def __str__(self):
         return self.name
@@ -76,9 +77,11 @@ class DataType(BaseModel):
         __str__(): Returns the name of the data type as its string representation.
     """
 
-    name = models.CharField(max_length=20)
-    colour = ColorField(default="#FFFFFF")
-    symbol = IconField(blank=True)
+    name = models.CharField(max_length=20, help_text="Name of data type.")
+    colour = ColorField(default="#FFFFFF",
+                        help_text="Colour to use for this data type.")
+    symbol = IconField(
+        blank=True, help_text="Symbol to use for this data type.")
 
     def __str__(self):
         return self.name

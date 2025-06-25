@@ -16,8 +16,8 @@ from utils.viewsets import (AddOwnerViewSetMixIn, CheckAttachmentViewSetMixIn,
 from .filtersets import ObservationFilter
 from .GBIF_functions import GBIF_species_search
 from .models import Observation, Taxon
-from .serializers import (DummyObservationSerializer,
-                          EvenShorterTaxonSerialier, ObservationSerializer)
+from .serializers import EvenShorterTaxonSerialier, ObservationSerializer
+from .serializers_fake import DummyObservationSerializer
 
 logger = logging.getLogger(__name__)
 
