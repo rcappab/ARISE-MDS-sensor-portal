@@ -1,24 +1,18 @@
-import datetime
+
 import logging
-import os
-from datetime import datetime
 
 from camtrap_dp_export.querysets import (get_ctdp_deployment_qs,
                                          get_ctdp_media_qs)
 from camtrap_dp_export.serializers import (DataFileSerializerCTDP,
                                            DeploymentSerializerCTDP)
 from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist
-from django.db import OperationalError, connection, transaction
-from django.db.models import Q
-from django.utils import timezone as djtimezone
+from django.db import connection, transaction
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
-from django.views.decorators.vary import vary_on_cookie, vary_on_headers
+from django.views.decorators.vary import vary_on_cookie
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (OpenApiParameter, extend_schema,
-                                   extend_schema_view, inline_serializer)
-from observation_editor.filtersets import ObservationFilter
+                                   extend_schema_view)
 from observation_editor.models import Observation
 from observation_editor.serializers import ObservationSerializer
 from rest_framework import serializers, status, viewsets
@@ -39,49 +33,23 @@ from .models import (DataFile, DataType, Deployment, Device, DeviceModel,
                      Project, Site)
 from .permissions import perms
 from .plotting_functions import get_all_file_metric_dicts
-from .serialiazer_fake import DummyDeploymentSerializer
 from .serializers import (DataFileCheckSerializer, DataFileSerializer,
                           DataFileUploadSerializer, DataTypeSerializer,
                           DeploymentSerializer, DeploymentSerializer_GeoJSON,
                           DeviceModelSerializer, DeviceSerializer,
                           GenericJobSerializer, ProjectSerializer,
                           SiteSerializer)
+from .serializers_fake import (DummyDataFileSerializer,
+                               DummyDataFileUploadSerializer,
+                               DummyDeploymentSerializer,
+                               DummyDeviceSerializer, ctdp_parameter,
+                               geoJSON_parameter, inline_count_serializer,
+                               inline_id_serializer,
+                               inline_id_serializer_optional,
+                               inline_job_start_serializer,
+                               inline_metric_serialiser)
 
 logger = logging.getLogger(__name__)
-
-ctdp_parameter = OpenApiParameter("ctdp",
-                                  OpenApiTypes.BOOL,
-                                  OpenApiParameter.QUERY,
-                                  description='Set True to return in camtrap DP format')
-geoJSON_parameter = OpenApiParameter("geojson",
-                                     OpenApiTypes.BOOL,
-                                     OpenApiParameter.QUERY,
-                                     description='Set True to return in geoJSON format')
-
-inline_id_serializer = inline_serializer("IDserializer",
-                                         {"ids":
-                                          serializers.ListField(child=serializers.IntegerField(), required=True)})
-inline_id_serializer_optional = inline_serializer("IDserializer",
-                                                  {"ids":
-                                                   serializers.ListField(child=serializers.IntegerField(), required=False)})
-inline_count_serializer = inline_serializer("InlineCountSerializer",
-                                            {"object_n":
-                                             serializers.ListField(child=serializers.IntegerField(), required=True)})
-inline_metric_serialiser = inline_serializer(
-    "MetricSerializer",
-    {"metric_name":
-     inline_serializer("NestedMetricSerializer",
-                       {"name": serializers.CharField(default="metric_name"),
-                        "x_label": serializers.CharField(default="Date"),
-                        "y_label": serializers.CharField(default="Metric"),
-                        "x_values": serializers.ListField(child=serializers.IntegerField()),
-                        "y_values": serializers.ListField(child=serializers.IntegerField()),
-                        "plot_type": serializers.ListField(child=serializers.CharField(), default=["bar", "scatter"])
-                        })
-     })
-
-inline_job_start_serializer = inline_serializer("StartJobSerializer",
-                                                {"detail": serializers.CharField(default="Job started")})
 
 
 @extend_schema(summary="Deployments",
@@ -151,7 +119,7 @@ inline_job_start_serializer = inline_serializer("StartJobSerializer",
     ids_count=extend_schema(summary="Count selected IDs",
                             request=inline_id_serializer,
                             responses=inline_count_serializer),
-    queryset_count=extend_schema(summary="Count filtered deployments",
+    queryset_count=extend_schema(summary="Count filtered projects",
                                  filters=True,
                                  responses=inline_count_serializer),
     start_job=extend_schema(summary="Start a job from these objects",
@@ -313,8 +281,61 @@ class DeploymentViewSet(CheckAttachmentViewSetMixIn, AddOwnerViewSetMixIn, Check
 @extend_schema(summary="Projects",
                description="Projects to organise collections of deployments and scientific work.",
                tags=["Projects"],
-               methods=["get", "post", "patch", "delete"],
+               methods=["get", "post", "put", "patch", "delete"],
                )
+@extend_schema_view(
+    list=extend_schema(summary='List projects.'
+                       ),
+    retrieve=extend_schema(summary='Get a single project',
+                           parameters=[
+                                   OpenApiParameter(
+                                       "id",
+                                       OpenApiTypes.INT,
+                                       OpenApiParameter.PATH,
+                                       description="Database ID of project to get.")]),
+    update=extend_schema(summary='Update an deployment',
+                         parameters=[
+                                 OpenApiParameter(
+                                     "id",
+                                     OpenApiTypes.INT,
+                                     OpenApiParameter.PATH,
+                                     description="Database ID of project to update.")]),
+    partial_update=extend_schema(summary='Partially update a project',
+                                 parameters=[
+                                         OpenApiParameter(
+                                             "id",
+                                             OpenApiTypes.INT,
+                                             OpenApiParameter.PATH,
+                                             description="Database ID of project to update.")]),
+    create=extend_schema(summary='Create a project'),
+    destroy=extend_schema(summary='Delete a project',
+                          parameters=[
+                                  OpenApiParameter(
+                                      "id",
+                                      OpenApiTypes.INT,
+                                      OpenApiParameter.PATH,
+                                      description="Database ID of project to delete.")]),
+    metrics=extend_schema(summary="Metrics",
+                          description="Get metrics of specific object.",
+                          responses=inline_metric_serialiser
+                          ),
+    ids_count=extend_schema(summary="Count selected IDs",
+                            request=inline_id_serializer,
+                            responses=inline_count_serializer),
+    queryset_count=extend_schema(summary="Count filtered deployments",
+                                 filters=True,
+                                 responses=inline_count_serializer),
+    species_list=extend_schema(
+        summary="Get list of species", responses=serializers.ListSerializer(
+            child=serializers.CharField(default="Bufo bufo"), many=False),
+        filters=False,
+    ),
+    start_job=extend_schema(summary="Start a job from these objects",
+                            filters=True,
+                            request=inline_id_serializer_optional,
+                            responses=inline_job_start_serializer)
+
+)
 class ProjectViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
     """
     A viewset for managing Project objects with additional functionality for filtering, searching, 
@@ -378,16 +399,17 @@ class ProjectViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
 
         return Response({"detail": detail}, status=job_status)
 
-    @action(detail=True, methods=['get'])
+    @action(detail=True, methods=['get'], pagination_class=None)
     def species_list(self, request, pk=None):
         project = self.get_object()
         user = request.user
         data_files = perms['data_models.view_datafile'].filter(
             user, DataFile.objects.filter(deployment__project=project))
         if not data_files.exists():
-            return Response({}, status=status.HTTP_200_OK)
-        species_list = list(data_files.values_list(
-            "observations__taxon__species_name", flat=True).distinct())
+            return Response([], status=status.HTTP_200_OK)
+        obs_obj = Observation.objects.filter(data_files__in=data_files)
+        species_list = list(obs_obj.values_list(
+            "taxon__species_name", flat=True).distinct())
         return Response(species_list, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['get'])
@@ -405,8 +427,58 @@ class ProjectViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
 @extend_schema(summary="Devices",
                description="Database representation of sensors.",
                tags=["Devices"],
-               methods=["get", "post", "patch", "delete"],
+               methods=["get", "post", "put", "patch", "delete"],
+               responses=DummyDeviceSerializer,
+               request=DummyDeviceSerializer
                )
+@extend_schema_view(
+    list=extend_schema(summary='List devices.',
+                       ),
+    retrieve=extend_schema(summary='Get a single device',
+                           parameters=[
+                                   OpenApiParameter(
+                                       "id",
+                                       OpenApiTypes.INT,
+                                       OpenApiParameter.PATH,
+                                       description="Database ID of device to get.")]),
+    update=extend_schema(summary='Update a device',
+                         parameters=[
+                                 OpenApiParameter(
+                                     "id",
+                                     OpenApiTypes.INT,
+                                     OpenApiParameter.PATH,
+                                     description="Database ID of device to update.")]),
+    partial_update=extend_schema(summary='Partially update a device',
+                                 parameters=[
+                                         OpenApiParameter(
+                                             "id",
+                                             OpenApiTypes.INT,
+                                             OpenApiParameter.PATH,
+                                             description="Database ID of device to update.")]),
+    create=extend_schema(summary='Create a device'),
+    destroy=extend_schema(summary='Delete a device',
+                          parameters=[
+                                  OpenApiParameter(
+                                      "id",
+                                      OpenApiTypes.INT,
+                                      OpenApiParameter.PATH,
+                                      description="Database ID of device to delete.")]),
+    metrics=extend_schema(summary="Metrics",
+                          description="Get metrics of specific object.",
+                          responses=inline_metric_serialiser
+                          ),
+    ids_count=extend_schema(summary="Count selected IDs",
+                            request=inline_id_serializer,
+                            responses=inline_count_serializer),
+    queryset_count=extend_schema(summary="Count filtered devices",
+                                 filters=True,
+                                 responses=inline_count_serializer),
+    start_job=extend_schema(summary="Start a job from these objects",
+                            filters=True,
+                            request=inline_id_serializer_optional,
+                            responses=inline_job_start_serializer)
+
+)
 class DeviceViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
     """
     A viewset for managing Device objects with additional functionality for filtering, searching, 
@@ -490,11 +562,59 @@ class DeviceViewSet(AddOwnerViewSetMixIn, OptionalPaginationViewSetMixIn):
         return Response(file_metric_dicts, status=status.HTTP_200_OK)
 
 
-@extend_schema(summary="Datafiles",
+@extend_schema(summary="Data files",
                description="Files recorded by sensors.",
                tags=["DataFiles"],
                methods=["get", "post", "patch", "delete"],
+               responses=DummyDataFileSerializer
                )
+@extend_schema_view(
+    list=extend_schema(summary='List datafiles.',
+                       ),
+    retrieve=extend_schema(summary='Get a single datafile',
+                           parameters=[
+                                   OpenApiParameter(
+                                       "id",
+                                       OpenApiTypes.INT,
+                                       OpenApiParameter.PATH,
+                                       description="Database ID of datafile to get.")]),
+    partial_update=extend_schema(summary='Partially update a datafile',
+                                 parameters=[
+                                         OpenApiParameter(
+                                             "id",
+                                             OpenApiTypes.INT,
+                                             OpenApiParameter.PATH,
+                                             description="Database ID of datafile to update.")]),
+    create=extend_schema(summary='Upload datafiles',
+                         request=DummyDataFileUploadSerializer),
+    destroy=extend_schema(summary='Delete a datafile',
+                          parameters=[
+                                  OpenApiParameter(
+                                      "id",
+                                      OpenApiTypes.INT,
+                                      OpenApiParameter.PATH,
+                                      description="Database ID of datafile to delete.")]),
+    metrics=extend_schema(summary="Metrics",
+                          description="Get metrics of specific object.",
+                          responses=inline_metric_serialiser
+                          ),
+    ids_count=extend_schema(summary="Count selected IDs",
+                            request=inline_id_serializer,
+                            responses=inline_count_serializer),
+    queryset_count=extend_schema(summary="Count filtered devices",
+                                 filters=True,
+                                 responses=inline_count_serializer),
+    start_job=extend_schema(summary="Start a job from these objects",
+                            filters=True,
+                            request=inline_id_serializer_optional,
+                            responses=inline_job_start_serializer),
+    check_existing=extend_schema(summary="Check a list of filenames for files already in the database",
+                                 filters=True,
+                                 request=DataFileCheckSerializer,
+                                 responses=serializers.ListSerializer(
+                                     child=serializers.CharField(default="myfile.jpg"), many=False),
+                                 )
+)
 class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixIn):
     """
     DataFileViewSet is a Django REST Framework viewset that provides various actions for managing and interacting 
@@ -538,7 +658,7 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
         - Pagination is applied to querysets where applicable.
         - Permissions are checked for certain actions, such as adding a DataFile to a deployment.
     """
-
+    http_method_names = ['get', 'patch', 'delete', 'post', 'head']
     filterset_class = DataFileFilter
 
     search_fields = ['=tag',
@@ -554,7 +674,7 @@ class DataFileViewSet(CheckAttachmentViewSetMixIn, OptionalPaginationViewSetMixI
             qs = get_ctdp_media_qs(qs)
         return qs
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], pagination_class=None)
     def check_existing(self, request, *args, **kwargs):
         queryset = perms['data_models.view_datafile'].filter(
             request.user, self.get_queryset())

@@ -320,7 +320,7 @@ class ProjectSerializer(OwnerMixIn, ManagerMixIn, CreatedModifiedMixIn, serializ
 
     class Meta:
         model = Project
-        exclude = []
+        exclude = ["data_storages", "automated_tasks", "archive"]
 
     def __init__(self, *args, **kwargs):
         self.management_perm = 'data_models.change_project'
@@ -466,6 +466,18 @@ class DeviceSerializer(OwnerMixIn, ManagerMixIn, CreatedModifiedMixIn, CheckForm
             user_is_manager = False
         if not user_is_manager:
             [initial_rep.pop(field, '') for field in fields_to_pop]
+
+        device_model = instance.model
+        device_type = instance.type
+        if device_model.colour != "":
+            initial_rep["colour"] = device_model.colour
+        else:
+            initial_rep["colour"] = device_type.colour
+
+        if device_model.symbol != "":
+            initial_rep["symbol"] = device_model.symbol
+        else:
+            initial_rep["symbol"] = device_type.symbol
 
         handler = settings.DATA_HANDLERS.get_handler(
             instance.type.name, instance.model.name)

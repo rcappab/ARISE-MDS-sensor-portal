@@ -114,7 +114,7 @@ class ProjectFilter(GenericFilterMixIn):
     """
 
     is_active = django_filters.BooleanFilter(
-        field_name="deployments__is_active")
+        field_name="deployments__is_active", help_text="Filters proejcts by whether they have active deployments.")
 
     class Meta:
         model = Project
@@ -143,12 +143,17 @@ class DeviceFilter(GenericFilterMixIn, ExtraDataFilterMixIn):
     """
 
     is_active = django_filters.BooleanFilter(
-        field_name="deployments__is_active")
+        field_name="deployments__is_active", help_text="Filters devices by whether they have active deployments.")
 
     device_type = django_filters.ModelChoiceFilter(field_name='type',
                                                    queryset=DataType.objects.filter(
                                                        devices__isnull=False).distinct(),
-                                                   label="device type")
+                                                   label="device type", help_text="Filters devices by their type. The queryset is restricted to \
+                                                   DataType objects associated with devices.")
+
+    field_help_dict = {"type": "Numeric database ID of device datatype.",
+                       "id": "Numeric database ID of device.",
+                       }
 
     class Meta:
         model = Device
@@ -190,17 +195,20 @@ class DataFileFilter(GenericFilterMixIn, ExtraDataFilterMixIn):
     is_favourite = django_filters.BooleanFilter(field_name='favourite_of',
                                                 exclude=True,
                                                 lookup_expr='isnull',
-                                                label='is favourite')
+                                                label='is favourite',
+                                                help_text="Filter datafiles by whether a user has favourited them.")
     is_active = django_filters.BooleanFilter(
-        field_name="deployment__is_active")
+        field_name="deployment__is_active",
+        help_text="Filter datafiles by whether their deployment is active")
 
     device_type = django_filters.ModelChoiceFilter(field_name='deployment__device__type',
                                                    queryset=DataType.objects.filter(
                                                        devices__isnull=False).distinct(),
-                                                   label="device type")
+                                                   label="device type", help_text="Data type of device")
 
     has_observations = django_filters.BooleanFilter(
-        field_name="observations", lookup_expr="isnull", exclude=True, label="Has observations")
+        field_name="observations", lookup_expr="isnull", exclude=True, label="Has observations",
+        help_text="Filter datafiles by whether they have observations")
 
     obs_type = django_filters.ChoiceFilter(
         choices=[
@@ -213,7 +221,8 @@ class DataFileFilter(GenericFilterMixIn, ExtraDataFilterMixIn):
             ("ai_only", "AI observations only"),
         ],
         method="filter_obs_type",
-        label="Observation type"
+        label="Observation type",
+        help_text="Filter datafiles by type of observation present."
     )
 
     def filter_obs_type(self, queryset, name, value):
@@ -258,7 +267,8 @@ class DataFileFilter(GenericFilterMixIn, ExtraDataFilterMixIn):
             ("my_uncertain", "My uncertain observations"),
         ],
         method="filter_uncertain",
-        label="Uncertain observations"
+        label="Uncertain observations",
+        help_text="Filter datafiles by whether they have uncertain observations."
     )
 
     def filter_uncertain(self, queryset, name, value):
@@ -285,6 +295,11 @@ class DataFileFilter(GenericFilterMixIn, ExtraDataFilterMixIn):
             return queryset.filter(observations__validation_requested=True, observations__owner=self.request.user)
         elif value == "other_uncertain":
             return queryset.filter(observations__validation_requested=True).exclude(observations__owner=self.request.user)
+
+    field_help_dict = {"deployment__id": "Numeric database ID of deployment.",
+                       "id": "Numeric database ID of datafile.",
+                       "favourite_of__id": "Database ID of user that has favourited this file."
+                       }
 
     class Meta:
         model = DataFile
