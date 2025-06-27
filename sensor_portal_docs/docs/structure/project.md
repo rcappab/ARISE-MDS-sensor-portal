@@ -3,7 +3,7 @@
 A project represents a defined ecological or scientific effort under which data is collected. It includes contextual information such as goals, study area, team members, and time frames. Projects serve as containers for organizing related deployments and observations.
 Each project in the system includes a standardized set of metadata fields. These fields help define the scope of the project, facilitate coordination among users, and ensure proper data management and access control.
 
-Project ID: A short, unique identifier for the project 
+Project ID: A short, unique identifier for the project
 
 Name: Full descriptive name of the project
 
@@ -19,11 +19,11 @@ Contact Email: Email address of the primary contact
 
 Organisation: Institution or entity responsible for the project
 
-Data Storages: External storage systems linked to the project 
+Data Storages: External storage systems linked to the project
 
-Archive: Designated archive for long-term data storage 
+Archive: Designated archive for long-term data storage
 
-Automated Tasks: Optional automated processes applied to data 
+Automated Tasks: Optional automated processes applied to data
 
 Managers: Users with administrative rights over the project
 
